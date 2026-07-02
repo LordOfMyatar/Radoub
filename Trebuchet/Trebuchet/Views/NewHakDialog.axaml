@@ -2,7 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="RadoubLauncher.Views.NewHakDialog"
         Title="New HAK"
-        Width="440" Height="360"
+        Width="440" Height="400"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         ShowInTaskbar="False">
@@ -49,6 +49,11 @@
                             Padding="12,4"/>
                 </Grid>
             </StackPanel>
+
+            <!-- Register in module IFO -->
+            <CheckBox x:Name="AddToIfoCheckBox"
+                      Content="Add to open module (IFO HAK list)"
+                      ToolTip.Tip="Append this HAK to the currently open module's HAK list. Writes on the next Save Module."/>
 
             <!-- Buttons -->
             <StackPanel Orientation="Horizontal"

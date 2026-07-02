@@ -11,7 +11,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Feature: Create new HAK from scratch (#2267)
 
-- "New HAK..." produces an empty `.hak` archive, then chains into the add-files picker to populate it.
+- "New HAK..." produces an empty `.hak` archive, then chains into a media/model add-files picker; an optional checkbox registers it in the open module's IFO HAK list.
+- "Add to HAK..." adds media and models (textures, models, sounds, 2DAs) to an existing HAK, defaulting to the game hak folder.
 
 ---
 

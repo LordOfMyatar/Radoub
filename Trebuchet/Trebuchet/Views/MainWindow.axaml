@@ -108,6 +108,10 @@
                             Click="OnNewHakClick"
                             Padding="8,4"
                             ToolTip.Tip="Create a new empty HAK archive"/>
+                    <Button Content="Add to HAK..."
+                            Click="OnAddToHakClick"
+                            Padding="8,4"
+                            ToolTip.Tip="Add media and models (textures, models, sounds, 2DAs) to an existing HAK archive"/>
                     <Button Content="Import ERF..."
                             Click="OnImportErfClick"
                             IsVisible="{Binding IsModuleUnpacked}"
