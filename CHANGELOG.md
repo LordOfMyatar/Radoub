@@ -8,6 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Tech-Debt] - 2026-07-02
+**Branch**: `radoub/sprint/tech-debt-perf-flaui-2560` | **PR**: #2646
+
+### Sprint: Tech-Debt — Performance & FlaUI Test Infrastructure (#2560)
+
+- Cross-tool performance tune: app stalling and cold-start latency (#2128).
+- Investigate Avalonia CheckBox AutomationId UIA exposure for FlaUI (#2154).
+- All app settings resolve fonts from Trebuchet as single source of truth (#2404).
+- Confirm FlaUIGlobalMutex de-flake holds under full-soak threadpool pressure (#2366).
+- Fix 3 flaky Relique FlaUI property tests: popup lookup + rollback assertion (#2528).
+
+---
+
 ## [Radoub.UI 0.2.33-alpha] - 2026-06-30
 **Branch**: `quartermaster/issue-2620` | **PR**: #2640
 

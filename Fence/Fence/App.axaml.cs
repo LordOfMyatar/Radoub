@@ -66,53 +66,8 @@ public partial class App : Application
         ApplyFontSettings();
     }
 
-    private void ApplyFontSettings()
-    {
-        var sharedSettings = Radoub.Formats.Settings.RadoubSettings.Instance;
-        var baseSize = (double)sharedSettings.SharedFontSize;
-        var fontFamily = sharedSettings.SharedFontFamily;
-
-        if (Resources != null)
-        {
-            // Update base font size
-            Resources["GlobalFontSize"] = baseSize;
-
-            // Update derived font sizes (must match ThemeManager.ApplyFontSettings logic)
-            Resources["FontSizeXSmall"] = Math.Max(10, baseSize - 2);  // 12 @ base 14
-            Resources["FontSizeSmall"] = Math.Max(11, baseSize - 1);   // 13 @ base 14
-            Resources["FontSizeNormal"] = baseSize;                     // 14 @ base 14
-            Resources["FontSizeMedium"] = baseSize + 2;                 // 16 @ base 14
-            Resources["FontSizeLarge"] = baseSize + 4;                  // 18 @ base 14
-            Resources["FontSizeXLarge"] = baseSize + 6;                 // 20 @ base 14
-            Resources["FontSizeTitle"] = baseSize + 10;                 // 24 @ base 14
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font size: {baseSize}pt (derived sizes updated)");
-        }
-
-        if (Resources != null)
-        {
-            if (!string.IsNullOrEmpty(fontFamily))
-            {
-                try
-                {
-                    Resources["GlobalFontFamily"] = new FontFamily(fontFamily);
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font family: {fontFamily}");
-                }
-                catch
-                {
-                    // Invalid font family - fall back to system default
-                    Resources["GlobalFontFamily"] = FontFamily.Default;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Applied font family: System Default (fallback)");
-                }
-            }
-            else
-            {
-                // Empty string means system default
-                Resources["GlobalFontFamily"] = FontFamily.Default;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Applied font family: System Default");
-            }
-        }
-    }
+    // Fonts resolve from Trebuchet shared settings via the single shared entry point (#2404).
+    private void ApplyFontSettings() => ThemeManager.ApplySharedFontSettings(Resources);
 
     private void DisableAvaloniaDataAnnotationValidation()
     {
