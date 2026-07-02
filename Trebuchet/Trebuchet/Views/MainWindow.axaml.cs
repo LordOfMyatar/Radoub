@@ -591,6 +591,7 @@ public partial class MainWindow : Window
         // HAK content (models, textures, sounds, 2DAs) lives outside the module (#2267).
         Avalonia.Platform.Storage.IStorageFolder? startFolder;
         Avalonia.Platform.Storage.FilePickerFileType[] fileTypes;
+        var archiveLabel = contentKind == ArchiveContentKind.HakMedia ? "HAK" : "ERF";
         if (contentKind == ArchiveContentKind.HakMedia)
         {
             startFolder = await TryGetHakFolderAsync(storage);
@@ -660,12 +661,12 @@ public partial class MainWindow : Window
                 foreach (var (name, reason) in result.Errors)
                     message += $"\n  • {name}: {reason}";
             }
-            new AlertDialog("Add to ERF", message).Show(this);
+            new AlertDialog($"Add to {archiveLabel}", message).Show(this);
         }
         catch (Exception ex)
         {
-            UnifiedLogger.LogApplication(LogLevel.WARN, $"Add to ERF failed: {ex.Message}");
-            new AlertDialog("Add to ERF Failed", ex.Message).Show(this);
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Add to {archiveLabel} failed: {ex.Message}");
+            new AlertDialog($"Add to {archiveLabel} Failed", ex.Message).Show(this);
         }
     }
 
