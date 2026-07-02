@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.41.0-alpha] - 2026-07-01
+**Branch**: `trebuchet/issue-2267` | **PR**: #TBD
+
+### Feature: Create new HAK from scratch (#2267)
+
+- "New HAK..." produces an empty `.hak` archive, then chains into the add-files picker to populate it.
+
+---
+
 ## [1.40.0-alpha] - 2026-06-27
 **Branch**: `trebuchet/issue-2268` | **PR**: #2607
 
