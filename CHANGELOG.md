@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Tech-Debt] - 2026-07-02
-**Branch**: `radoub/sprint/tech-debt-perf-flaui-2560` | **PR**: #TBD
+**Branch**: `radoub/sprint/tech-debt-perf-flaui-2560` | **PR**: #2646
 
 ### Sprint: Tech-Debt — Performance & FlaUI Test Infrastructure (#2560)
 
