@@ -84,4 +84,89 @@ public class ErfCreationServiceTests : IDisposable
 
         Assert.Throws<IOException>(() => _service.CreateErf(path));
     }
+
+    [Fact]
+    public void CreateErf_DefaultsToErfFileType()
+    {
+        var path = Path.Combine(_tempDir, "defaulttype.erf");
+
+        _service.CreateErf(path);
+
+        var erf = ErfReader.Read(path);
+        Assert.Equal("ERF ", erf.FileType);
+    }
+
+    [Fact]
+    public void CreateErf_RejectsInvalidFileType()
+    {
+        var path = Path.Combine(_tempDir, "badtype.erf");
+
+        Assert.Throws<ArgumentException>(() => _service.CreateErf(path, fileType: "XYZ "));
+    }
+
+    [Fact]
+    public void CreateErf_SetsBuildYearAndDay()
+    {
+        var path = Path.Combine(_tempDir, "builddate.erf");
+
+        _service.CreateErf(path);
+
+        var erf = ErfReader.Read(path);
+        Assert.Equal((uint)(DateTime.Now.Year - 1900), erf.BuildYear);
+        Assert.Equal((uint)DateTime.Now.DayOfYear, erf.BuildDay);
+    }
+
+    [Fact]
+    public void CreateHak_ProducesEmptyHakWithCorrectFileType()
+    {
+        var path = Path.Combine(_tempDir, "myhak.hak");
+
+        _service.CreateHak(path);
+
+        var erf = ErfReader.Read(path);
+        Assert.Equal("HAK ", erf.FileType);
+        Assert.Equal("V1.0", erf.FileVersion);
+        Assert.Empty(erf.Resources);
+    }
+
+    [Fact]
+    public void CreateHak_SetsBuildYearAndDay()
+    {
+        var path = Path.Combine(_tempDir, "hakdate.hak");
+
+        _service.CreateHak(path);
+
+        var erf = ErfReader.Read(path);
+        Assert.Equal((uint)(DateTime.Now.Year - 1900), erf.BuildYear);
+        Assert.Equal((uint)DateTime.Now.DayOfYear, erf.BuildDay);
+    }
+
+    [Fact]
+    public void CreateHak_WithDescription_StoresLocalizedString()
+    {
+        var path = Path.Combine(_tempDir, "hakdesc.hak");
+
+        _service.CreateHak(path, description: "My voiceover HAK");
+
+        var erf = ErfReader.Read(path);
+        Assert.Contains(erf.LocalizedStrings, s => s.Text == "My voiceover HAK");
+    }
+
+    [Fact]
+    public void CreateHak_RejectsInvalidAuroraFilename()
+    {
+        var path = Path.Combine(_tempDir, "thisnameistoolong.hak");
+
+        var ex = Assert.Throws<ArgumentException>(() => _service.CreateHak(path));
+        Assert.Contains("16", ex.Message);
+    }
+
+    [Fact]
+    public void CreateHak_DoesNotOverwriteExistingByDefault()
+    {
+        var path = Path.Combine(_tempDir, "exists.hak");
+        File.WriteAllText(path, "preexisting");
+
+        Assert.Throws<IOException>(() => _service.CreateHak(path));
+    }
 }
