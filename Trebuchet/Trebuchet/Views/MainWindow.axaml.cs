@@ -428,6 +428,51 @@ public partial class MainWindow : Window
 
     #endregion
 
+    #region New HAK
+
+    private void OnNewHakClick(object? sender, RoutedEventArgs e)
+    {
+        var dialog = new NewHakDialog();
+        dialog.Confirmed += OnNewHakConfirmed;
+        dialog.Show(this);
+    }
+
+    private async void OnNewHakConfirmed(object? sender, EventArgs e)
+    {
+        if (sender is not NewHakDialog dialog) return;
+
+        var path = System.IO.Path.Combine(dialog.OutputFolder, dialog.HakName + ".hak");
+
+        // Overwrite is the one destructive branch — a modal confirm is the sanctioned exception
+        // to the non-modal rule.
+        if (System.IO.File.Exists(path))
+        {
+            var confirm = new ConfirmDialog(
+                "Overwrite HAK?",
+                $"{System.IO.Path.GetFileName(path)} already exists in that folder.\n\nOverwrite it?");
+            await confirm.ShowDialog(this);
+            if (!confirm.Confirmed) return;
+        }
+
+        try
+        {
+            new ErfCreationService().CreateHak(path,
+                string.IsNullOrEmpty(dialog.Description) ? null : dialog.Description,
+                overwrite: true);
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"New HAK failed: {ex.Message}");
+            new AlertDialog("HAK Creation Failed", ex.Message).Show(this);
+            return;
+        }
+
+        // Chain straight into populating the fresh HAK (#2267).
+        await AddFilesToArchiveAsync(path);
+    }
+
+    #endregion
+
     #region Add to ERF
 
     private async void OnAddToErfClick(object? sender, RoutedEventArgs e)
@@ -442,11 +487,12 @@ public partial class MainWindow : Window
             AllowMultiple = false,
             FileTypeFilter = new[]
             {
-                // ERF only. Adding to a .mod is the module workflow (unpack -> edit -> Save Module),
-                // and .hak has its own "Add to HAK" flow (#2267); neither belongs here.
-                new Avalonia.Platform.Storage.FilePickerFileType("ERF Archives")
+                // ERF-family archives you build/populate directly (#2267). The open module's own
+                // archive is guarded below — packing working files back into it is the Save Module
+                // workflow, not this one.
+                new Avalonia.Platform.Storage.FilePickerFileType("ERF-family Archives")
                 {
-                    Patterns = new[] { "*.erf" }
+                    Patterns = new[] { "*.erf", "*.hak", "*.mod" }
                 }
             }
         });
@@ -463,12 +509,25 @@ public partial class MainWindow : Window
             return;
         }
 
-        // 2. Pick files to add. Default the picker to the current module's working folder so
-        //    palette assets (loose blueprints, compiled scripts) are right there to select.
+        await AddFilesToArchiveAsync(erfPath);
+    }
+
+    /// <summary>
+    /// Pick files and add them to an existing ERF-family archive (.erf/.hak/.mod), reporting the
+    /// result. Shared by "Add to ERF" and the post-create step of "New HAK" (#2267).
+    /// </summary>
+    private async System.Threading.Tasks.Task AddFilesToArchiveAsync(string archivePath)
+    {
+        var storage = GetTopLevel(this)?.StorageProvider;
+        if (storage is null) return;
+
+        // Pick files to add. Default the picker to the current module's working folder so
+        // palette assets (loose blueprints, compiled scripts) are right there to select.
         var startFolder = await TryGetModuleFolderAsync(storage);
+        var archiveName = System.IO.Path.GetFileName(archivePath);
         var files = await storage.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
         {
-            Title = "Add to ERF — choose files",
+            Title = $"Add to {archiveName} — choose files",
             AllowMultiple = true,
             SuggestedStartLocation = startFolder,
             FileTypeFilter = new[]
@@ -491,8 +550,7 @@ public partial class MainWindow : Window
 
         try
         {
-            var result = new ErfAssetService().AddFiles(erfPath, paths, overwriteExisting: false);
-            var archiveName = System.IO.Path.GetFileName(erfPath);
+            var result = new ErfAssetService().AddFiles(archivePath, paths, overwriteExisting: false);
 
             string message;
             if (result.AddedCount == 0 && result.SkippedCount > 0 && result.Errors.Count == 0)

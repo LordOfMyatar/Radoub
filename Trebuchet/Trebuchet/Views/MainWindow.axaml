@@ -103,7 +103,11 @@
                     <Button Content="Add to ERF..."
                             Click="OnAddToErfClick"
                             Padding="8,4"
-                            ToolTip.Tip="Add files (scripts, blueprints, assets) to an existing ERF archive"/>
+                            ToolTip.Tip="Add files (scripts, blueprints, assets) to an existing ERF/HAK/MOD archive"/>
+                    <Button Content="New HAK..."
+                            Click="OnNewHakClick"
+                            Padding="8,4"
+                            ToolTip.Tip="Create a new empty HAK archive"/>
                     <Button Content="Import ERF..."
                             Click="OnImportErfClick"
                             IsVisible="{Binding IsModuleUnpacked}"

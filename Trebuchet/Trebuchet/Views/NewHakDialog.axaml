@@ -1,0 +1,70 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="RadoubLauncher.Views.NewHakDialog"
+        Title="New HAK"
+        Width="440" Height="360"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False">
+
+    <Border Padding="16">
+        <StackPanel Spacing="12">
+            <TextBlock Text="Create New HAK Archive"
+                       FontSize="{DynamicResource FontSizeMedium}"
+                       FontWeight="SemiBold"/>
+
+            <!-- Name -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="HAK Name"/>
+                <TextBox x:Name="NameTextBox"
+                         Watermark="e.g. myvoiceover"
+                         ToolTip.Tip="Max 16 characters, lowercase letters, digits, and underscore."/>
+                <TextBlock x:Name="NameError"
+                           Foreground="{DynamicResource ThemeError}"
+                           TextWrapping="Wrap"
+                           IsVisible="False"/>
+            </StackPanel>
+
+            <!-- Description -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Description (optional)"/>
+                <TextBox x:Name="DescriptionTextBox"
+                         AcceptsReturn="True"
+                         Height="70"
+                         TextWrapping="Wrap"
+                         Watermark="Describe what this HAK contains..."/>
+            </StackPanel>
+
+            <!-- Folder -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Output Folder"/>
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBox x:Name="FolderTextBox"
+                             IsReadOnly="True"
+                             Watermark="Choose a folder..."/>
+                    <Button Grid.Column="1"
+                            Content="Browse..."
+                            Click="OnBrowseClick"
+                            Margin="8,0,0,0"
+                            Padding="12,4"/>
+                </Grid>
+            </StackPanel>
+
+            <!-- Buttons -->
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Spacing="8"
+                        Margin="0,8,0,0">
+                <Button Content="Create"
+                        x:Name="CreateButton"
+                        Click="OnCreateClick"
+                        IsDefault="True"
+                        Padding="24,6"/>
+                <Button Content="Cancel"
+                        Click="OnCancelClick"
+                        IsCancel="True"
+                        Padding="24,6"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>
