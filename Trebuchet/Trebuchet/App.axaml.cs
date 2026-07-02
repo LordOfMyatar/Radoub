@@ -140,56 +140,10 @@ public partial class App : Application
         }
     }
 
-    private void ApplyFontSettings()
-    {
-        var radoubSettings = Radoub.Formats.Settings.RadoubSettings.Instance;
-
-        if (Resources != null)
-        {
-            // SharedFontSize is the global font size in points — Trebuchet is the authority
-            // and applies it directly (no scale multiplier). All tools read the same value (#2152).
-            var baseSize = radoubSettings.SharedFontSize;
-
-            // Update base font size
-            Resources["GlobalFontSize"] = baseSize;
-
-            // Update derived font sizes (must match ThemeManager.ApplyFontSettings logic)
-            Resources["FontSizeXSmall"] = Math.Max(10, baseSize - 2);
-            Resources["FontSizeSmall"] = Math.Max(11, baseSize - 1);
-            Resources["FontSizeNormal"] = baseSize;
-            Resources["FontSizeMedium"] = baseSize + 2;
-            Resources["FontSizeLarge"] = baseSize + 4;
-            Resources["FontSizeXLarge"] = baseSize + 6;
-            Resources["FontSizeTitle"] = baseSize + 10;
-
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Applied font size: {baseSize:F0}pt (SharedFontSize)");
-        }
-
-        if (Resources != null)
-        {
-            var fontFamily = radoubSettings.SharedFontFamily;
-            if (!string.IsNullOrEmpty(fontFamily))
-            {
-                try
-                {
-                    Resources["GlobalFontFamily"] = new FontFamily(fontFamily);
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font family: {fontFamily}");
-                }
-                catch (Exception ex)
-                {
-                    // Invalid font family - fall back to system default
-                    Resources["GlobalFontFamily"] = FontFamily.Default;
-                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Font family fallback to System Default: {ex.Message}");
-                }
-            }
-            else
-            {
-                // Empty string means system default
-                Resources["GlobalFontFamily"] = FontFamily.Default;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Applied font family: System Default");
-            }
-        }
-    }
+    // Trebuchet is the authority that edits the shared font settings, but it applies them
+    // through the same single shared entry point every tool uses (#2404), so its own chrome
+    // stays in lockstep with what the tools render.
+    private void ApplyFontSettings() => ThemeManager.ApplySharedFontSettings(Resources);
 
     private void DisableAvaloniaDataAnnotationValidation()
     {

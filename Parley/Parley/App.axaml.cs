@@ -48,10 +48,8 @@ public partial class App : Application
         ThemeManager.Instance.DiscoverThemes();
         ThemeManager.Instance.ApplySharedTheme();
 
-        // Apply font size and family from shared settings
-        var sharedSettings = Radoub.Formats.Settings.RadoubSettings.Instance;
-        ApplyFontSize(sharedSettings.SharedFontSize);
-        ApplyFontFamily(sharedSettings.SharedFontFamily);
+        // Fonts resolve from Trebuchet shared settings via the single shared entry point (#2404).
+        ApplyFontSettings();
 
         // Apply scrollbar auto-hide preference (Issue #63)
         ApplyScrollbarAutoHide(_settings.AllowScrollbarAutoHide);
@@ -82,11 +80,9 @@ public partial class App : Application
 
     private void OnMainWindowActivated(object? sender, EventArgs e)
     {
-        var sharedSettings = Radoub.Formats.Settings.RadoubSettings.Instance;
-        sharedSettings.ReloadSettings();
+        Radoub.Formats.Settings.RadoubSettings.Instance.ReloadSettings();
         ThemeManager.Instance.ApplySharedTheme();
-        ApplyFontSize(sharedSettings.SharedFontSize);
-        ApplyFontFamily(sharedSettings.SharedFontFamily);
+        ApplyFontSettings();
     }
 
     private void OnSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -97,50 +93,13 @@ public partial class App : Application
         }
     }
 
-    /// <summary>
-    /// Apply font size globally to all UI elements
-    /// Fixes issue #58 - Font sizing across UI elements
-    /// </summary>
-    public static void ApplyFontSize(double fontSize)
-    {
-        if (Application.Current?.Resources != null)
-        {
-            Application.Current.Resources["GlobalFontSize"] = fontSize;
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied global font size: {fontSize}pt");
-        }
-    }
-
-    /// <summary>
-    /// Apply font family globally to all UI elements
-    /// Fixes issue #59 - Font selection
-    /// </summary>
-    public static void ApplyFontFamily(string fontFamilyName)
-    {
-        if (Application.Current?.Resources != null)
-        {
-            try
-            {
-                // If empty or null, use system default
-                if (string.IsNullOrWhiteSpace(fontFamilyName))
-                {
-                    Application.Current.Resources["GlobalFontFamily"] = FontFamily.Default;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Applied system default font");
-                }
-                else
-                {
-                    var fontFamily = new FontFamily(fontFamilyName);
-                    Application.Current.Resources["GlobalFontFamily"] = fontFamily;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied global font family: {fontFamilyName}");
-                }
-            }
-            catch
-            {
-                // Fallback to system default if font not found
-                Application.Current.Resources["GlobalFontFamily"] = FontFamily.Default;
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"Font '{fontFamilyName}' not found, using system default");
-            }
-        }
-    }
+    // Fonts resolve from Trebuchet shared settings via the single shared entry point (#2404).
+    // Previously Parley set only GlobalFontSize/GlobalFontFamily and skipped the seven derived
+    // sizes (FontSizeXSmall..Title), so its UI hierarchy did not scale with the slider — the
+    // shared path fixes that. Uses Application.Current.Resources since this can run before/after
+    // this instance's Resources is the app-level dictionary (same object).
+    private static void ApplyFontSettings() =>
+        ThemeManager.ApplySharedFontSettings(Application.Current?.Resources);
 
     /// <summary>
     /// Apply scrollbar auto-hide preference globally

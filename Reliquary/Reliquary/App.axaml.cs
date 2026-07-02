@@ -67,46 +67,8 @@ public partial class App : Application
         ApplyFontSettings();
     }
 
-    private void ApplyFontSettings()
-    {
-        var radoub = RadoubSettings.Instance;
-
-        if (Resources != null)
-        {
-            var baseSize = radoub.SharedFontSize;
-            Resources["GlobalFontSize"] = baseSize;
-            Resources["FontSizeXSmall"] = Math.Max(10, baseSize - 2);
-            Resources["FontSizeSmall"] = Math.Max(11, baseSize - 1);
-            Resources["FontSizeNormal"] = baseSize;
-            Resources["FontSizeMedium"] = baseSize + 2;
-            Resources["FontSizeLarge"] = baseSize + 4;
-            Resources["FontSizeXLarge"] = baseSize + 6;
-            Resources["FontSizeTitle"] = baseSize + 10;
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font size: {baseSize}pt (derived sizes updated)");
-        }
-
-        if (Resources != null)
-        {
-            if (!string.IsNullOrEmpty(radoub.SharedFontFamily))
-            {
-                try
-                {
-                    Resources["GlobalFontFamily"] = new FontFamily(radoub.SharedFontFamily);
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font family: {radoub.SharedFontFamily}");
-                }
-                catch
-                {
-                    Resources["GlobalFontFamily"] = FontFamily.Default;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Applied font family: System Default (fallback)");
-                }
-            }
-            else
-            {
-                Resources["GlobalFontFamily"] = FontFamily.Default;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Applied font family: System Default");
-            }
-        }
-    }
+    // Fonts resolve from Trebuchet shared settings via the single shared entry point (#2404).
+    private void ApplyFontSettings() => ThemeManager.ApplySharedFontSettings(Resources);
 
     private void DisableAvaloniaDataAnnotationValidation()
     {

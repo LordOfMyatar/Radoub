@@ -343,43 +343,35 @@ public partial class ThemeManager
         return (fonts?.Size is int s && s > 0) ? s : 14.0;
     }
 
+    /// <summary>
+    /// Resolves the effective global font family (#2404). The Trebuchet shared
+    /// setting (<paramref name="sharedFontFamily"/>) is the single authority; a
+    /// theme's own <c>fonts.Primary</c> is only a fallback used when no shared
+    /// family is configured. Returns null when neither yields a concrete family
+    /// (caller applies the system default). "$Default" in a theme is a sentinel
+    /// for "system default", not a literal family name. Pure logic for unit testing.
+    /// </summary>
+    public static string? ResolveEffectiveFontFamily(ThemeFonts? fonts, string? sharedFontFamily)
+    {
+        if (!string.IsNullOrWhiteSpace(sharedFontFamily))
+            return sharedFontFamily;
+
+        var themeFamily = fonts?.Primary;
+        if (!string.IsNullOrWhiteSpace(themeFamily) && themeFamily != "$Default")
+            return themeFamily;
+
+        return null;
+    }
+
     private void ApplyFonts(IResourceDictionary resources, ThemeFonts fonts)
     {
-        // Apply font family - empty or "$Default" means system default
-        if (!string.IsNullOrEmpty(fonts.Primary) && fonts.Primary != "$Default")
-        {
-            try
-            {
-                resources["GlobalFontFamily"] = new FontFamily(fonts.Primary);
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN,
-                    $"[{_toolName}] Invalid font family: {fonts.Primary} - {ex.Message}");
-                resources["GlobalFontFamily"] = FontFamily.Default;
-            }
-        }
-        else
-        {
-            // Explicitly set system default font
-            resources["GlobalFontFamily"] = FontFamily.Default;
-        }
-
-        // Global font size: the Trebuchet slider (RadoubSettings.SharedFontSize) is the
-        // single authority. The theme's own fonts.size is only a fallback used when no
-        // shared value is configured — otherwise every theme apply would clobber the
-        // user's global font-size choice back to the theme default (#2152).
-        var baseSize = ResolveEffectiveFontSize(fonts, RadoubSettings.Instance.SharedFontSize);
-        resources["GlobalFontSize"] = baseSize;
-
-        // Derived font sizes for UI hierarchy (all scale with base size)
-        resources["FontSizeXSmall"] = Math.Max(10, baseSize - 2);  // 12 @ base 14
-        resources["FontSizeSmall"] = Math.Max(11, baseSize - 1);   // 13 @ base 14
-        resources["FontSizeNormal"] = baseSize;                     // 14 @ base 14
-        resources["FontSizeMedium"] = baseSize + 2;                 // 16 @ base 14
-        resources["FontSizeLarge"] = baseSize + 4;                  // 18 @ base 14
-        resources["FontSizeXLarge"] = baseSize + 6;                 // 20 @ base 14
-        resources["FontSizeTitle"] = baseSize + 10;                 // 24 @ base 14
+        // Font family + size: RadoubSettings (Trebuchet shared settings) is the single
+        // authority (#2404 family, #2152 size). The theme's own fonts.Primary/fonts.Size
+        // are only fallbacks used when no shared value is configured — otherwise every
+        // theme apply would clobber the user's global font choices back to theme defaults.
+        var sharedSettings = RadoubSettings.Instance;
+        ApplyResolvedFonts(resources, ResolveEffectiveFontFamily(fonts, sharedSettings.SharedFontFamily),
+            ResolveEffectiveFontSize(fonts, sharedSettings.SharedFontSize));
 
         if (!string.IsNullOrEmpty(fonts.Monospace))
         {
@@ -393,6 +385,67 @@ public partial class ThemeManager
                     $"[{_toolName}] Invalid monospace font: {fonts.Monospace} - {ex.Message}");
             }
         }
+    }
+
+    /// <summary>
+    /// Re-applies global font family + size from the Trebuchet shared settings
+    /// (<see cref="RadoubSettings"/>) to the given resource dictionary (#2404).
+    /// This is the single shared entry point every tool calls on startup and on
+    /// window activation, replacing the six duplicated per-tool ApplyFontSettings()
+    /// copies. Only family + the seven derived sizes are shared; tool-specific
+    /// derived resources (e.g. Quartermaster portrait dimensions) are applied by
+    /// the tool after this call.
+    /// </summary>
+    public static void ApplySharedFontSettings(IResourceDictionary? resources)
+    {
+        if (resources == null)
+            return;
+
+        var sharedSettings = RadoubSettings.Instance;
+        // No theme fonts here — shared settings are authoritative; family falls back
+        // to system default and size to 14 when unset.
+        ApplyResolvedFonts(resources,
+            ResolveEffectiveFontFamily(null, sharedSettings.SharedFontFamily),
+            ResolveEffectiveFontSize(null, sharedSettings.SharedFontSize));
+    }
+
+    /// <summary>
+    /// Writes GlobalFontFamily + GlobalFontSize + the seven derived UI sizes to a
+    /// resource dictionary from an already-resolved family/size pair. Null family
+    /// means system default. Shared by theme apply (<see cref="ApplyFonts"/>) and
+    /// the per-tool shared entry point (<see cref="ApplySharedFontSettings"/>) so
+    /// both paths produce identical results.
+    /// </summary>
+    private static void ApplyResolvedFonts(IResourceDictionary resources, string? family, double baseSize)
+    {
+        if (family == null)
+        {
+            resources["GlobalFontFamily"] = FontFamily.Default;
+        }
+        else
+        {
+            try
+            {
+                resources["GlobalFontFamily"] = new FontFamily(family);
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"Invalid font family: {family} - {ex.Message}. Using system default.");
+                resources["GlobalFontFamily"] = FontFamily.Default;
+            }
+        }
+
+        resources["GlobalFontSize"] = baseSize;
+
+        // Derived font sizes for UI hierarchy (all scale with base size)
+        resources["FontSizeXSmall"] = Math.Max(10, baseSize - 2);  // 12 @ base 14
+        resources["FontSizeSmall"] = Math.Max(11, baseSize - 1);   // 13 @ base 14
+        resources["FontSizeNormal"] = baseSize;                     // 14 @ base 14
+        resources["FontSizeMedium"] = baseSize + 2;                 // 16 @ base 14
+        resources["FontSizeLarge"] = baseSize + 4;                  // 18 @ base 14
+        resources["FontSizeXLarge"] = baseSize + 6;                 // 20 @ base 14
+        resources["FontSizeTitle"] = baseSize + 10;                 // 24 @ base 14
     }
 
     /// <summary>
