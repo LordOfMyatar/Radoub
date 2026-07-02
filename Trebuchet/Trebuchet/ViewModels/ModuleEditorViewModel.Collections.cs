@@ -14,20 +14,31 @@ public partial class ModuleEditorViewModel
     [RelayCommand]
     private void AddHak()
     {
-        if (string.IsNullOrWhiteSpace(NewHakName)) return;
+        AddHakByName(NewHakName);
+        NewHakName = string.Empty;
+    }
 
-        var hakName = NewHakName.Trim();
+    /// <summary>
+    /// Append a HAK to the list by name (extension optional), deduplicating case-insensitively
+    /// and marking the module dirty when it actually changes. Shared by the HAK-list "Add" field
+    /// and the "New HAK → register in module IFO" flow (#2267).
+    /// </summary>
+    /// <returns>True if the HAK was added; false when blank or already present.</returns>
+    public bool AddHakByName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return false;
+
+        var hakName = name.Trim();
         // Remove .hak extension if present
         if (hakName.EndsWith(".hak", StringComparison.OrdinalIgnoreCase))
             hakName = hakName[..^4];
 
-        if (!HakList.Contains(hakName, StringComparer.OrdinalIgnoreCase))
-        {
-            HakList.Add(hakName);
-            HasUnsavedChanges = true;
-        }
+        if (string.IsNullOrEmpty(hakName)) return false;
+        if (HakList.Contains(hakName, StringComparer.OrdinalIgnoreCase)) return false;
 
-        NewHakName = string.Empty;
+        HakList.Add(hakName);
+        HasUnsavedChanges = true;
+        return true;
     }
 
     [RelayCommand]
