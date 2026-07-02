@@ -443,6 +443,9 @@ public partial class MainWindow : Window
     private async void OnNewHakConfirmed(object? sender, EventArgs e)
     {
         if (sender is not NewHakDialog dialog) return;
+        // One-shot: the dialog raises Confirmed at most once, but unsubscribe so the handler
+        // doesn't outlive the dialog instance.
+        dialog.Confirmed -= OnNewHakConfirmed;
 
         var path = System.IO.Path.Combine(dialog.OutputFolder, dialog.HakName + ".hak");
 
@@ -550,8 +553,9 @@ public partial class MainWindow : Window
         if (targets.Count == 0) return;
         var erfPath = targets[0].Path.LocalPath;
 
-        // Defense-in-depth: the picker only offers .erf, but guard against the open module's own
-        // archive anyway — adding its working files back to itself is a confusing no-op (#2268).
+        // Defense-in-depth: the picker now offers .erf/.hak/.mod (#2267), so guard against the
+        // open module's own .mod — adding its working files back to itself is a confusing no-op,
+        // and packing another module's .mod this way would corrupt it. Use Save Module instead (#2268).
         if (ModulePathHelper.IsCurrentModuleArchive(erfPath, RadoubSettings.Instance.CurrentModulePath))
         {
             new AlertDialog("Add to ERF",
