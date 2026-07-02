@@ -246,6 +246,11 @@ void main()
         // particles behind it) but control depth WRITES per blend mode below.
         _gl.Enable(EnableCap.Blend);
 
+        // #2620: restore GL state in a finally so a throw mid-draw (BufferData/DrawArrays) can't
+        // leak blend/depth-write into the mesh pass of THIS frame. The frame-start reset is the
+        // cross-frame net; this try/finally is the intra-frame guarantee.
+        try
+        {
         // TODO(#2395): back-to-front sort for Alpha blend (additive is order-independent).
         foreach (var (node, emitter, system) in _particleSystems)
         {
@@ -299,15 +304,18 @@ void main()
 
             _gl.DrawArrays(PrimitiveType.Triangles, 0, (uint)vertCount);
         }
-
-        // Restore state for the mesh pass: re-enable depth writes, drop blend (mesh is opaque),
-        // unbind everything we touched.
-        _gl.DepthMask(true);
-        _gl.Disable(EnableCap.Blend);
-        _gl.BindTexture(TextureTarget.Texture2D, 0);
-        _gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
-        _gl.BindVertexArray(0);
-        _gl.UseProgram(0);
+        }
+        finally
+        {
+            // Restore state for the mesh pass: re-enable depth writes, drop blend (mesh is opaque),
+            // unbind everything we touched. Runs even if a draw above threw (#2620).
+            _gl.DepthMask(true);
+            _gl.Disable(EnableCap.Blend);
+            _gl.BindTexture(TextureTarget.Texture2D, 0);
+            _gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
+            _gl.BindVertexArray(0);
+            _gl.UseProgram(0);
+        }
 
         var err = _gl.GetError();
         if (err != GLEnum.NoError)

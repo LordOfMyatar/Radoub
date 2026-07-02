@@ -404,6 +404,11 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
         _gl.Clear((uint)(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit));
         _gl.Enable(EnableCap.DepthTest);
         _gl.DepthFunc(DepthFunction.Less);  // Opaque geometry: strict Less avoids coplanar z-fighting.
+        // Defensive state reset (#2620): if a prior frame threw mid-render (e.g. the particle path
+        // after Enable(Blend)), blend/depth-write could still be set. Start every frame from a known
+        // clean state so a leaked GL state can never bleed into this frame's opaque mesh.
+        _gl.DepthMask(true);
+        _gl.Disable(EnableCap.Blend);
         _gl.Viewport(0, 0, (uint)width, (uint)height);
 
         // Check for any GL errors after basic setup
@@ -522,7 +527,7 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
 
         // Resolve a draw call's texture (direct or remapped), whether it has one, and its
         // MaterialMode (#2540). Shared by the routing pass and the actual draw.
-        (string? texture, bool hasTexture, MaterialMode mode) ResolveDrawCall(in MeshDrawCall drawCall)
+        (string? texture, bool hasTexture, MaterialMode mode, AlphaProfile profile) ResolveDrawCall(in MeshDrawCall drawCall)
         {
             var resolvedTexture = drawCall.TextureName;
             if (!string.IsNullOrEmpty(resolvedTexture) && !_textureCache.ContainsKey(resolvedTexture)
@@ -537,19 +542,32 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
             var profile = hasTexture && _textureAlphaProfile.TryGetValue(resolvedTexture!, out var p)
                 ? p : AlphaProfile.Opaque;
             var mode = MeshTransparency.ClassifyMesh(drawCall.MeshAlpha, drawCall.TransparencyHint, profile, drawCall.IsSkin, drawCall.IsMirrored);
-            return (resolvedTexture, hasTexture, mode);
+            return (resolvedTexture, hasTexture, mode, profile);
         }
 
         // Draws one mesh with its texture and transparency uniforms.
         void DrawMesh(in MeshDrawCall drawCall)
         {
-            var (resolvedTexture, hasTexture, mode) = ResolveDrawCall(drawCall);
+            var (resolvedTexture, hasTexture, mode, profile) = ResolveDrawCall(drawCall);
 
             if (_logTransparencyOncePerModel && mode != MaterialMode.Opaque)
             {
                 UnifiedLogger.LogApplication(LogLevel.DEBUG,
                     $"  [Transparency] '{resolvedTexture}' -> {mode} (alpha={drawCall.MeshAlpha:F2}, " +
                     $"hint={drawCall.TransparencyHint})");
+            }
+
+            // #2620 diagnostic: a non-skin Binary-alpha mesh that is NOT flagged mirrored blends
+            // (and may sort-fight) instead of alpha-testing. This is the known mis-route for
+            // doublesided cutout cards the normal-histogram HasMirroredNormals misses (absent stored
+            // normals, or a diagonal mirror plane — see MeshTransparency.HasMirroredNormals KNOWN
+            // LIMITATIONS). Logged so a "this card looks wrong" report is diagnosable in the field.
+            if (_logTransparencyOncePerModel && !drawCall.IsSkin
+                && profile == AlphaProfile.Binary && !drawCall.IsMirrored)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"  [MirrorGap #2620] '{resolvedTexture}' Binary but not mirror-detected -> blends " +
+                    $"(a doublesided cutout card here would sort-fight; likely absent normals or diagonal mirror)");
             }
 
             _shaderManager!.SetUniformInt("meshMode", (int)mode);
