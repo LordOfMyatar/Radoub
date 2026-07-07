@@ -65,6 +65,8 @@ namespace DialogEditor.Views
             // #988: Warm up GameDataService in background to avoid lag on first NPC click
             // KEY/BIF/TLK loading is lazy - prime it during startup instead of on first use
             _ = WarmupGameDataServiceAsync();
+
+            UnifiedLogger.LogStartupMilestone("Parley ready (services + startup load complete)");
         }
 
         /// <summary>

@@ -69,6 +69,8 @@ public partial class MainWindow
                 ShowProgress(false);
                 UpdateStatus("Ready");
             });
+
+            UnifiedLogger.LogStartupMilestone("Quartermaster ready (services + caches + startup file loaded)");
         }
         catch (OperationCanceledException)
         {

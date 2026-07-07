@@ -118,6 +118,8 @@ public partial class MainWindow
                 PopulateAvailableProperties();
             }
             InitializePropertySearchHandler();
+
+            UnifiedLogger.LogStartupMilestone("Relique ready (services + startup load complete)");
         }
         catch (Exception ex)
         {

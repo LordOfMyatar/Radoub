@@ -303,6 +303,7 @@ namespace DialogEditor.Views
             DebugLogger.Initialize(this);
             UnifiedLogger.SetLogLevel(LogLevel.DEBUG);
             UnifiedLogger.LogApplication(LogLevel.INFO, "Parley MainWindow initialized");
+            UnifiedLogger.LogStartupMilestone("Parley MainWindow constructed");
 
             // Cleanup old log sessions on startup (#1232: use DI-resolved settings)
             var retentionCount = _services.Settings.LogRetentionSessions;
