@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Tech-Debt — Performance & FlaUI Test Infrastructure (#2560)
 
-- Cross-tool performance tune: app stalling and cold-start latency (#2128).
+- Cold-start instrumentation across all tools (`[Startup]` milestones) with baseline captured; concrete offenders filed as #2647 (cleanup I/O) and #2648 (theme scan) (#2128).
 - Investigate Avalonia CheckBox AutomationId UIA exposure for FlaUI (#2154).
 - All app settings resolve fonts from Trebuchet as single source of truth (#2404).
 - Confirm FlaUIGlobalMutex de-flake holds under full-soak threadpool pressure (#2366).
