@@ -14,10 +14,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Sprint: Tech-Debt — Performance & FlaUI Test Infrastructure (#2560)
 
 - Cold-start instrumentation across all tools (`[Startup]` milestones) with baseline captured; concrete offenders filed as #2647 (cleanup I/O) and #2648 (theme scan) (#2128).
-- Investigate Avalonia CheckBox AutomationId UIA exposure for FlaUI (#2154).
+- Avalonia CheckBox AutomationId exposes fine via UIA now (bridge fixed upstream); the skipped Fence checkbox test failed because its control sat in a collapsed Expander — added a shared `ExpandExpander` helper and re-enabled the test (#2154).
 - All app settings resolve fonts from Trebuchet as single source of truth (#2404).
 - Confirm FlaUIGlobalMutex de-flake holds under full-soak threadpool pressure (#2366).
-- Fix 3 flaky Relique FlaUI property tests: popup lookup + rollback assertion (#2528).
+- Relique FlaUI property tests: rollback tests re-enabled (assert on the deterministic rollback status, not the race-prone row count); fixed a real product bug where `ItemPropertyService` cached an empty property-type list permanently if built before game data loaded; `FindPopupByTitle` now scans desktop windows for Avalonia dialogs. The edit-popup test stays skipped — it needs base-game 2DA the isolated FlaUI env lacks (#2528).
 
 ---
 

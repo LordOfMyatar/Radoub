@@ -513,6 +513,75 @@ public abstract class FlaUITestBase : IDisposable
     }
 
     /// <summary>
+    /// Finds a CheckBox with a workaround for Avalonia's UIA bridge (#2154). An Avalonia
+    /// <c>CheckBox</c> with string <c>Content</c> does not reliably expose its
+    /// <c>AutomationProperties.AutomationId</c> via UIA in a form <c>ByAutomationId</c> can find,
+    /// but its Content string DOES surface as the UIA Name on a CheckBox control type. So this
+    /// tries AutomationId first (works for some controls), then falls back to enumerating
+    /// CheckBox controls and matching the visible content/name — which is stable across the bridge.
+    /// </summary>
+    /// <param name="automationId">The AutomationId set in XAML.</param>
+    /// <param name="contentText">The CheckBox's Content text (its UIA Name). Required for the fallback.</param>
+    /// <param name="maxRetries">Maximum retry attempts (default 5).</param>
+    protected AutomationElement? FindCheckBox(string automationId, string contentText, int maxRetries = 5)
+    {
+        for (int attempt = 0; attempt < maxRetries; attempt++)
+        {
+            // Primary: AutomationId (works when the bridge exposes it).
+            var byId = MainWindow?.FindFirstDescendant(cf => cf.ByAutomationId(automationId));
+            if (byId != null) return byId;
+
+            // Fallback: match a CheckBox control by its content/name (the reliable UIA signal).
+            var checkboxes = MainWindow?.FindAllDescendants(
+                cf => cf.ByControlType(FlaUI.Core.Definitions.ControlType.CheckBox));
+            if (checkboxes != null)
+            {
+                foreach (var cb in checkboxes)
+                {
+                    if (cb.Name?.Contains(contentText, StringComparison.OrdinalIgnoreCase) == true)
+                        return cb;
+                }
+            }
+
+            Thread.Sleep(300);
+            MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Expands an Avalonia Expander by AutomationId so controls inside it become part of the UIA
+    /// tree (#2154). Controls inside a collapsed Expander are not rendered and therefore not
+    /// findable by FlaUI at all — expand first, then look them up. Returns true if the expander
+    /// was found and is now expanded (or already was).
+    /// </summary>
+    protected bool ExpandExpander(string automationId, int maxRetries = 5)
+    {
+        var expander = FindElement(automationId, maxRetries);
+        if (expander == null) return false;
+
+        if (expander.Patterns.ExpandCollapse.IsSupported)
+        {
+            var pattern = expander.Patterns.ExpandCollapse.Pattern;
+            if (pattern.ExpandCollapseState != FlaUI.Core.Definitions.ExpandCollapseState.Expanded)
+                pattern.Expand();
+            Thread.Sleep(300);
+            return pattern.ExpandCollapseState == FlaUI.Core.Definitions.ExpandCollapseState.Expanded;
+        }
+
+        // Fallback: toggle-button header. Click the header button to expand.
+        var header = expander.FindFirstChild(cf => cf.ByControlType(FlaUI.Core.Definitions.ControlType.Button))?.AsButton();
+        if (header != null)
+        {
+            EnsureFocused();
+            header.Invoke();
+            Thread.Sleep(300);
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
     /// Finds a tab item by name with retries.
     /// </summary>
     /// <param name="name">The tab name to search for</param>
@@ -565,18 +634,63 @@ public abstract class FlaUITestBase : IDisposable
     {
         for (int attempt = 0; attempt < maxRetries; attempt++)
         {
-            var windows = App?.GetAllTopLevelWindows(Automation!);
-            if (windows != null)
+            // Avalonia ShowDialog popups are unreliable in GetAllTopLevelWindows / ModalWindows
+            // via the UIA bridge (#2528); the candidate enumeration also scans desktop
+            // Window-type descendants, where the dialog actually surfaces. A Window element
+            // exposes its title as both Title and Name — match either.
+            foreach (var window in EnumerateCandidateWindows())
             {
-                foreach (var window in windows)
-                {
-                    if (window.Title?.Contains(titleContains, StringComparison.OrdinalIgnoreCase) == true)
-                        return window;
-                }
+                var title = window.Title ?? window.Name;
+                if (title?.Contains(titleContains, StringComparison.OrdinalIgnoreCase) == true)
+                    return window;
             }
             Thread.Sleep(300);
         }
         return null;
+    }
+
+    /// <summary>
+    /// Yields every element that could be an Avalonia modal dialog: the app's top-level windows,
+    /// the main window's owned modal windows, AND every Window-control-type descendant of the
+    /// DESKTOP. Avalonia <c>ShowDialog</c> popups do not reliably appear in
+    /// <c>GetAllTopLevelWindows</c> / <c>ModalWindows</c> via the UIA bridge (#2528) — but they
+    /// do register as Window-type elements under the desktop (the same place Avalonia popup menus
+    /// live), so the desktop scan is the reliable source.
+    /// </summary>
+    private IEnumerable<Window> EnumerateCandidateWindows()
+    {
+        var topLevel = App?.GetAllTopLevelWindows(Automation!);
+        if (topLevel != null)
+        {
+            foreach (var window in topLevel)
+                if (window != null) yield return window;
+        }
+
+        Window[]? modals = null;
+        try { modals = MainWindow?.ModalWindows; }
+        catch (Exception ex) { Console.Error.WriteLine($"[FindPopupByTitle] ModalWindows lookup threw: {ex.Message}"); }
+        if (modals != null)
+        {
+            foreach (var window in modals)
+                if (window != null) yield return window;
+        }
+
+        // Desktop Window-type descendants — where Avalonia dialog windows actually surface.
+        AutomationElement[]? desktopWindows = null;
+        try
+        {
+            desktopWindows = Automation?.GetDesktop()
+                ?.FindAllDescendants(cf => cf.ByControlType(FlaUI.Core.Definitions.ControlType.Window));
+        }
+        catch (Exception ex) { Console.Error.WriteLine($"[FindPopupByTitle] desktop scan threw: {ex.Message}"); }
+        if (desktopWindows != null)
+        {
+            foreach (var element in desktopWindows)
+            {
+                var window = element?.AsWindow();
+                if (window != null) yield return window;
+            }
+        }
     }
 
     /// <summary>

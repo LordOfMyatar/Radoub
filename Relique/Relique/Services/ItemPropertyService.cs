@@ -31,16 +31,21 @@ public class ItemPropertyService
         if (_cachedPropertyTypes != null)
             return _cachedPropertyTypes;
 
-        _cachedPropertyTypes = new List<PropertyTypeInfo>();
+        // Build into a local; only cache a SUCCESSFUL non-empty result (#2528). Caching an empty
+        // list when game data isn't ready yet (IsConfigured false, itempropdef missing, or zero
+        // rows) would poison the cache permanently — a later call after game data loads would keep
+        // returning empty, and the edit popup would report "Unknown property type" for every
+        // property. Returning a transient empty list lets the next call rebuild once data is ready.
+        var result = new List<PropertyTypeInfo>();
 
         if (!_gameDataService.IsConfigured)
-            return _cachedPropertyTypes;
+            return result;
 
         var propDef = _gameDataService.Get2DA("itempropdef");
         if (propDef == null)
         {
             UnifiedLogger.LogApplication(LogLevel.WARN, "Could not load itempropdef.2da");
-            return _cachedPropertyTypes;
+            return result;
         }
 
         for (int i = 0; i < propDef.RowCount; i++)
@@ -67,7 +72,7 @@ public class ItemPropertyService
             var costTableResRef = propDef.GetValue(i, "CostTableResRef");
             var param1ResRef = propDef.GetValue(i, "Param1ResRef");
 
-            _cachedPropertyTypes.Add(new PropertyTypeInfo(
+            result.Add(new PropertyTypeInfo(
                 propertyIndex: i,
                 displayName: displayName,
                 label: label,
@@ -77,11 +82,17 @@ public class ItemPropertyService
         }
 
         // Disambiguate duplicate display names by appending context from Label
-        DisambiguateDuplicateNames(_cachedPropertyTypes);
+        DisambiguateDuplicateNames(result);
 
-        _cachedPropertyTypes = _cachedPropertyTypes.OrderBy(t => t.DisplayName).ToList();
-        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {_cachedPropertyTypes.Count} property types from itempropdef.2da");
-        return _cachedPropertyTypes;
+        result = result.OrderBy(t => t.DisplayName).ToList();
+
+        // Only cache a successful, non-empty build (#2528) so a call made before game data was
+        // ready doesn't poison the cache with an empty list.
+        if (result.Count > 0)
+            _cachedPropertyTypes = result;
+
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {result.Count} property types from itempropdef.2da");
+        return result;
     }
 
     /// <summary>
