@@ -109,5 +109,38 @@ namespace Parley.Tests
             Dispatcher.UIThread.RunJobs();
             Assert.DoesNotContain("NPC replies", tts.SpokenTexts);
         }
+
+        /// <summary>
+        /// #2523 cross-platform: PiperTtsService.Stop() kills its process WITHOUT raising
+        /// SpeakCompleted. The user-stop flag must therefore be cleared when the next speech
+        /// begins, so a stale flag doesn't wrongly suppress a later natural completion.
+        /// </summary>
+        [AvaloniaFact]
+        public void SilentStop_DoesNotSuppressLaterNaturalCompletion()
+        {
+            EnableTts();
+            var tts = new MockTtsService { StopFiresCompleted = false }; // Piper-style silent Stop
+            var vm = new ConversationSimulatorViewModel(BuildTwoStepDialog(), "test-stop-3.dlg", tts);
+
+            vm.StartConversation();
+            vm.SelectReply(0);           // NPC entry1 auto-speaks
+            Dispatcher.UIThread.RunJobs();
+
+            vm.StopSpeaking();           // Piper-style: no SpeakCompleted, flag left armed
+            Dispatcher.UIThread.RunJobs();
+
+            // User re-speaks the current NPC entry; the fresh speak must clear the stale flag.
+            vm.Speak();
+            Dispatcher.UIThread.RunJobs();
+
+            // Natural completion of that speech must now drive auto-advance normally (single reply),
+            // i.e. it is NOT suppressed by a lingering user-stop flag.
+            int before = tts.SpokenTexts.Count;
+            tts.CompleteSpeech();
+            Dispatcher.UIThread.RunJobs();
+
+            Assert.True(tts.SpokenTexts.Count > before,
+                "Auto-advance should proceed after a fresh speak; the stale stop flag was not cleared.");
+        }
     }
 }

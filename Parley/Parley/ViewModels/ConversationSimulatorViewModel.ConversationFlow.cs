@@ -146,6 +146,7 @@ namespace DialogEditor.ViewModels
                         // Advancement will happen when PC speech completes
                         _isSpeakingPcReply = true;
                         _pendingReplyToAdvance = reply;
+                        _userStoppedSpeaking = false; // #2523: fresh speak clears stale stop flag
                         var pcVoice = GetVoiceForSpeaker("(PC)");
                         _ttsService.Speak(_ttsTextParser.GetSpeechText(pcText), pcVoice, TtsRate);
                         return; // Don't advance yet - wait for speech to complete

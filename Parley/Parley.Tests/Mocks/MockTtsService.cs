@@ -16,6 +16,13 @@ namespace Parley.Tests.Mocks
         public string UnavailableReason { get; set; } = "TTS not available in test environment";
         public string InstallInstructions { get; set; } = "No installation needed for tests";
 
+        /// <summary>
+        /// When true (default), Stop() raises SpeakCompleted like the Windows synthesizer's
+        /// SpeakAsyncCancelAll() and espeak/say's async process-exit. When false, Stop() is
+        /// silent like PiperTtsService, which kills its process without firing the event (#2523).
+        /// </summary>
+        public bool StopFiresCompleted { get; set; } = true;
+
         public event EventHandler? SpeakCompleted;
 
         public IReadOnlyList<string> GetVoiceNames() => _voiceNames.AsReadOnly();
@@ -29,7 +36,8 @@ namespace Parley.Tests.Mocks
         public void Stop()
         {
             IsSpeaking = false;
-            SpeakCompleted?.Invoke(this, EventArgs.Empty);
+            if (StopFiresCompleted)
+                SpeakCompleted?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>

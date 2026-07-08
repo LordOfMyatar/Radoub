@@ -356,6 +356,9 @@ namespace DialogEditor.ViewModels
 
             // Get the voice for the current speaker
             var voiceName = GetVoiceForSpeaker(NpcSpeaker);
+            // #2523: a fresh speak clears any stale user-stop flag (Piper's Stop() never fires
+            // SpeakCompleted, so the flag would otherwise linger and suppress the next completion).
+            _userStoppedSpeaking = false;
             _ttsService.Speak(_ttsTextParser.GetSpeechText(NpcText), voiceName, TtsRate);
             OnPropertyChanged(nameof(TtsSpeaking));
         }
@@ -489,6 +492,7 @@ namespace DialogEditor.ViewModels
             if (AutoSpeak && TtsAvailable && TtsEnabled && !string.IsNullOrWhiteSpace(NpcText))
             {
                 var npcVoice = GetVoiceForSpeaker(NpcSpeaker);
+                _userStoppedSpeaking = false; // #2523: fresh speak clears stale stop flag
                 _ttsService.Speak(_ttsTextParser.GetSpeechText(NpcText), npcVoice, TtsRate);
                 // Auto-advance will be triggered by OnTtsSpeakCompleted when speech finishes
             }
