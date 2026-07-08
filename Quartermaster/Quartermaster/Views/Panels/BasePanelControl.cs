@@ -37,9 +37,11 @@ public abstract class BasePanelControl : UserControl
     /// </summary>
     protected void DeferLoadingReset()
     {
+        // Shared constant so this and the MainWindow guard reset (DeferredGuardReset) can never
+        // drift apart — the ordering invariant depends on both using the same priority (#2459).
         Avalonia.Threading.Dispatcher.UIThread.Post(
             () => IsLoading = false,
-            Avalonia.Threading.DispatcherPriority.Background);
+            Quartermaster.Services.DeferredGuardReset.LoadingResetPriority);
     }
 
     /// <summary>

@@ -325,7 +325,7 @@ public partial class AppearancePanel : UserControl
         UpdateModelPreview();
 
         // Defer clearing _isLoading until after dispatcher processes queued SelectionChanged events
-        Avalonia.Threading.Dispatcher.UIThread.Post(() => _isLoading = false, Avalonia.Threading.DispatcherPriority.Background);
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => _isLoading = false, Quartermaster.Services.DeferredGuardReset.LoadingResetPriority);
     }
 
     /// <summary>

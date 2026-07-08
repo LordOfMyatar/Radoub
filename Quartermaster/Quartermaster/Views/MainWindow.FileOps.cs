@@ -375,10 +375,18 @@ public partial class MainWindow
             UpdateInventoryCounts();
             OnPropertyChanged(nameof(HasFile));
 
-            // Clear loading flag and reset dirty state
-            _isLoading = false;
-            _documentState.ClearDirty();
-            UpdateTitle();
+            // Defer clearing the loading guard until after the panels' own deferred IsLoading resets
+            // (BasePanelControl.DeferLoadingReset, Background priority) so populate-time change events
+            // can't slip past the guard and mark the fresh document dirty (#2459).
+            // Note: between LoadAllPanels returning and this Background callback draining, _isLoading
+            // stays true, so a (practically unreachable, sub-frame) user edit would be suppressed.
+            // That bounded gap is intentional — the alternative is the #2459 false-dirty race.
+            Quartermaster.Services.DeferredGuardReset.Post(() =>
+            {
+                _isLoading = false;
+                _documentState.ClearDirty();
+                UpdateTitle();
+            });
             ShowProgress(false);
             UpdateStatus($"Loaded: {Path.GetFileName(filePath)}");
 
