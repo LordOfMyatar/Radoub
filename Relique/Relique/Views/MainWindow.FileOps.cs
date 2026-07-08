@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using Avalonia.Platform.Storage;
 using ItemEditor.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Uti;
@@ -224,22 +223,17 @@ public partial class MainWindow
         if (_currentItem == null)
             return false;
 
-        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
-        {
-            Title = "Save Item As",
-            DefaultExtension = "uti",
-            FileTypeChoices = new[]
-            {
-                new FilePickerFileType("Item Blueprint") { Patterns = new[] { "*.uti" } },
-                new FilePickerFileType("All Files") { Patterns = new[] { "*.*" } }
-            },
-            SuggestedFileName = Path.GetFileName(_currentFilePath ?? "item.uti")
-        });
-
-        if (file == null)
+        var opts = new Radoub.UI.Services.SaveBlueprintOptions(
+            Title: "Save Item As — Relique",
+            Extensions: new[] { "uti" },
+            DefaultResRef: _currentItem.TemplateResRef,
+            Context: new ItemEditor.Services.ReliqueScriptBrowserContext(_currentFilePath, _gameDataService));
+        var win = new Radoub.UI.Views.SaveBlueprintWindow(opts);
+        await win.ShowDialog(this);
+        if (win.Result is not { } saveResult)
             return false;
 
-        var path = file.Path.LocalPath;
+        var path = saveResult.Path;
         _currentFilePath = path;
 
         var result = await SaveCurrentFileAsync();

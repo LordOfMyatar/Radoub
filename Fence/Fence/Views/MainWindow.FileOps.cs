@@ -1,7 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Avalonia.Platform.Storage;
 using MerchantEditor.Services;
 using MerchantEditor.ViewModels;
 using Radoub.Formats.Logging;
@@ -395,33 +394,15 @@ public partial class MainWindow
         if (_currentStore == null)
             return false;
 
-        // Default to current module directory if available
-        IStorageFolder? suggestedFolder = null;
-        if (!string.IsNullOrEmpty(_currentFilePath))
-        {
-            var directory = Path.GetDirectoryName(_currentFilePath);
-            if (!string.IsNullOrEmpty(directory) && Directory.Exists(directory))
-            {
-                suggestedFolder = await StorageProvider.TryGetFolderFromPathAsync(directory);
-            }
-        }
-
-        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
-        {
-            Title = "Save Store As",
-            DefaultExtension = "utm",
-            FileTypeChoices = new[]
-            {
-                new FilePickerFileType("Store Files") { Patterns = new[] { "*.utm" } }
-            },
-            SuggestedFileName = _currentStore.ResRef,
-            SuggestedStartLocation = suggestedFolder
-        });
-
-        if (file == null)
-            return false;
-
-        await SaveFile(file.Path.LocalPath);
+        var opts = new Radoub.UI.Services.SaveBlueprintOptions(
+            Title: "Save Store As — Fence",
+            Extensions: new[] { "utm" },
+            DefaultResRef: _currentStore.ResRef,
+            Context: new FenceScriptBrowserContext(_currentFilePath, _gameDataService));
+        var win = new Radoub.UI.Views.SaveBlueprintWindow(opts);
+        await win.ShowDialog(this);
+        if (win.Result is not { } result) return false;
+        await SaveFile(result.Path);
         return true;
     }
 
