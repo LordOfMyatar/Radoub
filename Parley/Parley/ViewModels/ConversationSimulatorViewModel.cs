@@ -409,13 +409,30 @@ namespace DialogEditor.ViewModels
                 _isSpeakingPcReply = false;
                 _pendingReplyToAdvance = null;
 
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    "[AutoAdvance] PC-reply speech complete, advancing to next NPC entry");
                 // Use dispatcher to ensure UI thread safety
                 Avalonia.Threading.Dispatcher.UIThread.Post(() => AdvanceToNextEntry(reply));
                 return;
             }
+            // #2524: PC-reply flag set but pending reply missing (or vice-versa) would drop an
+            // advance — log the inconsistency so a one-off no-advance can be traced.
+            if (_isSpeakingPcReply || _pendingReplyToAdvance != null)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"[AutoAdvance] inconsistent PC-reply state on completion " +
+                    $"(isSpeakingPcReply={_isSpeakingPcReply}, pending={_pendingReplyToAdvance != null})");
+            }
 
             // NPC speech completed - auto-advance if enabled and single reply available
-            if (AutoAdvance && AutoSpeak && Replies.Count == 1 && !_isSelectingRootEntry && !HasEnded)
+            bool npcAutoAdvance = AutoAdvance && AutoSpeak && Replies.Count == 1 && !_isSelectingRootEntry && !HasEnded;
+            // #2524: DEBUG trace of the gating state — a one-off "failed to advance" that later
+            // works is a timing/race symptom; this shows which condition was false when it missed.
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"[AutoAdvance] NPC-complete gate={npcAutoAdvance} " +
+                $"(AutoAdvance={AutoAdvance}, AutoSpeak={AutoSpeak}, Replies={Replies.Count}, " +
+                $"selectingRoot={_isSelectingRootEntry}, ended={HasEnded})");
+            if (npcAutoAdvance)
             {
                 // Use dispatcher to ensure UI thread safety
                 Avalonia.Threading.Dispatcher.UIThread.Post(() => SelectReply(0));
@@ -505,7 +522,18 @@ namespace DialogEditor.ViewModels
             else if (!_suppressAutoSpeak && AutoAdvance && Replies.Count == 1 && !_isSelectingRootEntry)
             {
                 // Auto-advance immediately when not auto-speaking
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    "[AutoAdvance] immediate (no auto-speak): single reply, advancing");
                 SelectReply(0);
+            }
+            else if (AutoAdvance && Replies.Count == 1 && !_isSelectingRootEntry)
+            {
+                // #2524: AutoAdvance wanted but skipped — record why (suppress during Back restore,
+                // or auto-speak deferring to speech-completion). Helps diagnose a one-off no-advance.
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"[AutoAdvance] deferred/suppressed at UpdateDisplay " +
+                    $"(suppressAutoSpeak={_suppressAutoSpeak}, AutoSpeak={AutoSpeak}, " +
+                    $"TtsEnabled={TtsEnabled}, TtsAvailable={TtsAvailable})");
             }
         }
 
