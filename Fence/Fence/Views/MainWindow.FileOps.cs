@@ -25,8 +25,84 @@ public partial class MainWindow
 {
     #region File Operations
 
+    /// <summary>
+    /// Returns true if it is safe to discard the current store (clean, or the user chose
+    /// Save/Don't Save). Saves on Save. Returns false on Cancel or a failed save (#2516).
+    /// Mirrors the Reliquary/Relique sibling pattern.
+    /// </summary>
+    private async Task<bool> ConfirmDiscardAsync()
+    {
+        if (DiscardDecision.Evaluate(_isDirty, null) == DiscardAction.ProceedNoPrompt) return true;
+
+        var result = await PromptSaveChangesAsync();
+        switch (DiscardDecision.Evaluate(_isDirty, result))
+        {
+            case DiscardAction.Save:
+                if (string.IsNullOrEmpty(_currentFilePath)) return await SaveAsAsync();
+                await SaveFile(_currentFilePath);
+                return !_isDirty; // SaveFile clears dirty on success
+            case DiscardAction.Proceed:
+                return true;
+            default:
+                return false; // Abort
+        }
+    }
+
+    /// <summary>
+    /// 3-button Save / Don't Save / Cancel modal (#2516). Mirrors Relique/Reliquary.
+    /// </summary>
+    private async Task<SavePromptResult> PromptSaveChangesAsync()
+    {
+        var dialog = new Window
+        {
+            Title = "Save Changes?",
+            Width = 360,
+            Height = 150,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false,
+            Background = this.FindResource("ThemeBackground") as Avalonia.Media.IBrush
+        };
+
+        var result = SavePromptResult.Cancel;
+
+        var panel = new StackPanel { Margin = new Thickness(16) };
+        panel.Children.Add(new TextBlock
+        {
+            Text = "Save changes to the current store before continuing?",
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+            Margin = new Thickness(0, 0, 0, 16)
+        });
+
+        var buttons = new StackPanel
+        {
+            Orientation = Avalonia.Layout.Orientation.Horizontal,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+            Spacing = 8
+        };
+
+        var saveBtn = new Button { Content = "Save" };
+        saveBtn.Click += (_, _) => { result = SavePromptResult.Save; dialog.Close(); };
+        var dontSaveBtn = new Button { Content = "Don't Save" };
+        dontSaveBtn.Click += (_, _) => { result = SavePromptResult.DontSave; dialog.Close(); };
+        var cancelBtn = new Button { Content = "Cancel" };
+        cancelBtn.Click += (_, _) => { result = SavePromptResult.Cancel; dialog.Close(); };
+
+        buttons.Children.Add(saveBtn);
+        buttons.Children.Add(dontSaveBtn);
+        buttons.Children.Add(cancelBtn);
+        panel.Children.Add(buttons);
+        dialog.Content = panel;
+
+        await dialog.ShowDialog(this);
+        return result;
+    }
+
     private async void OnNewClick(object? sender, RoutedEventArgs e)
     {
+        // Prompt to save unsaved edits to the current store before tearing it down (#2516).
+        // Cancel leaves the current store fully untouched.
+        if (!await ConfirmDiscardAsync()) return;
+
         // Prompt for Name/Tag/ResRef up front (#2418). Cancel leaves the current document
         // untouched — return before mutating any state.
         var dialog = new NewBlueprintWindow("New Store - Fence", "Create a new store",
@@ -103,6 +179,8 @@ public partial class MainWindow
             var selectedEntry = browser.SelectedEntry;
             if (selectedEntry?.FilePath != null)
             {
+                // Prompt to save unsaved edits before replacing the current store (#2516).
+                if (!await ConfirmDiscardAsync()) return;
                 LoadFile(selectedEntry.FilePath);
             }
         }
