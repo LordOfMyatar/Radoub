@@ -5,7 +5,7 @@ All notable changes to Parley. One-line highlights per version; full details in 
 ---
 
 ## [0.1.177-alpha] - 2026-07-07
-**Branch**: `parley/sprint/2524-simulator-fixes` | **PR**: #TBD
+**Branch**: `parley/sprint/2524-simulator-fixes` | **PR**: #2652
 
 ### Sprint: Conversation Simulator Fixes
 
