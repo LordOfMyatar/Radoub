@@ -70,6 +70,12 @@ namespace DialogEditor.ViewModels
             // A pending PC-reply advance would fire after we've already stepped back; cancel it.
             _isSpeakingPcReply = false;
             _pendingReplyToAdvance = null;
+            // #2524: Stop() fires SpeakCompleted synchronously on Windows/espeak/say. Arm the
+            // user-stop flag first (as StopSpeaking does) so that completion is treated as an
+            // intentional stop and does NOT drive a spurious auto-advance off the pre-restore
+            // reply list. Armed unconditionally: the restore below suppresses auto-speak, and the
+            // next real speak clears the flag (matching the Piper silent-Stop path in #2523).
+            _userStoppedSpeaking = true;
             _ttsService.Stop();
 
             var snapshot = _navigationHistory.Pop();

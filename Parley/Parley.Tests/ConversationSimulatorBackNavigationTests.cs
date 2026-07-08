@@ -93,6 +93,64 @@ namespace Parley.Tests
             Assert.True(vm.CanGoBack); // can now step back to root selection
         }
 
+        /// <summary>
+        /// #2524 race guard: GoBack calls _ttsService.Stop(), and on Windows/espeak/say that
+        /// fires SpeakCompleted synchronously → OnTtsSpeakCompleted. With AutoAdvance+AutoSpeak on
+        /// and the pre-Back display showing a single reply, the NPC-auto-advance gate could fire a
+        /// spurious forward SelectReply, undoing the Back. GoBack must not advance forward.
+        /// </summary>
+        [AvaloniaFact]
+        public void GoBack_WithAutoAdvanceAndSingleReply_DoesNotSpuriouslyAdvanceForward()
+        {
+            var settings = Program.Services.GetRequiredService<DialogEditor.Services.ISettingsService>();
+            settings.SimulatorTtsEnabled = true;
+            settings.SimulatorAutoSpeak = true;
+            settings.SimulatorAutoAdvance = true;
+
+            var tts = new MockTtsService(); // StopFiresCompleted = true (Windows-style)
+            // Single-reply chain: A -> B -> C, each NPC entry has exactly one reply.
+            var dialog = BuildSingleReplyChainForBack();
+            var vm = new ConversationSimulatorViewModel(dialog, "test-back-race.dlg", tts);
+
+            vm.StartConversation();
+            vm.SelectReply(0);              // pick root "A"; auto-speaks
+            Dispatcher.UIThread.RunJobs();
+            tts.CompleteSpeech();           // NPC "A" done -> auto-advance to speak PC reply
+            Dispatcher.UIThread.RunJobs();
+            tts.CompleteSpeech();           // PC reply done -> advance to "B"
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal("B", vm.NpcText);  // now at B with its single reply displayed
+
+            int spokenBeforeBack = tts.SpokenTexts.Count;
+
+            vm.GoBack();                    // GoBack -> Stop() fires completion; must NOT advance forward
+            Dispatcher.UIThread.RunJobs();
+
+            // We stepped back to "A" and must stay there, not get bounced forward to "B"/"C".
+            Assert.Equal("A", vm.NpcText);
+            // GoBack must not trigger any new speech (a spurious SelectReply would re-speak a reply).
+            Assert.Equal(spokenBeforeBack, tts.SpokenTexts.Count);
+        }
+
+        /// <summary>A -> only-1 -> B -> only-2 -> C -> only-3 (leaf ends). Every entry: 1 reply.</summary>
+        private static Dialog BuildSingleReplyChainForBack()
+        {
+            var dialog = new Dialog();
+            var a = dialog.CreateNode(DialogNodeType.Entry)!; a.Text.Add(0, "A"); dialog.AddNodeInternal(a, a.Type);
+            var r1 = dialog.CreateNode(DialogNodeType.Reply)!; r1.Text.Add(0, "only-1"); dialog.AddNodeInternal(r1, r1.Type);
+            var b = dialog.CreateNode(DialogNodeType.Entry)!; b.Text.Add(0, "B"); dialog.AddNodeInternal(b, b.Type);
+            var r2 = dialog.CreateNode(DialogNodeType.Reply)!; r2.Text.Add(0, "only-2"); dialog.AddNodeInternal(r2, r2.Type);
+            var c = dialog.CreateNode(DialogNodeType.Entry)!; c.Text.Add(0, "C"); dialog.AddNodeInternal(c, c.Type);
+            var r3 = dialog.CreateNode(DialogNodeType.Reply)!; r3.Text.Add(0, "only-3"); dialog.AddNodeInternal(r3, r3.Type);
+            AddPtr(dialog, a, r1, DialogNodeType.Reply);
+            AddPtr(dialog, r1, b, DialogNodeType.Entry);
+            AddPtr(dialog, b, r2, DialogNodeType.Reply);
+            AddPtr(dialog, r2, c, DialogNodeType.Entry);
+            AddPtr(dialog, c, r3, DialogNodeType.Reply);
+            var start = dialog.CreatePtr()!; start.Type = DialogNodeType.Entry; start.Node = a; dialog.Starts.Add(start);
+            return dialog;
+        }
+
         [AvaloniaFact]
         public void GoBack_FromFirstEntry_ReturnsToRootSelection()
         {
