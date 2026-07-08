@@ -62,6 +62,8 @@ public partial class MainWindow : Window
         AddHandler(KeyDownEvent, OnWindowKeyDownTunnel, Avalonia.Interactivity.RoutingStrategies.Tunnel);
 
         Closing += OnWindowClosing;
+
+        UnifiedLogger.LogStartupMilestone("Reliquary MainWindow constructed");
     }
 
     private void InitializeComponent()

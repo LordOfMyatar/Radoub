@@ -120,6 +120,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "Manifest MainWindow initialized");
+        UnifiedLogger.LogStartupMilestone("Manifest MainWindow constructed");
     }
 
     #region Lifecycle
@@ -137,6 +138,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             UpdateRecentFilesMenu();
             UpdateModuleIndicator();
             await HandleStartupFileAsync();
+
+            UnifiedLogger.LogStartupMilestone("Manifest ready (services + startup load complete)");
         }
         catch (OperationCanceledException)
         {

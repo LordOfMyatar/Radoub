@@ -195,6 +195,7 @@ userDict.AddWord("Waterdeep");
 - [ ] **Copy CommandLineService pattern** - Same flags, same behavior
 - [ ] **Copy SettingsService pattern** - JSON storage in `~/Radoub/ToolName/`
 - [ ] **Use ThemeManager from Radoub.UI** - Don't reinvent theming
+- [ ] **Resolve fonts through the single shared entry point** — call `ThemeManager.ApplySharedFontSettings(Resources)` on startup and again inside `OnMainWindowActivated` (after `RadoubSettings.Instance.ReloadSettings()` + `ApplySharedTheme()`), so a font change made in Trebuchet propagates on next focus. `RadoubSettings.SharedFontFamily` / `SharedFontSize` are the single source of truth; a theme's own `fonts.Primary`/`fonts.Size` are fallbacks only. Do **not** hand-roll a per-tool `ApplyFontSettings()` that writes `GlobalFontSize`/`GlobalFontFamily` and the seven derived `FontSize*` resources — that duplication drifted across six tools and left Parley without derived sizes (#2404). Tool-specific derived resources (e.g. Quartermaster's portrait dimensions) are applied by the tool *after* the shared call.
 - [ ] **Use IGameDataService** for any 2DA/TLK data - Never hardcode game data
 - [ ] **Inherit BasePanelControl** for panel controls - Consistent styling
 - [ ] **Add to Radoub.sln** - Root solution builds all tools

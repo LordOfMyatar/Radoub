@@ -151,6 +151,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // so the item-name resolver captures a non-null _itemResolutionService.
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "Fence MainWindow initialized");
+        UnifiedLogger.LogStartupMilestone("Fence MainWindow constructed");
     }
 
     #region Lifecycle
@@ -241,6 +242,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     LoadFile(options.FilePath);
                 });
             }
+
+            UnifiedLogger.LogStartupMilestone("Fence ready (services + startup load complete)");
         }
         catch (OperationCanceledException)
         {

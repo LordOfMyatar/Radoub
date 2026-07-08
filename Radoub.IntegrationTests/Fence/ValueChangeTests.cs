@@ -133,9 +133,9 @@ public class ValueChangeTests : FenceTestBase
     /// <summary>
     /// Gets a CheckBox checked state by automation ID.
     /// </summary>
-    private bool? GetCheckBoxState(string automationId)
+    private bool? GetCheckBoxState(string automationId, string contentText)
     {
-        var element = FindElement(automationId);
+        var element = FindCheckBox(automationId, contentText);
         if (element == null) return null;
 
         if (element.Patterns.Toggle.IsSupported)
@@ -147,11 +147,11 @@ public class ValueChangeTests : FenceTestBase
     }
 
     /// <summary>
-    /// Toggles a CheckBox by automation ID.
+    /// Toggles a CheckBox by automation ID, falling back to content lookup (#2154).
     /// </summary>
-    private void ToggleCheckBox(string automationId)
+    private void ToggleCheckBox(string automationId, string contentText)
     {
-        var element = FindElement(automationId);
+        var element = FindCheckBox(automationId, contentText);
         Assert.NotNull(element);
 
         if (element.Patterns.Toggle.IsSupported)
@@ -321,10 +321,14 @@ public class ValueChangeTests : FenceTestBase
         }
     }
 
-    [Fact(Skip = "Avalonia CheckBox AutomationId not reliably exposed via UIA automation")]
+    [Fact]
     [Trait("Category", "ValueChange")]
     public void Store_BlackMarketToggle_ChangesState()
     {
+        // #2154: driven via FindCheckBox, which falls back from AutomationId to CheckBox
+        // content ("Buy Stolen Goods") — the reliable UIA signal for Avalonia checkboxes.
+        const string blackMarketContent = "Buy Stolen Goods";
+
         // Arrange
         var tempFile = GetTempStoreFile();
         try
@@ -333,16 +337,21 @@ public class ValueChangeTests : FenceTestBase
             var loaded = WaitForTitleContains("test_store", FileOperationTimeout);
             Assert.True(loaded, "Store should be loaded");
 
+            // #2154: the checkbox lives inside the collapsed "Buy Restrictions" Expander, so it isn't
+            // in the UIA tree until the expander is opened. (The original "AutomationId not exposed"
+            // theory was stale — AutomationId resolves fine once the control is actually rendered.)
+            Assert.True(ExpandExpander("BuyRestrictionsExpander"), "Buy Restrictions expander should open");
+
             // Get original state
-            var originalState = GetCheckBoxState("BlackMarketCheck");
+            var originalState = GetCheckBoxState("BlackMarketCheck", blackMarketContent);
             Assert.NotNull(originalState);
 
             // Act - Toggle black market checkbox
-            ToggleCheckBox("BlackMarketCheck");
+            ToggleCheckBox("BlackMarketCheck", blackMarketContent);
             Thread.Sleep(300);
 
             // Assert - State should have changed
-            var newState = GetCheckBoxState("BlackMarketCheck");
+            var newState = GetCheckBoxState("BlackMarketCheck", blackMarketContent);
             Assert.NotNull(newState);
             Assert.NotEqual(originalState.Value, newState.Value);
         }

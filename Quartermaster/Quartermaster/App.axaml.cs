@@ -73,54 +73,17 @@ public partial class App : Application
 
     private void ApplyFontSettings()
     {
-        var sharedSettings = Radoub.Formats.Settings.RadoubSettings.Instance;
+        // Family + size + derived sizes resolve from Trebuchet shared settings via the
+        // single shared entry point (#2404).
+        ThemeManager.ApplySharedFontSettings(Resources);
 
+        // Quartermaster-specific: portrait dimensions scale with the shared font size
+        // (base: 64x100 @ font 14). Not shared — only QM shows portraits.
         if (Resources != null)
         {
-            var baseSize = sharedSettings.SharedFontSize;
-
-            // Update base font size
-            Resources["GlobalFontSize"] = baseSize;
-
-            // Update derived font sizes (must match ThemeManager.ApplyFontSettings logic)
-            Resources["FontSizeXSmall"] = Math.Max(10, baseSize - 2);  // 12 @ base 14
-            Resources["FontSizeSmall"] = Math.Max(11, baseSize - 1);   // 13 @ base 14
-            Resources["FontSizeNormal"] = baseSize;                     // 14 @ base 14
-            Resources["FontSizeMedium"] = baseSize + 2;                 // 16 @ base 14
-            Resources["FontSizeLarge"] = baseSize + 4;                  // 18 @ base 14
-            Resources["FontSizeXLarge"] = baseSize + 6;                 // 20 @ base 14
-            Resources["FontSizeTitle"] = baseSize + 10;                 // 24 @ base 14
-
-            // Update portrait dimensions based on font scale (base: 64x100 @ font 14)
-            var scale = baseSize / 14.0;
+            var scale = Radoub.Formats.Settings.RadoubSettings.Instance.SharedFontSize / 14.0;
             Resources["PortraitWidth"] = 64.0 * scale;
             Resources["PortraitHeight"] = 100.0 * scale;
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font size: {baseSize}pt (derived sizes updated)");
-        }
-
-        if (Resources != null)
-        {
-            if (!string.IsNullOrEmpty(sharedSettings.SharedFontFamily))
-            {
-                try
-                {
-                    Resources["GlobalFontFamily"] = new FontFamily(sharedSettings.SharedFontFamily);
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font family: {sharedSettings.SharedFontFamily}");
-                }
-                catch (ArgumentException ex)
-                {
-                    // Invalid font family - fall back to system default
-                    Resources["GlobalFontFamily"] = FontFamily.Default;
-                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Invalid font family '{sharedSettings.SharedFontFamily}': {ex.Message}. Using system default.");
-                }
-            }
-            else
-            {
-                // Empty string means system default
-                Resources["GlobalFontFamily"] = FontFamily.Default;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Applied font family: System Default");
-            }
         }
     }
 

@@ -13,6 +13,7 @@
             <TextBlock Grid.Column="0" Text="Property" VerticalAlignment="Center"
                        FontWeight="SemiBold"/>
             <TextBlock Grid.Column="1" x:Name="PropertyNameText"
+                       AutomationProperties.AutomationId="PropertyNameText"
                        VerticalAlignment="Center" FontWeight="SemiBold"/>
         </Grid>
 

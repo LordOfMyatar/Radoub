@@ -312,6 +312,27 @@ public class ItemPropertyServiceTests
         Assert.Empty(types);
     }
 
+    [Fact]
+    public void GetAvailablePropertyTypes_DoesNotCacheEmpty_WhenCalledBeforeConfigured()
+    {
+        // #2528: a call made before game data is ready (IsConfigured false) must NOT poison the
+        // cache with an empty list — otherwise the edit popup reports "Unknown property type" for
+        // every property even after game data finishes loading. The next call, once configured,
+        // must rebuild the full list.
+        var mock = CreateMockWithItemPropertyData();
+        mock.IsConfigured = false;
+        var service = new ItemPropertyService(mock);
+
+        var early = service.GetAvailablePropertyTypes();
+        Assert.Empty(early);
+
+        // Game data finishes loading.
+        mock.IsConfigured = true;
+        var afterReady = service.GetAvailablePropertyTypes();
+
+        Assert.NotEmpty(afterReady);
+    }
+
     #endregion
 
     #region GetSubtypes

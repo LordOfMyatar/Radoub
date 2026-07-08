@@ -143,6 +143,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         Opened += OnWindowOpened;
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "Quartermaster MainWindow initialized");
+        UnifiedLogger.LogStartupMilestone("Quartermaster MainWindow constructed");
     }
 
     private void InitializeEquipmentSlots()

@@ -11,6 +11,13 @@ namespace Radoub.Formats.Logging;
 /// </summary>
 public static class UnifiedLogger
 {
+    // Cold-start instrumentation (#2128). Started at static-init, which happens the first
+    // time any UnifiedLogger member is touched — in practice SetAppName() at the very top of
+    // Program.Main — so it approximates process start. Measure-only: LogStartupMilestone writes
+    // the elapsed time to the session log for before/after profiling; nothing gates on it.
+    private static readonly System.Diagnostics.Stopwatch StartupStopwatch =
+        System.Diagnostics.Stopwatch.StartNew();
+
     private static string _appName = "Radoub";
     private static string _baseLogDirectory = string.Empty;
     private static LogLevel _currentLogLevel = LogLevel.INFO;
@@ -74,6 +81,21 @@ public static class UnifiedLogger
     /// Check if the logger has been configured.
     /// </summary>
     public static bool IsConfigured => _configured;
+
+    /// <summary>
+    /// Milliseconds elapsed since the logger's startup stopwatch began (approximately
+    /// process start — see <see cref="StartupStopwatch"/>). Cold-start instrumentation
+    /// for #2128; measure-only.
+    /// </summary>
+    public static long StartupElapsedMs => StartupStopwatch.ElapsedMilliseconds;
+
+    /// <summary>
+    /// Logs a named startup milestone with the elapsed time since process start (#2128).
+    /// Emitted at INFO on the App channel with a stable <c>[Startup]</c> tag so a session
+    /// log can be grepped for cold-start timings. Measure-only — nothing gates on it.
+    /// </summary>
+    public static void LogStartupMilestone(string milestone) =>
+        LogApplication(LogLevel.INFO, $"[Startup] {milestone}: {StartupElapsedMs}ms since process start");
 
     // ========================================================================
     // Standard Component Channels (available to all apps)

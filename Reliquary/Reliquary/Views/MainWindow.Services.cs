@@ -88,6 +88,8 @@ public partial class MainWindow
         var startupFile = CommandLineService.Options.FilePath;
         if (!string.IsNullOrEmpty(startupFile) && System.IO.File.Exists(startupFile))
             LoadPlaceable(startupFile);
+
+        UnifiedLogger.LogStartupMilestone("Reliquary ready (services + startup load complete)");
     }
 
     private static string? GetModuleWorkingDirectory()

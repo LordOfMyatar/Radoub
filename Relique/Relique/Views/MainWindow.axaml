@@ -658,6 +658,7 @@
                                                  Watermark="Search properties..."
                                                  Margin="0,0,0,4"/>
                                         <TreeView x:Name="AvailablePropertiesTree"
+                                                  AutomationProperties.AutomationId="AvailablePropertiesTree"
                                                   SelectionChanged="OnAvailablePropertySelectionChanged">
                                             <TreeView.ContextMenu>
                                                 <ContextMenu>
