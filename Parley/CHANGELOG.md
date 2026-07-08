@@ -5,7 +5,7 @@ All notable changes to Parley. One-line highlights per version; full details in 
 ---
 
 ## [0.1.178-alpha] - 2026-07-08
-**Branch**: `radoub/sprint/save-integrity` | **PR**: #TBD
+**Branch**: `radoub/sprint/save-integrity` | **PR**: #2656
 
 ### Sprint: Data-Loss & Save Integrity (#2655)
 

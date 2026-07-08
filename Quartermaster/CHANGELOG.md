@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.139-alpha] - 2026-07-08
-**Branch**: `radoub/sprint/save-integrity` | **PR**: #TBD
+**Branch**: `radoub/sprint/save-integrity` | **PR**: #2656
 
 ### Sprint: Data-Loss & Save Integrity (#2655)
 
