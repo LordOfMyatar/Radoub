@@ -364,6 +364,17 @@ When all sprint items are done (before `/pre-merge`), generate a **manual spot-c
 - User-facing behavior (new shortcuts, menu items, dialog behavior)
 - Event/notification wiring (events that should trigger visible UI updates)
 - File format changes (round-trip with real files)
+- **Platform-dependent behavior — flag with a `(Linux)` tag** when a change touches code
+  whose behavior or backend differs between Windows and Linux/macOS. Development happens on
+  Windows, so anything with a Linux-specific dependency needs a human to verify it on a Linux
+  box. Common triggers:
+  - **Filesystem**: path handling, case sensitivity, separators, symlinks, permissions, temp-dir
+    resolution (`Path.GetTempPath()`, `SpecialFolder`), file locking/delete-while-open semantics
+  - **Audio / TTS**: different backends per platform (e.g. Windows `System.Speech` vs Linux
+    Piper/`espeak-ng`, macOS `say`), sound playback (`aplay`/`afplay`), stop/cancel semantics
+    that differ (see #2523 — `Stop()` fires completion sync on Windows, silent on Piper)
+  - **Process launch**: external editors, spawned CLIs, argument quoting, PATH lookup
+  - **Native/interop**: SkiaSharp/OpenGL rendering, platform packages, `[SupportedOSPlatform]` code
 
 **Skip spot-checks when:**
 - Changes are purely internal (refactoring, test-only, documentation)
@@ -377,15 +388,20 @@ Verify in the running app before `/pre-merge`:
 
 - [ ] [Specific thing to check] — [where/how to verify]
 - [ ] [Another thing] — [steps to reproduce]
+- [ ] (Linux) [Platform-specific thing] — verify on a Linux box, not just Windows
 ```
 
 **Rules:**
 - Be specific — "check the UI" is not useful
 - Include how to trigger the behavior
 - Only list things automated tests can't verify
+- **Tag Linux-specific items with `(Linux)`** and say what Linux dependency makes it differ
+  (filesystem, TTS/audio backend, process launch, native interop). If unsure whether behavior
+  is platform-identical, err toward flagging it — a Windows-only check can silently pass while
+  the Linux path is broken.
 - Keep it short (3-8 items typical)
 
-**Example** (for a sprint with a new FlowView icon + theme fixes):
+**Example** (for a sprint with a new FlowView icon + theme fixes + a TTS stop fix):
 ```markdown
 ### Manual Spot-Checks
 
@@ -394,6 +410,9 @@ Verify in the running app before `/pre-merge`:
 - [ ] 📋 icon appears when quest selected via Browse dialog
 - [ ] Browser window text readable on dark theme (no white-on-white)
 - [ ] Browser window text readable on light theme (no invisible text)
+- [ ] (Linux) TTS Stop halts in-progress speech — Piper/espeak backend differs from Windows;
+      verify audio actually stops and does not auto-advance
+- [ ] (Linux) File open/save round-trips with a module on a case-sensitive filesystem
 ```
 
 ---

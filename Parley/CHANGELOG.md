@@ -4,6 +4,16 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
+## [0.1.177-alpha] - 2026-07-08
+**Branch**: `parley/sprint/2524-simulator-fixes` | **PR**: #2652
+
+### Sprint: Conversation Simulator Fixes
+
+- Add a Back/Previous button to step to the prior entry in a playthrough (#2524)
+- Fix: Stop button now halts in-progress TTS playback (#2523)
+
+---
+
 ## [0.1.176-alpha] - 2026-06-19
 **Branch**: `parley/sprint/2445-ui-ux` | **PR**: #2519
 

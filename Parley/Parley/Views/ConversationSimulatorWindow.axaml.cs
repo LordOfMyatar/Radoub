@@ -157,6 +157,11 @@ namespace DialogEditor.Views
             }
         }
 
+        private void OnBackClick(object? sender, RoutedEventArgs e)
+        {
+            _viewModel?.GoBack();
+        }
+
         private void OnSkipClick(object? sender, RoutedEventArgs e)
         {
             _viewModel?.Skip();

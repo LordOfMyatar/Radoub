@@ -69,19 +69,30 @@ namespace DialogEditor.ViewModels
         private string _defaultNpcVoice = "";
         private bool _isSpeakingPcReply = false;
         private DialogNode? _pendingReplyToAdvance = null;
+        // #2523: set true when the user presses Stop so the completion event fired by
+        // SpeakAsyncCancelAll() suppresses auto-advance instead of progressing the conversation.
+        private bool _userStoppedSpeaking = false;
+
+        // #2524: navigation history for the Back button. Each snapshot captures the restorable
+        // state of one step; GoBack pops and restores it. _suppressAutoSpeak stops a restored
+        // display from re-triggering TTS.
+        private readonly Stack<NavigationSnapshot> _navigationHistory = new();
+        private bool _suppressAutoSpeak = false;
 
         public event PropertyChangedEventHandler? PropertyChanged;
         public event EventHandler? ConversationEnded;
         public event EventHandler? RequestClose;
 
-        public ConversationSimulatorViewModel(Dialog dialog, string filePath)
+        // #2523: ttsService is injectable for unit testing the stop/auto-advance flow;
+        // production passes null and resolves the platform service from DI.
+        public ConversationSimulatorViewModel(Dialog dialog, string filePath, ITtsService? ttsService = null)
         {
             _settings = Program.Services.GetRequiredService<ISettingsService>();
             _dialog = dialog ?? throw new ArgumentNullException(nameof(dialog));
             _filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
             _conversationManager = new ConversationManager(dialog, new AlwaysTrueScriptEngine());
             _coverageTracker = Program.Services.GetRequiredService<CoverageTracker>();
-            _ttsService = Program.Services.GetRequiredService<ITtsService>();
+            _ttsService = ttsService ?? Program.Services.GetRequiredService<ITtsService>();
 
             Replies = new ObservableCollection<ReplyOption>();
             VoiceNames = new ObservableCollection<string>();
@@ -351,6 +362,9 @@ namespace DialogEditor.ViewModels
 
             // Get the voice for the current speaker
             var voiceName = GetVoiceForSpeaker(NpcSpeaker);
+            // #2523: a fresh speak clears any stale user-stop flag (Piper's Stop() never fires
+            // SpeakCompleted, so the flag would otherwise linger and suppress the next completion).
+            _userStoppedSpeaking = false;
             _ttsService.Speak(_ttsTextParser.GetSpeechText(NpcText), voiceName, TtsRate);
             OnPropertyChanged(nameof(TtsSpeaking));
         }
@@ -360,6 +374,13 @@ namespace DialogEditor.ViewModels
         /// </summary>
         public void StopSpeaking()
         {
+            // #2523: Stop() cancels playback but the platform synthesizer fires SpeakCompleted
+            // (Cancelled) synchronously; flag it so OnTtsSpeakCompleted suppresses auto-advance
+            // and clears any pending PC-reply advance instead of restarting speech. Only arm the
+            // flag when speech (or a pending PC-reply advance) is actually active, otherwise a
+            // Stop with nothing queued could leave it set and wrongly suppress the next completion.
+            if (_ttsService.IsSpeaking || _isSpeakingPcReply)
+                _userStoppedSpeaking = true;
             _ttsService.Stop();
             OnPropertyChanged(nameof(TtsSpeaking));
         }
@@ -371,6 +392,16 @@ namespace DialogEditor.ViewModels
         {
             OnPropertyChanged(nameof(TtsSpeaking));
 
+            // #2523: This completion was triggered by the user pressing Stop. Do not advance
+            // or restart speech; clear any pending PC-reply advance so it can't resurrect later.
+            if (_userStoppedSpeaking)
+            {
+                _userStoppedSpeaking = false;
+                _isSpeakingPcReply = false;
+                _pendingReplyToAdvance = null;
+                return;
+            }
+
             // If we were speaking a PC reply, now advance to NPC response
             if (_isSpeakingPcReply && _pendingReplyToAdvance != null)
             {
@@ -378,13 +409,30 @@ namespace DialogEditor.ViewModels
                 _isSpeakingPcReply = false;
                 _pendingReplyToAdvance = null;
 
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    "[AutoAdvance] PC-reply speech complete, advancing to next NPC entry");
                 // Use dispatcher to ensure UI thread safety
                 Avalonia.Threading.Dispatcher.UIThread.Post(() => AdvanceToNextEntry(reply));
                 return;
             }
+            // #2524: PC-reply flag set but pending reply missing (or vice-versa) would drop an
+            // advance — log the inconsistency so a one-off no-advance can be traced.
+            if (_isSpeakingPcReply || _pendingReplyToAdvance != null)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"[AutoAdvance] inconsistent PC-reply state on completion " +
+                    $"(isSpeakingPcReply={_isSpeakingPcReply}, pending={_pendingReplyToAdvance != null})");
+            }
 
             // NPC speech completed - auto-advance if enabled and single reply available
-            if (AutoAdvance && AutoSpeak && Replies.Count == 1 && !_isSelectingRootEntry && !HasEnded)
+            bool npcAutoAdvance = AutoAdvance && AutoSpeak && Replies.Count == 1 && !_isSelectingRootEntry && !HasEnded;
+            // #2524: DEBUG trace of the gating state — a one-off "failed to advance" that later
+            // works is a timing/race symptom; this shows which condition was false when it missed.
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"[AutoAdvance] NPC-complete gate={npcAutoAdvance} " +
+                $"(AutoAdvance={AutoAdvance}, AutoSpeak={AutoSpeak}, Replies={Replies.Count}, " +
+                $"selectingRoot={_isSelectingRootEntry}, ended={HasEnded})");
+            if (npcAutoAdvance)
             {
                 // Use dispatcher to ensure UI thread safety
                 Avalonia.Threading.Dispatcher.UIThread.Post(() => SelectReply(0));
@@ -464,16 +512,28 @@ namespace DialogEditor.ViewModels
             OnPropertyChanged(nameof(CoverageComplete));
 
             // Auto-speak NPC text if enabled
-            if (AutoSpeak && TtsAvailable && TtsEnabled && !string.IsNullOrWhiteSpace(NpcText))
+            if (!_suppressAutoSpeak && AutoSpeak && TtsAvailable && TtsEnabled && !string.IsNullOrWhiteSpace(NpcText))
             {
                 var npcVoice = GetVoiceForSpeaker(NpcSpeaker);
+                _userStoppedSpeaking = false; // #2523: fresh speak clears stale stop flag
                 _ttsService.Speak(_ttsTextParser.GetSpeechText(NpcText), npcVoice, TtsRate);
                 // Auto-advance will be triggered by OnTtsSpeakCompleted when speech finishes
             }
-            else if (AutoAdvance && Replies.Count == 1 && !_isSelectingRootEntry)
+            else if (!_suppressAutoSpeak && AutoAdvance && Replies.Count == 1 && !_isSelectingRootEntry)
             {
                 // Auto-advance immediately when not auto-speaking
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    "[AutoAdvance] immediate (no auto-speak): single reply, advancing");
                 SelectReply(0);
+            }
+            else if (AutoAdvance && Replies.Count == 1 && !_isSelectingRootEntry)
+            {
+                // #2524: AutoAdvance wanted but skipped — record why (suppress during Back restore,
+                // or auto-speak deferring to speech-completion). Helps diagnose a one-off no-advance.
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"[AutoAdvance] deferred/suppressed at UpdateDisplay " +
+                    $"(suppressAutoSpeak={_suppressAutoSpeak}, AutoSpeak={AutoSpeak}, " +
+                    $"TtsEnabled={TtsEnabled}, TtsAvailable={TtsAvailable})");
             }
         }
 

@@ -227,6 +227,12 @@
                     Click="OnStopClick"
                     IsEnabled="{Binding TtsSpeaking}"
                     ToolTip.Tip="Stop speaking"/>
+            <Button x:Name="BackButton"
+                    Content="Back"
+                    Width="80"
+                    Click="OnBackClick"
+                    IsEnabled="{Binding CanGoBack}"
+                    ToolTip.Tip="Step back to the previous entry"/>
             <Button x:Name="SkipButton"
                     Content="Skip"
                     Width="80"

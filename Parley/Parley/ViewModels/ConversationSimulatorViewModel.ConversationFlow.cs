@@ -24,6 +24,7 @@ namespace DialogEditor.ViewModels
             LoopDetected = false;
             ShowLoopWarning = false;
             _isSelectingRootEntry = true;
+            ResetNavigationHistory(); // #2524: a fresh playthrough has no back-history
             OnPropertyChanged(nameof(IsShowingPcChoices));
 
             if (_dialog.Starts.Count == 0)
@@ -118,6 +119,9 @@ namespace DialogEditor.ViewModels
 
             SelectedReplyIndex = replyIndex;
 
+            // #2524: capture the state we're leaving so Back can return to it.
+            PushNavigationSnapshot();
+
             // Handle root entry selection
             if (_isSelectingRootEntry)
             {
@@ -146,6 +150,7 @@ namespace DialogEditor.ViewModels
                         // Advancement will happen when PC speech completes
                         _isSpeakingPcReply = true;
                         _pendingReplyToAdvance = reply;
+                        _userStoppedSpeaking = false; // #2523: fresh speak clears stale stop flag
                         var pcVoice = GetVoiceForSpeaker("(PC)");
                         _ttsService.Speak(_ttsTextParser.GetSpeechText(pcText), pcVoice, TtsRate);
                         return; // Don't advance yet - wait for speech to complete
