@@ -474,41 +474,21 @@ public partial class MainWindow
     {
         if (_currentCreature == null) return;
 
-        // List the current file type first so the dialog defaults to the correct extension (#1594)
-        var utcType = new FilePickerFileType("Creature Blueprint") { Patterns = new[] { "*.utc" } };
-        var bicType = new FilePickerFileType("Player Character") { Patterns = new[] { "*.bic" } };
+        // Convert to the shared save dialog (#2515). The dialog supports multiple extensions
+        // and returns which one the user chose in Result.Extension.
+        var firstExt = _isBicFile ? "bic" : "utc";
+        var opts = new Radoub.UI.Services.SaveBlueprintOptions(
+            Title: _isBicFile ? "Save Player Character — Quartermaster" : "Save Creature As — Quartermaster",
+            Extensions: firstExt == "bic" ? new[] { "bic", "utc" } : new[] { "utc", "bic" },
+            DefaultResRef: Path.GetFileNameWithoutExtension(_currentFilePath ?? "creature"),
+            Context: new QuartermasterScriptBrowserContext(_currentFilePath, GameData));
+        var win = new Radoub.UI.Views.SaveBlueprintWindow(opts);
+        await win.ShowDialog(this);
+        if (win.Result is not { } saveResult) return; // cancel — leave state untouched
 
-        // Default to the file's current directory so Save As opens where the file lives
-        IStorageFolder? suggestedFolder = null;
-        if (!string.IsNullOrEmpty(_currentFilePath))
         {
-            var dir = Path.GetDirectoryName(_currentFilePath);
-            if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
-            {
-                try { suggestedFolder = await StorageProvider.TryGetFolderFromPathAsync(dir); }
-                catch (Exception ex) // #2252 — log; fall back to OS default
-                {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                        $"SaveFileAs: TryGetFolderFromPathAsync failed for {UnifiedLogger.SanitizePath(dir)}: {ex.Message}");
-                }
-            }
-        }
-
-        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
-        {
-            Title = "Save Creature As",
-            DefaultExtension = _isBicFile ? ".bic" : ".utc",
-            SuggestedFileName = Path.GetFileNameWithoutExtension(_currentFilePath ?? "creature"),
-            SuggestedStartLocation = suggestedFolder,
-            FileTypeChoices = _isBicFile
-                ? new[] { bicType, utcType }
-                : new[] { utcType, bicType }
-        });
-
-        if (file != null)
-        {
-            _currentFilePath = file.Path.LocalPath;
-            var newExtension = Path.GetExtension(_currentFilePath).ToLowerInvariant();
+            _currentFilePath = saveResult.Path;
+            var newExtension = "." + saveResult.Extension;
             var savingAsBic = newExtension == ".bic";
 
             // Validate Aurora Engine filename constraints
