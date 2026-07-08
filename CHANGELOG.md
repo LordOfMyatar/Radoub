@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Save-Integrity] - 2026-07-08
+**Branch**: `radoub/sprint/save-integrity` | **PR**: #TBD
+
+### Sprint: Data-Loss & Save Integrity (#2655)
+
+- New shared internal Save dialog (`Radoub.UI` `SaveBlueprintWindow`) defaults to the active module directory with a deliberate Browse override, replacing the OS-native save picker across blueprint tools so files stop scattering where the game can't see them (#2515).
+- `Radoub.Formats` `ErfReader.ReadMetadataOnly` no longer throws on sloppy third-party ERFs (PRC HAKs) with an over-long localized string — the metadata path now tolerates it like the full reader (#2501).
+
+---
+
 ## [Tech-Debt] - 2026-07-02
 **Branch**: `radoub/sprint/tech-debt-perf-flaui-2560` | **PR**: #2646
 

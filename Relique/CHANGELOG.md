@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.33-alpha] - 2026-07-08
+**Branch**: `radoub/sprint/save-integrity` | **PR**: #TBD
+
+### Sprint: Data-Loss & Save Integrity (#2655)
+
+- Save/Save As now uses the shared internal dialog defaulting to the module directory (see root CHANGELOG, #2515).
+
+---
+
 ## [0.10.32-alpha] - 2026-06-28
 **Branch**: `relique/issue-2596` | **PR**: #2617
 

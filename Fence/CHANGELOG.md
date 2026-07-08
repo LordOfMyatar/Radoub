@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.42-alpha] - 2026-07-08
+**Branch**: `radoub/sprint/save-integrity` | **PR**: #TBD
+
+### Sprint: Data-Loss & Save Integrity (#2655)
+
+- Save/Save As now uses the shared internal dialog defaulting to the module directory (see root CHANGELOG, #2515).
+- File → New (and Open) now prompt to save unsaved edits before discarding the current store (#2516).
+
+---
+
 ## [0.1.41-alpha] - 2026-06-19
 **Branch**: `fence/sprint/2422-2418-shared-ui` | **PR**: #2512
 

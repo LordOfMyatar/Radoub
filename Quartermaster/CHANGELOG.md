@@ -5,6 +5,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.139-alpha] - 2026-07-08
+**Branch**: `radoub/sprint/save-integrity` | **PR**: #TBD
+
+### Sprint: Data-Loss & Save Integrity (#2655)
+
+- Save As now uses the shared internal dialog with .utc/.bic selection defaulting to the module directory (see root CHANGELOG, #2515). The New Character Wizard prepopulates a module-default save path so it no longer needs the OS save popup.
+- Opening a creature no longer marks the document dirty before any edit (#2459).
+
+---
+
 ## [0.2.138-alpha] - 2026-06-28
 **Branch**: `radoub/issue-2622` | **PR**: #2625
 
