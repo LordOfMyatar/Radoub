@@ -69,19 +69,24 @@ namespace DialogEditor.ViewModels
         private string _defaultNpcVoice = "";
         private bool _isSpeakingPcReply = false;
         private DialogNode? _pendingReplyToAdvance = null;
+        // #2523: set true when the user presses Stop so the completion event fired by
+        // SpeakAsyncCancelAll() suppresses auto-advance instead of progressing the conversation.
+        private bool _userStoppedSpeaking = false;
 
         public event PropertyChangedEventHandler? PropertyChanged;
         public event EventHandler? ConversationEnded;
         public event EventHandler? RequestClose;
 
-        public ConversationSimulatorViewModel(Dialog dialog, string filePath)
+        // #2523: ttsService is injectable for unit testing the stop/auto-advance flow;
+        // production passes null and resolves the platform service from DI.
+        public ConversationSimulatorViewModel(Dialog dialog, string filePath, ITtsService? ttsService = null)
         {
             _settings = Program.Services.GetRequiredService<ISettingsService>();
             _dialog = dialog ?? throw new ArgumentNullException(nameof(dialog));
             _filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
             _conversationManager = new ConversationManager(dialog, new AlwaysTrueScriptEngine());
             _coverageTracker = Program.Services.GetRequiredService<CoverageTracker>();
-            _ttsService = Program.Services.GetRequiredService<ITtsService>();
+            _ttsService = ttsService ?? Program.Services.GetRequiredService<ITtsService>();
 
             Replies = new ObservableCollection<ReplyOption>();
             VoiceNames = new ObservableCollection<string>();
@@ -360,6 +365,13 @@ namespace DialogEditor.ViewModels
         /// </summary>
         public void StopSpeaking()
         {
+            // #2523: Stop() cancels playback but the platform synthesizer fires SpeakCompleted
+            // (Cancelled) synchronously; flag it so OnTtsSpeakCompleted suppresses auto-advance
+            // and clears any pending PC-reply advance instead of restarting speech. Only arm the
+            // flag when speech (or a pending PC-reply advance) is actually active, otherwise a
+            // Stop with nothing queued could leave it set and wrongly suppress the next completion.
+            if (_ttsService.IsSpeaking || _isSpeakingPcReply)
+                _userStoppedSpeaking = true;
             _ttsService.Stop();
             OnPropertyChanged(nameof(TtsSpeaking));
         }
@@ -370,6 +382,16 @@ namespace DialogEditor.ViewModels
         private void OnTtsSpeakCompleted(object? sender, EventArgs e)
         {
             OnPropertyChanged(nameof(TtsSpeaking));
+
+            // #2523: This completion was triggered by the user pressing Stop. Do not advance
+            // or restart speech; clear any pending PC-reply advance so it can't resurrect later.
+            if (_userStoppedSpeaking)
+            {
+                _userStoppedSpeaking = false;
+                _isSpeakingPcReply = false;
+                _pendingReplyToAdvance = null;
+                return;
+            }
 
             // If we were speaking a PC reply, now advance to NPC response
             if (_isSpeakingPcReply && _pendingReplyToAdvance != null)
