@@ -112,10 +112,10 @@ public static class ErfReader
 
     private static void ReadLocalizedStringsFromBuffer(byte[] buffer, ErfFile erf, uint count)
     {
-        // ReadMetadataOnly path — buffer is a tight slice sized exactly to
-        // the localized-string block, so use the strict reader (throws on
-        // truncation) starting at offset 0 with the whole buffer as the limit.
-        ReadLocalizedStringsCore(buffer, erf, count, startOffset: 0, endOffset: buffer.Length, strict: true);
+        // ReadMetadataOnly path — third-party ERFs (PRC HAKs) can declare a loc-string
+        // StringSize larger than the sliced block. Metadata enumeration does not use loc
+        // strings, so tolerate it like the full Read() path instead of throwing (#2501).
+        ReadLocalizedStringsCore(buffer, erf, count, startOffset: 0, endOffset: buffer.Length, strict: false);
     }
 
     private static void ReadResourcesFromBuffers(byte[] keyListBuffer, byte[] resourceListBuffer, ErfFile erf, uint count)
