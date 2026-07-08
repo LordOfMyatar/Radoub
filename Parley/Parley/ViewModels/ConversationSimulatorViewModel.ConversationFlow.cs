@@ -24,6 +24,7 @@ namespace DialogEditor.ViewModels
             LoopDetected = false;
             ShowLoopWarning = false;
             _isSelectingRootEntry = true;
+            ResetNavigationHistory(); // #2524: a fresh playthrough has no back-history
             OnPropertyChanged(nameof(IsShowingPcChoices));
 
             if (_dialog.Starts.Count == 0)
@@ -117,6 +118,9 @@ namespace DialogEditor.ViewModels
                 return;
 
             SelectedReplyIndex = replyIndex;
+
+            // #2524: capture the state we're leaving so Back can return to it.
+            PushNavigationSnapshot();
 
             // Handle root entry selection
             if (_isSelectingRootEntry)

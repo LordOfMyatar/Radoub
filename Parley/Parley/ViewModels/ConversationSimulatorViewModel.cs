@@ -73,6 +73,12 @@ namespace DialogEditor.ViewModels
         // SpeakAsyncCancelAll() suppresses auto-advance instead of progressing the conversation.
         private bool _userStoppedSpeaking = false;
 
+        // #2524: navigation history for the Back button. Each snapshot captures the restorable
+        // state of one step; GoBack pops and restores it. _suppressAutoSpeak stops a restored
+        // display from re-triggering TTS.
+        private readonly Stack<NavigationSnapshot> _navigationHistory = new();
+        private bool _suppressAutoSpeak = false;
+
         public event PropertyChangedEventHandler? PropertyChanged;
         public event EventHandler? ConversationEnded;
         public event EventHandler? RequestClose;
@@ -489,14 +495,14 @@ namespace DialogEditor.ViewModels
             OnPropertyChanged(nameof(CoverageComplete));
 
             // Auto-speak NPC text if enabled
-            if (AutoSpeak && TtsAvailable && TtsEnabled && !string.IsNullOrWhiteSpace(NpcText))
+            if (!_suppressAutoSpeak && AutoSpeak && TtsAvailable && TtsEnabled && !string.IsNullOrWhiteSpace(NpcText))
             {
                 var npcVoice = GetVoiceForSpeaker(NpcSpeaker);
                 _userStoppedSpeaking = false; // #2523: fresh speak clears stale stop flag
                 _ttsService.Speak(_ttsTextParser.GetSpeechText(NpcText), npcVoice, TtsRate);
                 // Auto-advance will be triggered by OnTtsSpeakCompleted when speech finishes
             }
-            else if (AutoAdvance && Replies.Count == 1 && !_isSelectingRootEntry)
+            else if (!_suppressAutoSpeak && AutoAdvance && Replies.Count == 1 && !_isSelectingRootEntry)
             {
                 // Auto-advance immediately when not auto-speaking
                 SelectReply(0);
