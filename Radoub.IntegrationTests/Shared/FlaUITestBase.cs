@@ -569,14 +569,35 @@ public abstract class FlaUITestBase : IDisposable
             return pattern.ExpandCollapseState == FlaUI.Core.Definitions.ExpandCollapseState.Expanded;
         }
 
-        // Fallback: toggle-button header. Click the header button to expand.
+        // Fallback: toggle-button header. Click the header button to expand, then VERIFY —
+        // don't report success blindly (a blind true masks the real failure point when the
+        // control the caller wants is still collapsed).
         var header = expander.FindFirstChild(cf => cf.ByControlType(FlaUI.Core.Definitions.ControlType.Button))?.AsButton();
         if (header != null)
         {
             EnsureFocused();
-            header.Invoke();
+            // If the header exposes a toggle, prefer setting it on; otherwise Invoke it.
+            if (header.Patterns.Toggle.IsSupported)
+            {
+                if (header.Patterns.Toggle.Pattern.ToggleState != FlaUI.Core.Definitions.ToggleState.On)
+                    header.Patterns.Toggle.Pattern.Toggle();
+            }
+            else
+            {
+                header.Invoke();
+            }
             Thread.Sleep(300);
-            return true;
+
+            // Re-read state to confirm expansion actually happened.
+            var refetched = FindElement(automationId, maxRetries: 2);
+            if (refetched?.Patterns.ExpandCollapse.IsSupported == true)
+                return refetched.Patterns.ExpandCollapse.Pattern.ExpandCollapseState
+                    == FlaUI.Core.Definitions.ExpandCollapseState.Expanded;
+            if (header.Patterns.Toggle.IsSupported)
+                return header.Patterns.Toggle.Pattern.ToggleState == FlaUI.Core.Definitions.ToggleState.On;
+
+            // No readable state signal — fall back to "did a child besides the header appear?"
+            return refetched != null && refetched.FindAllChildren().Length > 1;
         }
         return false;
     }

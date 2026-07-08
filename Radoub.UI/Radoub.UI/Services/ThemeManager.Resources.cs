@@ -402,11 +402,15 @@ public partial class ThemeManager
             return;
 
         var sharedSettings = RadoubSettings.Instance;
-        // No theme fonts here — shared settings are authoritative; family falls back
-        // to system default and size to 14 when unset.
+        // Shared settings are authoritative, but when SharedFontFamily/Size are unset fall back to
+        // the ACTIVE theme's own fonts (matching ApplyFonts on the theme path) rather than jumping
+        // straight to system default — otherwise this call, which runs right after ApplySharedTheme
+        // on window activation, would clobber a theme's concrete primary font back to default every
+        // time (a regression for community themes; shipped themes use "$Default" → no effect).
+        var themeFonts = Instance.CurrentTheme?.Fonts;
         ApplyResolvedFonts(resources,
-            ResolveEffectiveFontFamily(null, sharedSettings.SharedFontFamily),
-            ResolveEffectiveFontSize(null, sharedSettings.SharedFontSize));
+            ResolveEffectiveFontFamily(themeFonts, sharedSettings.SharedFontFamily),
+            ResolveEffectiveFontSize(themeFonts, sharedSettings.SharedFontSize));
     }
 
     /// <summary>
