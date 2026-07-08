@@ -151,6 +151,7 @@ public partial class SaveBlueprintWindow : Window
 
                 UpdateLocationDisplay();
                 LoadFiles();
+                ValidateFileName();
             }
         }
         catch (Exception ex)
@@ -165,6 +166,7 @@ public partial class SaveBlueprintWindow : Window
         UnifiedLogger.LogApplication(LogLevel.INFO, "Save blueprint: Reset to auto-detected path");
         UpdateLocationDisplay();
         LoadFiles();
+        ValidateFileName();
     }
 
     private void LoadFiles()
@@ -290,9 +292,11 @@ public partial class SaveBlueprintWindow : Window
             ValidationLabel.IsVisible = false;
         }
 
+        var hasDir = !string.IsNullOrEmpty(GetCurrentDirectory());
+
         if (SaveButton != null)
         {
-            SaveButton.IsEnabled = valid;
+            SaveButton.IsEnabled = valid && hasDir;
         }
         return valid;
     }
