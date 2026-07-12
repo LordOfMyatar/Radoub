@@ -10,7 +10,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ### Sprint: Data-Loss & Save Integrity (#2655)
 
-- Save As now uses the shared internal dialog with .utc/.bic selection defaulting to the module directory (see root CHANGELOG, #2515). The New Character Wizard prepopulates a module-default save path so it no longer needs the OS save popup.
+- Save As and the New Character Wizard now save through the shared internal dialog (see root CHANGELOG, #2515) — one in-app save path, no OS popup. Creatures default to the module directory, characters (.bic) to localvault, with .utc/.bic selection and a Browse override.
 - Opening a creature no longer marks the document dirty before any edit (#2459).
 
 ---
