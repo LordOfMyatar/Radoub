@@ -3,7 +3,6 @@ using System.IO;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using DialogEditor.Models;
 
@@ -42,50 +41,46 @@ namespace DialogEditor.Views
         {
             try
             {
-                var storageProvider = StorageProvider;
-                if (storageProvider == null)
+                // Shared internal Save dialog (#2515): defaults to module dir via
+                // ParleyScriptBrowserContext.CurrentFileDirectory, inline Aurora
+                // validation, existing-file list, overwrite-confirm, Browse override.
+                var currentPath = _viewModel.CurrentFilePath;
+                var defaultResRef = string.IsNullOrEmpty(currentPath)
+                    ? "new_dialog"
+                    : Path.GetFileNameWithoutExtension(currentPath);
+
+                var opts = new Radoub.UI.Services.SaveBlueprintOptions(
+                    Title: "Save Dialog As — Parley",
+                    Extensions: new[] { "dlg" },
+                    DefaultResRef: defaultResRef,
+                    Context: new DialogEditor.Services.ParleyScriptBrowserContext(
+                        currentPath, _services.Settings, _services.GameData));
+
+                var win = new Radoub.UI.Views.SaveBlueprintWindow(opts);
+                await win.ShowDialog(this);
+                if (win.Result is not { } result)
                 {
-                    _viewModel.StatusMessage = "Storage provider not available";
+                    return false; // User cancelled
+                }
+
+                var filePath = result.Path;
+
+                // #826: Validate filename length for Aurora Engine (authoritative gate; keep)
+                if (!await _controllers.FileMenu.ValidateFilenameAsync(filePath))
+                {
                     return false;
                 }
 
-                // WORKAROUND (2025-10-23): Simplified options to avoid hang
-                var options = new FilePickerSaveOptions
-                {
-                    Title = "Save Dialog File As",
-                    FileTypeChoices = new[]
-                    {
-                        new FilePickerFileType("DLG Dialog Files")
-                        {
-                            Patterns = new[] { "*.dlg" }
-                        }
-                    }
-                };
+                // CRITICAL FIX: Save current node properties before saving file
+                SaveCurrentNodeProperties();
 
-                var file = await storageProvider.SaveFilePickerAsync(options);
-                if (file != null)
-                {
-                    var filePath = file.Path.LocalPath;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Saving file as: {UnifiedLogger.SanitizePath(filePath)}");
+                var success = await _viewModel.SaveDialogAsync(filePath);
 
-                    // #826: Validate filename length for Aurora Engine
-                    if (!await _controllers.FileMenu.ValidateFilenameAsync(filePath))
-                    {
-                        return false;
-                    }
+                // Refresh recent files menu
+                PopulateRecentFilesMenu();
 
-                    // CRITICAL FIX: Save current node properties before saving file
-                    SaveCurrentNodeProperties();
-
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Saving file as: {UnifiedLogger.SanitizePath(filePath)}");
-                    var success = await _viewModel.SaveDialogAsync(filePath);
-
-                    // Refresh recent files menu
-                    PopulateRecentFilesMenu();
-
-                    return success;
-                }
-
-                return false; // User cancelled
+                return success;
             }
             catch (Exception ex)
             {
