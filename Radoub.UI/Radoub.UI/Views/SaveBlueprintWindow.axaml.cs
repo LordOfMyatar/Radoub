@@ -32,6 +32,7 @@ public partial class SaveBlueprintWindow : Window
 {
     private readonly IScriptBrowserContext? _context;
     private readonly IReadOnlyList<string> _extensions;
+    private readonly IReadOnlyDictionary<string, string?>? _defaultDirByExtension;
     private List<SaveBlueprintEntry> _allFiles = new();
     private List<SaveBlueprintEntry> _filteredFiles = new();
     private string? _overridePath;
@@ -53,6 +54,7 @@ public partial class SaveBlueprintWindow : Window
         InitializeComponent();
 
         _context = options.Context;
+        _defaultDirByExtension = options.DefaultDirectoryByExtension;
         _extensions = options.Extensions != null && options.Extensions.Count > 0
             ? options.Extensions
             : new[] { "utm" };
@@ -91,6 +93,22 @@ public partial class SaveBlueprintWindow : Window
         return _extensions[0];
     }
 
+    /// <summary>
+    /// Per-extension default dir for the currently-selected extension, if configured (#2515).
+    /// Case-insensitive key match so a caller passing "UTC" resolves the same as "utc".
+    /// </summary>
+    private string? PerExtensionDefaultDir()
+    {
+        if (_defaultDirByExtension == null) return null;
+        var ext = SelectedExtension();
+        foreach (var kvp in _defaultDirByExtension)
+        {
+            if (string.Equals(kvp.Key, ext, StringComparison.OrdinalIgnoreCase))
+                return kvp.Value;
+        }
+        return null;
+    }
+
     private void UpdateLocationDisplay()
     {
         if (!string.IsNullOrEmpty(_overridePath))
@@ -101,7 +119,8 @@ public partial class SaveBlueprintWindow : Window
         }
         else
         {
-            var currentDir = _context?.CurrentFileDirectory;
+            // Per-extension default (e.g. BIC→localvault) takes precedence over the context module dir (#2515).
+            var currentDir = SaveBlueprintPathResolver.ResolveDirectory(null, PerExtensionDefaultDir(), _context?.CurrentFileDirectory);
             if (!string.IsNullOrEmpty(currentDir))
             {
                 LocationPathLabel.Text = UnifiedLogger.SanitizePath(currentDir);
@@ -118,7 +137,7 @@ public partial class SaveBlueprintWindow : Window
 
     private string? GetCurrentDirectory()
     {
-        return SaveBlueprintPathResolver.ResolveDirectory(_overridePath, _context?.CurrentFileDirectory);
+        return SaveBlueprintPathResolver.ResolveDirectory(_overridePath, PerExtensionDefaultDir(), _context?.CurrentFileDirectory);
     }
 
     private async void OnBrowseLocationClick(object? sender, RoutedEventArgs e)
@@ -254,7 +273,9 @@ public partial class SaveBlueprintWindow : Window
 
     private void OnExtensionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        // Changing the selected extension re-scans the list for that extension.
+        // Changing the selected extension re-resolves the default location (per-ext dirs, #2515),
+        // re-scans the file list for that extension, and re-validates Save-enabled state.
+        UpdateLocationDisplay();
         LoadFiles();
         ValidateFileName();
     }

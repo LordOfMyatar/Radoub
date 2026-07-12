@@ -600,10 +600,6 @@ public partial class NewCharacterWizardWindow : Window
         _validationLevelComboBox.SelectionChanged += OnValidationLevelChanged;
 
         UpdateStepDisplay();
-
-        // Prepopulate step 1's save location so a fresh wizard defaults to the module/localvault
-        // path instead of forcing the OS Browse popup (#2515).
-        RefreshDefaultSavePath();
     }
 
     private void InitializeComponent()

@@ -481,192 +481,182 @@ public partial class MainWindow
             Title: _isBicFile ? "Save Player Character — Quartermaster" : "Save Creature As — Quartermaster",
             Extensions: firstExt == "bic" ? new[] { "bic", "utc" } : new[] { "utc", "bic" },
             DefaultResRef: Path.GetFileNameWithoutExtension(_currentFilePath ?? "creature"),
-            Context: new QuartermasterScriptBrowserContext(_currentFilePath, GameData));
+            Context: new QuartermasterScriptBrowserContext(_currentFilePath, GameData),
+            DefaultDirectoryByExtension: new Dictionary<string, string?> { ["utc"] = ResolveModuleDir(), ["bic"] = ResolveLocalVaultDir() });
         var win = new Radoub.UI.Views.SaveBlueprintWindow(opts);
         await win.ShowDialog(this);
         if (win.Result is not { } saveResult) return; // cancel — leave state untouched
 
+        _currentFilePath = saveResult.Path;
+        var savingAsBic = saveResult.Extension == "bic";
+
+        // Validate Aurora Engine filename constraints
+        if (!await ValidateAuroraFilename(_currentFilePath))
         {
-            _currentFilePath = saveResult.Path;
-            var newExtension = "." + saveResult.Extension;
-            var savingAsBic = newExtension == ".bic";
+            _currentFilePath = null; // Clear the path since save was cancelled
+            return;
+        }
 
-            // Validate Aurora Engine filename constraints
-            if (!await ValidateAuroraFilename(_currentFilePath))
-            {
-                _currentFilePath = null; // Clear the path since save was cancelled
-                return;
-            }
+        // Validate playable class for BIC files
+        if (savingAsBic && !await ValidatePlayableClassForBic(_currentCreature))
+        {
+            _currentFilePath = null; // Clear the path since save was cancelled
+            return;
+        }
 
-            // Validate playable class for BIC files
-            if (savingAsBic && !await ValidatePlayableClassForBic(_currentCreature))
-            {
-                _currentFilePath = null; // Clear the path since save was cancelled
-                return;
-            }
+        // Handle format conversion
+        var wasConverted = false;
+        if (savingAsBic && !_isBicFile)
+        {
+            // Converting UTC to BIC
+            _currentCreature = BicFile.FromUtcFile(_currentCreature, GameData);
+            _isBicFile = true;
+            wasConverted = true;
+            UnifiedLogger.LogCreature(LogLevel.INFO, "Converted UTC to BIC format");
+        }
+        else if (!savingAsBic && _isBicFile && _currentCreature is BicFile bicFile)
+        {
+            // Converting BIC to UTC - pass the target filename so TemplateResRef matches
+            var targetResRef = Path.GetFileNameWithoutExtension(_currentFilePath);
+            _currentCreature = bicFile.ToUtcFile(targetResRef);
+            _isBicFile = false;
+            wasConverted = true;
 
-            // Handle format conversion
-            var wasConverted = false;
-            if (savingAsBic && !_isBicFile)
+            // ============================================================
+            // PORTRAIT FIX FOR AURORA TOOLSET (BIC → UTC)
+            // ============================================================
+            // BIC files use Portrait string (e.g., "po_hu_m_01_") with PortraitId=0
+            // Aurora Toolset shows "must specify valid portrait" error if PortraitId=0
+            // Look up the PortraitId from portraits.2da using the Portrait string
+            if (_currentCreature.PortraitId == 0 && !string.IsNullOrEmpty(_currentCreature.Portrait))
             {
-                // Converting UTC to BIC
-                _currentCreature = BicFile.FromUtcFile(_currentCreature, GameData);
-                _isBicFile = true;
-                wasConverted = true;
-                UnifiedLogger.LogCreature(LogLevel.INFO, "Converted UTC to BIC format");
-            }
-            else if (!savingAsBic && _isBicFile && _currentCreature is BicFile bicFile)
-            {
-                // Converting BIC to UTC - pass the target filename so TemplateResRef matches
-                var targetResRef = Path.GetFileNameWithoutExtension(_currentFilePath);
-                _currentCreature = bicFile.ToUtcFile(targetResRef);
-                _isBicFile = false;
-                wasConverted = true;
-
-                // ============================================================
-                // PORTRAIT FIX FOR AURORA TOOLSET (BIC → UTC)
-                // ============================================================
-                // BIC files use Portrait string (e.g., "po_hu_m_01_") with PortraitId=0
-                // Aurora Toolset shows "must specify valid portrait" error if PortraitId=0
-                // Look up the PortraitId from portraits.2da using the Portrait string
-                if (_currentCreature.PortraitId == 0 && !string.IsNullOrEmpty(_currentCreature.Portrait))
+                var foundId = DisplayService.FindPortraitIdByResRef(_currentCreature.Portrait);
+                if (foundId.HasValue)
                 {
-                    var foundId = DisplayService.FindPortraitIdByResRef(_currentCreature.Portrait);
-                    if (foundId.HasValue)
-                    {
-                        _currentCreature.PortraitId = foundId.Value;
-                        UnifiedLogger.LogCreature(LogLevel.DEBUG,
-                            $"Portrait lookup: '{_currentCreature.Portrait}' → PortraitId {foundId.Value}");
-                    }
-                    else
-                    {
-                        UnifiedLogger.LogCreature(LogLevel.WARN,
-                            $"Portrait lookup failed: '{_currentCreature.Portrait}' not found in portraits.2da");
-                    }
+                    _currentCreature.PortraitId = foundId.Value;
+                    UnifiedLogger.LogCreature(LogLevel.DEBUG,
+                        $"Portrait lookup: '{_currentCreature.Portrait}' → PortraitId {foundId.Value}");
                 }
-
-                UnifiedLogger.LogCreature(LogLevel.INFO, "Converted BIC to UTC format");
+                else
+                {
+                    UnifiedLogger.LogCreature(LogLevel.WARN,
+                        $"Portrait lookup failed: '{_currentCreature.Portrait}' not found in portraits.2da");
+                }
             }
-            else
-            {
-                _isBicFile = savingAsBic;
-            }
 
-            await SaveFile();
+            UnifiedLogger.LogCreature(LogLevel.INFO, "Converted BIC to UTC format");
+        }
+        else
+        {
+            _isBicFile = savingAsBic;
+        }
+
+        await SaveFile();
+        UpdateTitle();
+        UpdateCharacterHeader();
+        SettingsService.Instance.AddRecentFile(_currentFilePath);
+        UpdateRecentFilesMenu();
+
+        // Refresh creature browser so the new file appears (#1690)
+        UpdateCreatureBrowserCurrentFile(_currentFilePath);
+        var creatureBrowserPanel = this.FindControl<CreatureBrowserPanel>("CreatureBrowserPanel");
+        if (creatureBrowserPanel != null)
+            await creatureBrowserPanel.RefreshAsync();
+
+        // If format was converted, reload panels to reflect the new file type
+        if (wasConverted)
+        {
+            _isLoading = true;
+            LoadAllPanels(_currentCreature);
+            _isLoading = false;
+            _documentState.ClearDirty(); // Reset dirty after panel reload
             UpdateTitle();
-            UpdateCharacterHeader();
-            SettingsService.Instance.AddRecentFile(_currentFilePath);
-            UpdateRecentFilesMenu();
-
-            // Refresh creature browser so the new file appears (#1690)
-            UpdateCreatureBrowserCurrentFile(_currentFilePath);
-            var creatureBrowserPanel = this.FindControl<CreatureBrowserPanel>("CreatureBrowserPanel");
-            if (creatureBrowserPanel != null)
-                await creatureBrowserPanel.RefreshAsync();
-
-            // If format was converted, reload panels to reflect the new file type
-            if (wasConverted)
-            {
-                _isLoading = true;
-                LoadAllPanels(_currentCreature);
-                _isLoading = false;
-                _documentState.ClearDirty(); // Reset dirty after panel reload
-                UpdateTitle();
-                UpdateStatus($"Converted and saved as {(savingAsBic ? "BIC" : "UTC")}: {Path.GetFileName(_currentFilePath)}");
-            }
+            UpdateStatus($"Converted and saved as {(savingAsBic ? "BIC" : "UTC")}: {Path.GetFileName(_currentFilePath)}");
         }
     }
 
     /// <summary>
-    /// Prompts the user to save a newly created creature immediately after wizard creation.
-    /// BIC files default to the local vault directory, UTC files to the module directory.
+    /// Resolves the default UTC save directory: the current module directory, or the .mod
+    /// working directory when the module path is a packed .mod file. Null when unresolved.
+    /// </summary>
+    private static string? ResolveModuleDir()
+    {
+        var modulePath = RadoubSettings.Instance.CurrentModulePath;
+        if (string.IsNullOrEmpty(modulePath)) return null;
+        if (Directory.Exists(modulePath)) return modulePath;
+        if (File.Exists(modulePath))
+            return PathHelper.FindWorkingDirectoryWithFallbacks(modulePath);
+        return null;
+    }
+
+    /// <summary>Resolves the default BIC save directory (localvault) if it exists, else null.</summary>
+    private static string? ResolveLocalVaultDir()
+    {
+        var nwnPath = RadoubSettings.Instance.NeverwinterNightsPath;
+        if (string.IsNullOrEmpty(nwnPath)) return null;
+        var localVault = Path.Combine(nwnPath, "localvault");
+        return Directory.Exists(localVault) ? localVault : null;
+    }
+
+    /// <summary>
+    /// Prompts the user to save a newly created creature immediately after wizard creation
+    /// via the shared in-app Save dialog (#2515). Per-extension defaults: BIC→localvault,
+    /// UTC→module directory (overwrite confirmation is built into the dialog).
     /// </summary>
     private async Task PromptSaveNewCreature()
     {
         if (_currentCreature == null) return;
-
-        // Determine default save directory
-        IStorageFolder? suggestedFolder = null;
-        try
-        {
-            if (_isBicFile)
-            {
-                // BIC → local vault
-                var nwnPath = RadoubSettings.Instance.NeverwinterNightsPath;
-                if (!string.IsNullOrEmpty(nwnPath))
-                {
-                    var localVault = Path.Combine(nwnPath, "localvault");
-                    if (Directory.Exists(localVault))
-                        suggestedFolder = await StorageProvider.TryGetFolderFromPathAsync(localVault);
-                }
-            }
-            else
-            {
-                // UTC → module directory
-                var modulePath = RadoubSettings.Instance.CurrentModulePath;
-                if (!string.IsNullOrEmpty(modulePath) && Directory.Exists(modulePath))
-                {
-                    suggestedFolder = await StorageProvider.TryGetFolderFromPathAsync(modulePath);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogCreature(LogLevel.DEBUG, $"Could not resolve default save directory: {ex.Message}");
-        }
 
         // Generate suggested filename from creature's ResRef or tag
         var suggestedName = _currentCreature.TemplateResRef;
         if (string.IsNullOrEmpty(suggestedName) || suggestedName == "new_creature")
             suggestedName = _currentCreature.Tag ?? "new_creature";
 
-        var extension = _isBicFile ? "bic" : "utc";
-        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
-        {
-            Title = _isBicFile ? "Save Player Character" : "Save Creature Blueprint",
-            DefaultExtension = extension,
-            FileTypeChoices = _isBicFile
-                ? new[] { new FilePickerFileType("Player Character") { Patterns = new[] { "*.bic" } } }
-                : new[] { new FilePickerFileType("Creature Blueprint") { Patterns = new[] { "*.utc" } } },
-            SuggestedFileName = suggestedName,
-            SuggestedStartLocation = suggestedFolder
-        });
-
-        if (file != null)
-        {
-            _currentFilePath = file.Path.LocalPath;
-
-            if (!await ValidateAuroraFilename(_currentFilePath))
-            {
-                _currentFilePath = null;
-                UpdateStatus("New creature created (not saved yet)");
-                return;
-            }
-
-            // Convert to BIC if saving as .bic and creature is still a UtcFile
-            var savingAsBic = Path.GetExtension(_currentFilePath).Equals(".bic", StringComparison.OrdinalIgnoreCase);
-            if (savingAsBic && _currentCreature is not BicFile)
-            {
-                _currentCreature = BicFile.FromUtcFile(_currentCreature, GameData);
-                _isBicFile = true;
-            }
-
-            await SaveFile();
-            UpdateTitle();
-            UpdateCharacterHeader();
-            SettingsService.Instance.AddRecentFile(_currentFilePath);
-            UpdateRecentFilesMenu();
-
-            // Refresh creature browser so the new file appears (#1477)
-            UpdateCreatureBrowserCurrentFile(_currentFilePath);
-            var creatureBrowserPanel = this.FindControl<CreatureBrowserPanel>("CreatureBrowserPanel");
-            if (creatureBrowserPanel != null)
-                await creatureBrowserPanel.RefreshAsync();
-        }
-        else
+        var moduleDir = ResolveModuleDir();
+        var localVault = ResolveLocalVaultDir();
+        var firstExt = _isBicFile ? "bic" : "utc";
+        var opts = new Radoub.UI.Services.SaveBlueprintOptions(
+            Title: _isBicFile ? "Save Player Character — Quartermaster" : "Save Creature Blueprint — Quartermaster",
+            Extensions: firstExt == "bic" ? new[] { "bic", "utc" } : new[] { "utc", "bic" },
+            DefaultResRef: suggestedName,
+            Context: new QuartermasterScriptBrowserContext(_currentFilePath, GameData),
+            DefaultDirectoryByExtension: new Dictionary<string, string?> { ["utc"] = moduleDir, ["bic"] = localVault });
+        var win = new Radoub.UI.Views.SaveBlueprintWindow(opts);
+        await win.ShowDialog(this);
+        if (win.Result is not { } saveResult)
         {
             UpdateStatus("New creature created (not saved yet)");
+            return;
         }
+
+        _currentFilePath = saveResult.Path;
+        var savingAsBic = saveResult.Extension == "bic";
+
+        if (!await ValidateAuroraFilename(_currentFilePath))
+        {
+            _currentFilePath = null;
+            UpdateStatus("New creature created (not saved yet)");
+            return;
+        }
+
+        // Convert to BIC if saving as .bic and creature is still a UtcFile
+        if (savingAsBic && _currentCreature is not BicFile)
+        {
+            _currentCreature = BicFile.FromUtcFile(_currentCreature, GameData);
+            _isBicFile = true;
+        }
+
+        await SaveFile();
+        UpdateTitle();
+        UpdateCharacterHeader();
+        SettingsService.Instance.AddRecentFile(_currentFilePath);
+        UpdateRecentFilesMenu();
+
+        // Refresh creature browser so the new file appears (#1477)
+        UpdateCreatureBrowserCurrentFile(_currentFilePath);
+        var creatureBrowserPanel = this.FindControl<CreatureBrowserPanel>("CreatureBrowserPanel");
+        if (creatureBrowserPanel != null)
+            await creatureBrowserPanel.RefreshAsync();
     }
 
     /// <summary>

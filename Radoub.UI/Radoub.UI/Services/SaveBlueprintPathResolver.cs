@@ -20,6 +20,13 @@ public static class SaveBlueprintPathResolver
     public static bool WouldOverwrite(string fullPath) => File.Exists(fullPath);
 
     public static string? ResolveDirectory(string? overridePath, string? contextDir)
+        => ResolveDirectory(overridePath, null, contextDir);
+
+    /// <summary>
+    /// Directory precedence: explicit Browse override > per-extension default > context dir (#2515).
+    /// </summary>
+    public static string? ResolveDirectory(string? overridePath, string? perExtensionDir, string? contextDir)
         => !string.IsNullOrEmpty(overridePath) ? overridePath
+         : !string.IsNullOrEmpty(perExtensionDir) ? perExtensionDir
          : !string.IsNullOrEmpty(contextDir) ? contextDir : null;
 }

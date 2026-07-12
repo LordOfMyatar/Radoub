@@ -73,4 +73,36 @@ public class SaveBlueprintPathResolverTests
     {
         Assert.Null(SaveBlueprintPathResolver.ResolveDirectory(null, null));
     }
+
+    // 3-arg overload: override > per-extension default > context (#2515)
+
+    [Fact]
+    public void ResolveDirectory3_Override_WinsOverAll()
+    {
+        var over = Path.Combine("C:", "over");
+        var perExt = Path.Combine("C:", "vault");
+        var ctx = Path.Combine("C:", "mod");
+        Assert.Equal(over, SaveBlueprintPathResolver.ResolveDirectory(over, perExt, ctx));
+    }
+
+    [Fact]
+    public void ResolveDirectory3_NoOverride_PerExtWinsOverContext()
+    {
+        var perExt = Path.Combine("C:", "vault");
+        var ctx = Path.Combine("C:", "mod");
+        Assert.Equal(perExt, SaveBlueprintPathResolver.ResolveDirectory(null, perExt, ctx));
+    }
+
+    [Fact]
+    public void ResolveDirectory3_NoOverrideNoPerExt_ReturnsContext()
+    {
+        var ctx = Path.Combine("C:", "mod");
+        Assert.Equal(ctx, SaveBlueprintPathResolver.ResolveDirectory(null, null, ctx));
+    }
+
+    [Fact]
+    public void ResolveDirectory3_AllNull_ReturnsNull()
+    {
+        Assert.Null(SaveBlueprintPathResolver.ResolveDirectory(null, null, null));
+    }
 }

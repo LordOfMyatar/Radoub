@@ -43,27 +43,12 @@ public partial class NewCharacterWizardWindow
         // Show default scripts option for UTC only
         _defaultScriptsPanel.IsVisible = !_isBicFile;
 
-        // Re-default the save location when file type changes (extension changes) so
-        // flipping UTC/BIC re-populates the module/localvault path instead of blanking (#2515).
-        RefreshDefaultSavePath();
+        // File type changed → clear any prior save-location choice; the finish-time
+        // save routes through the shared in-app dialog (#2515).
+        ChosenSavePath = null;
+        _saveLocationTextBox.Text = "";
 
         UpdateSidebarSummary();
-    }
-
-    /// <summary>
-    /// Prepopulate the save location from the module working dir (UTC) or localvault (BIC)
-    /// so a fresh wizard has a sensible default path without forcing the OS Browse popup (#2515).
-    /// </summary>
-    private void RefreshDefaultSavePath()
-    {
-        var dir = Quartermaster.Services.WizardSavePathResolver.ResolveDefaultDir(
-            _isBicFile, RadoubSettings.Instance.CurrentModulePath, RadoubSettings.Instance.NeverwinterNightsPath);
-        if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
-        {
-            ChosenSavePath = Path.Combine(dir, "new_creature." + (_isBicFile ? "bic" : "utc"));
-            _saveLocationTextBox.Text = ChosenSavePath;
-        }
-        else { ChosenSavePath = null; _saveLocationTextBox.Text = ""; }
     }
 
     private void OnStartingLevelChanged(object? sender, NumericUpDownValueChangedEventArgs e)
