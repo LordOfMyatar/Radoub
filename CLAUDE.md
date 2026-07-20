@@ -533,9 +533,33 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 
 ## Shell Usage on Windows
 
+### Run .ps1 Scripts Through the Bash Tool, Not the PowerShell Tool (HARD RULE)
+
+**Every `.ps1` invocation goes through the Bash tool.** The PowerShell tool's
+permission rules do not match on Windows, so it prompts on every call no matter how
+the allow rule is written — an upstream bug (anthropics/claude-code#57013, #60289,
+#42318), not a syntax problem. Do not try to fix it by adding allow rules; they
+become dead entries.
+
+Controlled test (2026-07-20, same script and args, only the tool/path varied):
+
+| Tool | Path form | Result |
+|------|-----------|--------|
+| Bash | relative `".claude/scripts/X.ps1"` | no prompt |
+| Bash | absolute `"d:\LOM\...\X.ps1"` | no prompt |
+| PowerShell | absolute, with `& ` call operator | prompts |
+| PowerShell | relative, no call operator | prompts |
+
+The deciding variable is the **tool**. Path form and the `&` call operator do not
+matter — Bash works with either path style.
+
+**Carve-out**: the PowerShell tool is still correct for genuine PowerShell work
+that is not a script invocation — `Get-Process`/`Stop-Process`, or PS7 loading
+net9.0 Radoub DLLs. Those prompt too; that is unavoidable.
+
 ### Prefer Script Files Over Inline Commands
 
-**DO**: Use `powershell.exe -File` with PowerShell scripts (NEVER use `pwsh` — it launches Microsoft Store)
+**DO**: Use `powershell.exe -File` **via the Bash tool** (NEVER use `pwsh` — it launches Microsoft Store)
 ```bash
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View status
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1" -Force
@@ -549,13 +573,20 @@ powershell.exe -Command "\$data = Get-Content file.json | ConvertFrom-Json; \$da
 
 ### When to Use Each Shell
 
-| Task | Use | Example |
-|------|-----|---------|
+| Task | Tool | Example |
+|------|------|---------|
 | Git operations | Bash | `git status`, `git commit` |
 | GitHub CLI | Bash | `gh issue view 123`, `gh pr create` |
 | File operations | Bash | `cp`, `mkdir -p`, `rm -f` |
-| Complex data processing | PowerShell script | `Get-CacheData.ps1` |
-| JSON parsing | PowerShell script | Custom `.ps1` files |
+| Running any `.ps1` | **Bash** | `powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View list` |
+| Complex data processing | **Bash** running a `.ps1` | `Get-CacheData.ps1` |
+| JSON parsing | **Bash** running a `.ps1` | Custom `.ps1` files |
+| Process control | PowerShell tool | `Get-Process`, `Stop-Process` (prompts — unavoidable) |
+| PS7 loading net9.0 DLLs | PowerShell tool | absolute PS7 path (prompts — unavoidable) |
+
+The "Use" column is the **Claude Code tool**, not the shell language. A `.ps1` still
+runs under PowerShell — it is just launched from the Bash tool so the allowlist
+matches. See the hard rule above.
 
 ### Bash on Windows (Git Bash)
 
