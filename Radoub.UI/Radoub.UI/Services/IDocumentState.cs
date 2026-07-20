@@ -137,8 +137,15 @@ public class DocumentState : IDocumentState
     }
 
     /// <summary>
-    /// Generates a title bar string with the standard format:
-    /// "ToolName - filepath*" or "ToolName - Untitled*" if no file loaded.
+    /// Generates a title bar string in the standard Radoub format (#1572):
+    /// "ToolName - filename.ext" with the filename only, never the full path.
+    ///
+    /// The filename is what identifies a window in the Windows taskbar, where the
+    /// text is truncated aggressively — a leading path pushes it out of view. It
+    /// also keeps the title free of user directory names.
+    ///
+    /// With no file loaded: "ToolName" (plus the optional subtitle), or
+    /// "ToolName - Untitled*" once dirty.
     /// </summary>
     /// <param name="extraInfo">Optional extra info to include (e.g., " (Player)" for BIC files)</param>
     public string GetTitle(string? extraInfo = null)
@@ -153,10 +160,15 @@ public class DocumentState : IDocumentState
             return _titleSuffix != null ? $"{_toolName}{_titleSuffix}" : _toolName;
         }
 
-        var displayPath = UnifiedLogger.SanitizePath(CurrentFilePath);
+        // Filename only. The subtitle is deliberately dropped once a file is open:
+        // it identifies the tool when idle, but competes with the filename here.
+        var displayName = Path.GetFileName(CurrentFilePath);
+        if (string.IsNullOrEmpty(displayName))
+            displayName = CurrentFilePath;
+
         var dirty = _isDirty ? "*" : "";
         var readOnly = IsReadOnly ? " [Read-Only]" : "";
         var extraSuffix = extraInfo ?? "";
-        return $"{_toolName} - {displayPath}{extraSuffix}{readOnly}{dirty}";
+        return $"{_toolName} - {displayName}{extraSuffix}{readOnly}{dirty}";
     }
 }

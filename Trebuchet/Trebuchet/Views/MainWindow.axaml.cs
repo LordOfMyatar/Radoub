@@ -294,7 +294,10 @@ public partial class MainWindow : Window
         }
         else
         {
-            Title = $"{baseTitle} - Radoub Toolset (Alpha)";
+            // #1572: idle title is the bare tool name, matching every other tool.
+            // The module name and tab remain when a module is open — Trebuchet is a
+            // hub, so the tab is the equivalent of a filename here.
+            Title = baseTitle;
         }
     }
 
