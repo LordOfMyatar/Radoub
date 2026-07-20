@@ -45,6 +45,11 @@ public partial class MainWindow
         }
 
         UpdateStatus("Ready");
+
+        // Startup housekeeping, off the first-paint path (#2647)
+        Radoub.UI.Services.StartupCleanupCoordinator.RunDeferredCleanup(
+            SettingsService.Instance.LogRetentionSessions,
+            RadoubSettings.Instance.BackupRetentionDays);
     }
 
     private async Task InitializeGameDataAsync()

@@ -67,6 +67,11 @@ namespace DialogEditor.Views
             _ = WarmupGameDataServiceAsync();
 
             UnifiedLogger.LogStartupMilestone("Parley ready (services + startup load complete)");
+
+            // Startup housekeeping, off the first-paint path (#2647)
+            Radoub.UI.Services.StartupCleanupCoordinator.RunDeferredCleanup(
+                _services.Settings.LogRetentionSessions,
+                Radoub.Formats.Settings.RadoubSettings.Instance.BackupRetentionDays);
         }
 
         /// <summary>

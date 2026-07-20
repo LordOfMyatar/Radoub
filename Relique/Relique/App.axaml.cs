@@ -38,12 +38,8 @@ public partial class App : Application
         // Apply font settings
         ApplyFontSettings();
 
-        // Clean up old log sessions
-        UnifiedLogger.CleanupOldSessions(SettingsService.Instance.LogRetentionSessions);
-
-        // Clean up old backups
-        BackupCleanupService.CleanupExpiredBackups(
-            RadoubSettings.Instance.BackupRetentionDays);
+        // Log-session and backup cleanup run after first paint (#2647) — see
+        // MainWindow's Opened handler.
     }
 
     public override void OnFrameworkInitializationCompleted()

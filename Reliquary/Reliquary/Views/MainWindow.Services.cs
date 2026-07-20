@@ -90,6 +90,11 @@ public partial class MainWindow
             LoadPlaceable(startupFile);
 
         UnifiedLogger.LogStartupMilestone("Reliquary ready (services + startup load complete)");
+
+        // Startup housekeeping, off the first-paint path (#2647)
+        Radoub.UI.Services.StartupCleanupCoordinator.RunDeferredCleanup(
+            SettingsService.Instance.LogRetentionSessions,
+            RadoubSettings.Instance.BackupRetentionDays);
     }
 
     private static string? GetModuleWorkingDirectory()

@@ -124,6 +124,11 @@ public partial class MainWindow : Window
         {
             _viewModel?.OpenSettingsCommand.Execute(null);
         }
+
+        // Startup housekeeping, off the first-paint path (#2647)
+        Radoub.UI.Services.StartupCleanupCoordinator.RunDeferredCleanup(
+            SettingsService.Instance.LogRetentionSessions,
+            Radoub.Formats.Settings.RadoubSettings.Instance.BackupRetentionDays);
     }
 
     private void RestoreWindowState()

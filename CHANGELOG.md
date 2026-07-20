@@ -8,6 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Startup-Cleanup] - 2026-07-20
+**Branch**: `radoub/issue-2647` | **PR**: #TBD
+
+### Fix: Move startup cleanup off the first-paint path (#2647)
+
+- Log-session and backup cleanup now run on a background thread after the window opens, via the new shared `StartupCleanupCoordinator`, instead of blocking startup in `Program.Main` and `App.Initialize`.
+- Removed a duplicate session sweep: every tool ran the same recursive delete twice per launch, once in `UnifiedLogger.Configure` and again in `App.Initialize`.
+- `CleanupOldSessions` now refuses to delete the live session directory, which matters once the sweep runs concurrently with active logging.
+- Measured impact on a machine with normal retention is small (~5 ms) — the sweep is cheap precisely because retention keeps history short. The correctness fixes are the substantive part.
+
+---
+
 ## [Cross-Tool-UX] - 2026-07-19
 **Branch**: `radoub/issue-2653` | **PR**: #2663
 

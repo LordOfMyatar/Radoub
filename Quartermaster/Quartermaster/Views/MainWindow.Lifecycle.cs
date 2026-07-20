@@ -34,6 +34,11 @@ public partial class MainWindow
         // Fire and forget - don't block UI thread
         // Service init and all loading happens in background
         _ = InitializeAndLoadAsync(_windowCts.Token);
+
+        // Startup housekeeping, off the first-paint path (#2647)
+        Radoub.UI.Services.StartupCleanupCoordinator.RunDeferredCleanup(
+            SettingsService.Instance.LogRetentionSessions,
+            Radoub.Formats.Settings.RadoubSettings.Instance.BackupRetentionDays);
     }
 
     private async Task InitializeAndLoadAsync(CancellationToken token)

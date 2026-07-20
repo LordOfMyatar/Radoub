@@ -56,9 +56,10 @@ public static class UnifiedLogger
 
         _configured = true;
 
-        // Initialize and cleanup old sessions
+        // Session cleanup is NOT done here (#2647). Configure runs in Program.Main before
+        // Avalonia starts, so a recursive session-tree delete here blocks first paint.
+        // Tools call RunDeferredCleanup() after the window is open instead.
         EnsureInitialized();
-        CleanupOldSessions(_retainSessions);
 
         LogApplication(LogLevel.INFO, $"{_appName} logging initialized (level: {_currentLogLevel})");
     }
@@ -326,20 +327,45 @@ public static class UnifiedLogger
     /// Cleans up old log sessions based on session count retention.
     /// Keeps the N most recent sessions and deletes older ones.
     /// </summary>
-    public static void CleanupOldSessions(int retainSessionCount)
+    /// <param name="retainSessionCount">Number of recent sessions to keep.</param>
+    /// <param name="baseDirectory">Log root to sweep. Defaults to the configured session root.</param>
+    /// <param name="protectedSessionDirectory">
+    /// A session directory that must never be deleted regardless of age, and which does not
+    /// consume a retention slot. Defaults to the live session (#2647): cleanup now runs
+    /// concurrently with active logging rather than before it, so the directory currently
+    /// open for appending has to be excluded explicitly.
+    /// </param>
+    public static void CleanupOldSessions(
+        int retainSessionCount,
+        string? baseDirectory = null,
+        string? protectedSessionDirectory = null)
     {
         try
         {
-            if (!Directory.Exists(_baseLogDirectory))
+            var logRoot = baseDirectory ?? _baseLogDirectory;
+            var protectedDir = protectedSessionDirectory
+                ?? (baseDirectory == null ? _sessionDirectory : null);
+
+            if (!Directory.Exists(logRoot))
                 return;
 
-            var sessionDirs = Directory.GetDirectories(_baseLogDirectory, "Session_*");
+            var sessionDirs = Directory.GetDirectories(logRoot, "Session_*");
             var sessions = new List<(string Path, DateTime Timestamp)>();
 
             foreach (var sessionDir in sessionDirs)
             {
                 try
                 {
+                    // Never sweep the live session — it is open for appending.
+                    if (protectedDir != null &&
+                        string.Equals(
+                            Path.GetFullPath(sessionDir).TrimEnd(Path.DirectorySeparatorChar),
+                            Path.GetFullPath(protectedDir).TrimEnd(Path.DirectorySeparatorChar),
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
                     var dirName = Path.GetFileName(sessionDir);
                     if (dirName.StartsWith("Session_") && dirName.Length >= 23)
                     {

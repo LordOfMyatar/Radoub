@@ -34,12 +34,8 @@ public partial class App : Application
 
         ApplyFontSettings();
 
-        // Clean up old log sessions
-        UnifiedLogger.CleanupOldSessions(SettingsService.Instance.LogRetentionSessions);
-
-        // Clean up old backups
-        Radoub.UI.Services.BackupCleanupService.CleanupExpiredBackups(
-            Radoub.Formats.Settings.RadoubSettings.Instance.BackupRetentionDays);
+        // Log-session and backup cleanup run after first paint (#2647) — see
+        // MainWindow's Opened handler.
 
         // Initialize spell-checking (async, non-blocking)
         _ = SpellCheckService.Instance.InitializeAsync();
