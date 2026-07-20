@@ -542,13 +542,32 @@ powershell.exe -Command "\$data = Get-Content file.json | ConvertFrom-Json; \$da
 
 ### Which tool for which task
 
-Columns name the Claude Code tool, not the shell language.
+The column names the Claude Code **tool** that dispatches the call, not the language you
+write in. Launching a `.ps1` from Bash still runs PowerShell — Bash is only the dispatcher
+whose allowlist works.
 
 | Task | Tool |
 |------|------|
-| Git, GitHub CLI, file operations | Bash |
+| Git, GitHub CLI, simple file operations | Bash |
 | Any `.ps1` — data processing, JSON parsing | Bash |
 | Process control, PS7 loading net9.0 DLLs | PowerShell |
+
+**Write the logic in PowerShell, not POSIX pipelines.** This is a Windows box: `jq` is not
+installed, and `sed`/`awk`/`xargs` differ from their Linux behavior or mangle Windows paths.
+Reaching for them wastes a cycle on a command that fails or, worse, silently produces the
+wrong answer. Put real work in a `.ps1` and launch it from Bash.
+
+| Instead of | Use |
+|------------|-----|
+| `jq '.field' f.json` | `Get-Content f.json \| ConvertFrom-Json` then `.field` |
+| `sed`/`awk` field munging | `Select-String`, `-split`, `-replace`, `ForEach-Object` |
+| `xargs` | `ForEach-Object` over the pipeline |
+| `wc -l` | `(Get-Content f \| Measure-Object -Line).Lines` |
+| `grep -c` on structured data | parse it as an object, then `.Count` |
+
+Bash is fine for what it does well here: `git`, `gh`, `ls`, `cp`, `mkdir`, and single-purpose
+`grep` over plain text. Anything involving JSON, objects, or multi-step transformation belongs
+in PowerShell.
 
 ### Bash on Windows (Git Bash)
 
