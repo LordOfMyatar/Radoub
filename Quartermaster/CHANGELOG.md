@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.140-alpha] - 2026-07-20
-**Branch**: `quartermaster/issue-2676` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2676` | **PR**: #2697
 
 ### Sprint: Level-Up Wizard Data Integrity (#2676)
 
