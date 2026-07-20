@@ -29,9 +29,7 @@ public static class BackupCleanupService
     private static readonly HashSet<string> FlatFileBuckets =
         new(StringComparer.OrdinalIgnoreCase) { "SearchReplace", ArchivesBucket };
 
-    /// <summary>
-    /// Delete backup directories/files older than retentionDays.
-    /// </summary>
+    /// <summary>Delete backup directories/files older than retentionDays.</summary>
     public static void CleanupExpiredBackups(int retentionDays, string? backupRoot = null)
     {
         var root = backupRoot ?? DefaultBackupRoot;
@@ -69,9 +67,7 @@ public static class BackupCleanupService
         }
     }
 
-    /// <summary>
-    /// Delete all contents of the backup directory.
-    /// </summary>
+    /// <summary>Delete all contents of the backup directory.</summary>
     public static void DeleteAllBackups(string? backupRoot = null)
     {
         var root = backupRoot ?? DefaultBackupRoot;
@@ -104,9 +100,7 @@ public static class BackupCleanupService
         }
     }
 
-    /// <summary>
-    /// Returns (fileCount, totalBytes) for all backup content.
-    /// </summary>
+    /// <summary>Returns (fileCount, totalBytes) for all backup content.</summary>
     public static (int fileCount, long totalBytes) GetBackupSummary(string? backupRoot = null)
     {
         var root = backupRoot ?? DefaultBackupRoot;
@@ -203,9 +197,7 @@ public static class BackupCleanupService
         return deleted;
     }
 
-    /// <summary>
-    /// Parse timestamp from batch backup directory name (yyyyMMdd_HHmmss).
-    /// </summary>
+    /// <summary>Parse timestamp from batch backup directory name (yyyyMMdd_HHmmss).</summary>
     private static bool TryParseTimestamp(string dirName, out DateTime timestamp)
     {
         return DateTime.TryParseExact(dirName, "yyyyMMdd_HHmmss",

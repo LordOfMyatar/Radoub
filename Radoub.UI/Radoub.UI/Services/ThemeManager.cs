@@ -27,30 +27,17 @@ public partial class ThemeManager
     private readonly string? _cachePathOverride;
     private const string DefaultThemeId = "org.radoub.theme.light";
 
-    /// <summary>
-    /// Event raised when a theme is successfully applied.
-    /// UI components can subscribe to refresh their visuals.
-    /// </summary>
+    /// <summary>Raised when a theme is applied. UI components subscribe to refresh their visuals.</summary>
     public event EventHandler? ThemeApplied;
 
-    /// <summary>
-    /// Theme directories (official and user)
-    /// </summary>
+    /// <summary>Theme directories (official and user)</summary>
     private readonly List<string> _themeDirectories = new();
 
-    /// <summary>
-    /// Available themes discovered from theme directories
-    /// </summary>
     public IReadOnlyList<ThemeManifest> AvailableThemes { get { lock (_lock) { return _themes.Values.ToList(); } } }
 
-    /// <summary>
-    /// Currently active theme
-    /// </summary>
     public ThemeManifest? CurrentTheme => _currentTheme;
 
-    /// <summary>
-    /// Gets the singleton instance. Must call Initialize() first.
-    /// </summary>
+    /// <summary>Gets the singleton instance. Must call Initialize() first.</summary>
     /// <exception cref="InvalidOperationException">Thrown if Initialize() has not been called.</exception>
     public static ThemeManager Instance
     {
@@ -240,9 +227,7 @@ public partial class ThemeManager
         UnifiedLogger.LogApplication(LogLevel.INFO, $"[{_toolName}] Discovered {_themes.Count} themes (rescanned)");
     }
 
-    /// <summary>
-    /// Try to load themes from cached file paths. Returns false if any file is missing or corrupt.
-    /// </summary>
+    /// <summary>Try to load themes from cached file paths. Returns false if any file is missing or corrupt.</summary>
     private bool TryLoadFromCache(ThemeCatalogData cached)
     {
         var discovered = new Dictionary<string, ThemeManifest>();
@@ -281,9 +266,7 @@ public partial class ThemeManager
         return true;
     }
 
-    /// <summary>
-    /// Load theme manifest from JSON file
-    /// </summary>
+    /// <summary>Load theme manifest from JSON file</summary>
     private ThemeManifest? LoadThemeManifest(string filePath)
     {
         var json = File.ReadAllText(filePath);
@@ -303,9 +286,7 @@ public partial class ThemeManager
         return manifest;
     }
 
-    /// <summary>
-    /// Apply a theme by ID
-    /// </summary>
+    /// <summary>Apply a theme by ID</summary>
     public bool ApplyTheme(string themeId)
     {
         ThemeManifest? theme;
@@ -389,9 +370,7 @@ public partial class ThemeManager
         }
     }
 
-    /// <summary>
-    /// Get theme by ID
-    /// </summary>
+    /// <summary>Get theme by ID</summary>
     public ThemeManifest? GetTheme(string themeId)
     {
         lock (_lock)
@@ -400,9 +379,7 @@ public partial class ThemeManager
         }
     }
 
-    /// <summary>
-    /// Reload themes from disk
-    /// </summary>
+    /// <summary>Reload themes from disk</summary>
     public void RefreshThemes()
     {
         DiscoverThemes();
@@ -437,9 +414,7 @@ public partial class ThemeManager
         return DefaultThemeId;
     }
 
-    /// <summary>
-    /// Apply the shared theme from RadoubSettings.
-    /// </summary>
+    /// <summary>Apply the shared theme from RadoubSettings.</summary>
     /// <returns>True if a theme was applied successfully</returns>
     public bool ApplySharedTheme()
     {

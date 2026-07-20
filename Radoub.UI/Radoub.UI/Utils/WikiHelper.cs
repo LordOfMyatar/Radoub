@@ -47,9 +47,7 @@ public static class WikiHelper
             : WikiRoot;
     }
 
-    /// <summary>
-    /// Opens the tool's wiki documentation in the default browser.
-    /// </summary>
+    /// <summary>Opens the tool's wiki documentation in the default browser.</summary>
     /// <returns>True if the browser was launched; false if it failed (already logged).</returns>
     public static bool OpenToolDocumentation(string? toolName)
     {

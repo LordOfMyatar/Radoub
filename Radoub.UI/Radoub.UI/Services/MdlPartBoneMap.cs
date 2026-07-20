@@ -43,9 +43,7 @@ public static class MdlPartBoneMap
     };
 }
 
-/// <summary>
-/// String-formatting helpers for NWN body-part MDL ResRefs.
-/// </summary>
+/// <summary>String-formatting helpers for NWN body-part MDL ResRefs.</summary>
 public static class MdlPartNaming
 {
     /// <summary>

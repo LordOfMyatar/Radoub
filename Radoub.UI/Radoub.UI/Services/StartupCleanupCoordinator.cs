@@ -53,8 +53,6 @@ public static class StartupCleanupCoordinator
         });
     }
 
-    /// <summary>
-    /// Test hook: allow a fresh run within the same process.
-    /// </summary>
+    /// <summary>Test hook: allow a fresh run within the same process.</summary>
     internal static void ResetForTests() => Interlocked.Exchange(ref _started, 0);
 }

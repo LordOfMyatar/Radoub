@@ -62,9 +62,7 @@ public class ModuleSearchService
         _factory = factory ?? throw new ArgumentNullException(nameof(factory));
     }
 
-    /// <summary>
-    /// Search all matching files in a module directory.
-    /// </summary>
+    /// <summary>Search all matching files in a module directory.</summary>
     /// <param name="modulePath">Path to the unpacked module directory</param>
     /// <param name="criteria">Search criteria including pattern and filters</param>
     /// <param name="progress">Optional progress reporter</param>
@@ -175,9 +173,7 @@ public class ModuleSearchService
         };
     }
 
-    /// <summary>
-    /// Search a single file and return results.
-    /// </summary>
+    /// <summary>Search a single file and return results.</summary>
     public FileSearchResult SearchSingleFile(string filePath, SearchCriteria criteria)
     {
         if (string.IsNullOrEmpty(filePath))
@@ -248,9 +244,7 @@ public class ModuleSearchService
         }
     }
 
-    /// <summary>
-    /// Search NWScript (.nss) source as plain text, one match per regex hit, with line numbers.
-    /// </summary>
+    /// <summary>Search NWScript (.nss) source as plain text, one match per regex hit, with line numbers.</summary>
     private FileSearchResult? SearchNssFileInternal(
         string filePath, ushort resourceType, string toolId, SearchCriteria criteria)
     {

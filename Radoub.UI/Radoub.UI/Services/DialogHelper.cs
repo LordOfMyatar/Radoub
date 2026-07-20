@@ -55,12 +55,7 @@ public static class DialogHelper
 
     #region Confirmation Dialogs (Modal)
 
-    /// <summary>
-    /// Shows a Yes/No confirmation dialog.
-    /// </summary>
-    /// <param name="parent">Parent window for centering</param>
-    /// <param name="title">Dialog title</param>
-    /// <param name="message">Message to display</param>
+    /// <summary>Shows a Yes/No confirmation dialog.</summary>
     /// <param name="showDontAskAgain">If true, shows "Don't show this again" checkbox</param>
     /// <param name="onDontAskAgain">Callback when user checks "Don't ask again" and clicks Yes</param>
     /// <returns>True if user clicked Yes, false if No</returns>
@@ -136,12 +131,7 @@ public static class DialogHelper
         return result;
     }
 
-    /// <summary>
-    /// Shows an OK/Cancel confirmation dialog.
-    /// </summary>
-    /// <param name="parent">Parent window for centering</param>
-    /// <param name="title">Dialog title</param>
-    /// <param name="message">Message to display</param>
+    /// <summary>Shows an OK/Cancel confirmation dialog.</summary>
     /// <returns>True if user clicked OK, false if Cancel</returns>
     public static async Task<bool> ShowOkCancelAsync(Window parent, string title, string message)
     {
@@ -189,11 +179,7 @@ public static class DialogHelper
         return result;
     }
 
-    /// <summary>
-    /// Shows an OK/Cancel confirmation dialog with a warning icon.
-    /// </summary>
-    /// <param name="parent">Parent window for centering</param>
-    /// <param name="title">Dialog title</param>
+    /// <summary>Shows an OK/Cancel confirmation dialog with a warning icon.</summary>
     /// <param name="message">Message to display (supports longer text with scrolling)</param>
     /// <returns>True if user clicked OK, false if Cancel</returns>
     public static async Task<bool> ShowWarningConfirmAsync(Window parent, string title, string message)
@@ -270,10 +256,7 @@ public static class DialogHelper
         return result;
     }
 
-    /// <summary>
-    /// Shows a Save/Discard/Cancel dialog for unsaved changes.
-    /// </summary>
-    /// <param name="parent">Parent window for centering</param>
+    /// <summary>Shows a Save/Discard/Cancel dialog for unsaved changes.</summary>
     /// <returns>"Save", "Discard", or "Cancel"</returns>
     public static async Task<string> ShowUnsavedChangesAsync(Window parent)
     {
@@ -319,12 +302,7 @@ public static class DialogHelper
         return result;
     }
 
-    /// <summary>
-    /// Shows an error dialog with Save As option.
-    /// Used when save operation fails.
-    /// </summary>
-    /// <param name="parent">Parent window for centering</param>
-    /// <param name="errorMessage">Error message to display</param>
+    /// <summary>Shows an error dialog with Save As option. Used when a save fails.</summary>
     /// <returns>True if user wants to Save As, false to cancel</returns>
     public static async Task<bool> ShowSaveErrorAsync(Window parent, string errorMessage)
     {
@@ -377,12 +355,7 @@ public static class DialogHelper
 
     #region Message Dialogs (Non-Modal)
 
-    /// <summary>
-    /// Shows an informational message dialog (non-modal).
-    /// </summary>
-    /// <param name="parent">Parent window for positioning</param>
-    /// <param name="title">Dialog title</param>
-    /// <param name="message">Message to display</param>
+    /// <summary>Shows an informational message dialog (non-modal).</summary>
     public static void ShowMessage(Window parent, string title, string message)
     {
         var dialog = new Window
@@ -414,12 +387,7 @@ public static class DialogHelper
         dialog.Show(parent);
     }
 
-    /// <summary>
-    /// Shows an error message dialog (non-modal).
-    /// </summary>
-    /// <param name="parent">Parent window for positioning</param>
-    /// <param name="title">Dialog title</param>
-    /// <param name="message">Error message to display</param>
+    /// <summary>Shows an error message dialog (non-modal).</summary>
     public static void ShowError(Window parent, string title, string message)
     {
         var dialog = new Window

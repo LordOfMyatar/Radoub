@@ -53,9 +53,7 @@ public class ItemResolutionService
         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"ItemResolutionService: Module directory set to: {_moduleDirectory ?? "(none)"}");
     }
 
-    /// <summary>
-    /// Sets the module directory directly for item resolution.
-    /// </summary>
+    /// <summary>Sets the module directory directly for item resolution.</summary>
     public void SetModuleDirectory(string? directory)
     {
         _moduleDirectory = directory;
@@ -63,9 +61,7 @@ public class ItemResolutionService
         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"ItemResolutionService: Module directory set to: {_moduleDirectory ?? "(none)"}");
     }
 
-    /// <summary>
-    /// Resolve item data from a ResRef.
-    /// </summary>
+    /// <summary>Resolve item data from a ResRef.</summary>
     /// <param name="resRef">Item blueprint ResRef</param>
     /// <returns>Resolved item data, or null if not found</returns>
     public ResolvedItemData? ResolveItem(string resRef)
@@ -85,9 +81,7 @@ public class ItemResolutionService
         return data;
     }
 
-    /// <summary>
-    /// Resolve multiple items efficiently.
-    /// </summary>
+    /// <summary>Resolve multiple items efficiently.</summary>
     public Dictionary<string, ResolvedItemData> ResolveItems(IEnumerable<string> resRefs)
     {
         var results = new Dictionary<string, ResolvedItemData>(StringComparer.OrdinalIgnoreCase);
@@ -104,9 +98,7 @@ public class ItemResolutionService
         return results;
     }
 
-    /// <summary>
-    /// Clear the item cache.
-    /// </summary>
+    /// <summary>Clear the item cache.</summary>
     public void ClearCache()
     {
         _cache.Clear();
@@ -260,9 +252,7 @@ public class ItemResolutionService
     }
 }
 
-/// <summary>
-/// Resolved item data from a UTI file.
-/// </summary>
+/// <summary>Resolved item data from a UTI file.</summary>
 public class ResolvedItemData
 {
     public required string ResRef { get; init; }
@@ -277,18 +267,14 @@ public class ResolvedItemData
     public string PropertiesDisplay { get; init; } = string.Empty;
     public string SourceLocation { get; init; } = string.Empty;
 
-    /// <summary>
-    /// Calculate sell price (what player pays to buy from store).
-    /// </summary>
+    /// <summary>Calculate sell price (what player pays to buy from store).</summary>
     /// <param name="markUp">Store markup percentage (100 = base price)</param>
     public int CalculateSellPrice(int markUp)
     {
         return (int)Math.Ceiling(BaseCost * markUp / 100.0);
     }
 
-    /// <summary>
-    /// Calculate buy price (what store pays to buy from player).
-    /// </summary>
+    /// <summary>Calculate buy price (what store pays to buy from player).</summary>
     /// <param name="markDown">Store markdown percentage (100 = full price)</param>
     public int CalculateBuyPrice(int markDown)
     {

@@ -10,9 +10,7 @@ namespace Radoub.UI.Models;
 /// </summary>
 public static class SearchBarCriteriaFactory
 {
-    /// <summary>
-    /// Builds search criteria from the raw SearchBar control values.
-    /// </summary>
+    /// <summary>Builds search criteria from the raw SearchBar control values.</summary>
     /// <param name="pattern">The search pattern text.</param>
     /// <param name="isRegex">Whether the pattern is a regular expression.</param>
     /// <param name="caseSensitive">Whether matching is case-sensitive.</param>

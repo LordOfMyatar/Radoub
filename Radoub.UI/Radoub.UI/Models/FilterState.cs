@@ -2,14 +2,10 @@ using System.Text.Json.Serialization;
 
 namespace Radoub.UI.Models;
 
-/// <summary>
-/// Persisted filter state for ItemFilterPanel.
-/// </summary>
+/// <summary>Persisted filter state for ItemFilterPanel.</summary>
 public class FilterState
 {
-    /// <summary>
-    /// Show base game (Standard / BIF) items.
-    /// </summary>
+    /// <summary>Show base game (Standard / BIF) items.</summary>
     public bool ShowStandard { get; set; } = true;
 
     /// <summary>
@@ -36,24 +32,16 @@ public class FilterState
     [JsonPropertyName("ShowCustom")]
     public bool? LegacyShowCustom { get; set; }
 
-    /// <summary>
-    /// Text search string.
-    /// </summary>
+    /// <summary>Text search string.</summary>
     public string? SearchText { get; set; }
 
-    /// <summary>
-    /// Selected base item type index, or null for "All Types".
-    /// </summary>
+    /// <summary>Selected base item type index, or null for "All Types".</summary>
     public int? SelectedBaseItemIndex { get; set; }
 
-    /// <summary>
-    /// Property search string (searches item properties).
-    /// </summary>
+    /// <summary>Property search string (searches item properties).</summary>
     public string? PropertySearchText { get; set; }
 
-    /// <summary>
-    /// Selected slot filter flag, or null for "All Slots".
-    /// </summary>
+    /// <summary>Selected slot filter flag, or null for "All Slots".</summary>
     public int? SelectedSlotFlag { get; set; }
 
     /// <summary>

@@ -16,29 +16,19 @@ public static class ImageHelper
 {
     #region Standard Portrait Sizes
 
-    /// <summary>
-    /// Tiny portrait size (32x40) - Used for inventory icons.
-    /// </summary>
+    /// <summary>Tiny portrait size (32x40) - Used for inventory icons.</summary>
     public static readonly Size PortraitTiny = new(32, 40);
 
-    /// <summary>
-    /// Small portrait size (64x100) - Used for party bar, dialog speaker.
-    /// </summary>
+    /// <summary>Small portrait size (64x100) - Used for party bar, dialog speaker.</summary>
     public static readonly Size PortraitSmall = new(64, 100);
 
-    /// <summary>
-    /// Medium portrait size (128x200) - Used for character sheet.
-    /// </summary>
+    /// <summary>Medium portrait size (128x200) - Used for character sheet.</summary>
     public static readonly Size PortraitMedium = new(128, 200);
 
-    /// <summary>
-    /// Large portrait size (256x400) - Used for full portrait view.
-    /// </summary>
+    /// <summary>Large portrait size (256x400) - Used for full portrait view.</summary>
     public static readonly Size PortraitLarge = new(256, 400);
 
-    /// <summary>
-    /// Huge portrait size (512x800) - Used for HD portrait mods.
-    /// </summary>
+    /// <summary>Huge portrait size (512x800) - Used for HD portrait mods.</summary>
     public static readonly Size PortraitHuge = new(512, 800);
 
     /// <summary>
@@ -51,9 +41,7 @@ public static class ImageHelper
 
     #region Size Calculation
 
-    /// <summary>
-    /// Calculates the target size that fits within bounds while preserving aspect ratio.
-    /// </summary>
+    /// <summary>Calculates the target size that fits within bounds while preserving aspect ratio.</summary>
     /// <param name="sourceSize">Original image size</param>
     /// <param name="targetBounds">Maximum bounds to fit within</param>
     /// <param name="preserveAspect">If true, preserve aspect ratio (default). If false, stretch to fill.</param>
@@ -87,9 +75,7 @@ public static class ImageHelper
         return new Size(Math.Round(newWidth), Math.Round(newHeight));
     }
 
-    /// <summary>
-    /// Calculates portrait size for a given panel width, maintaining standard aspect ratio.
-    /// </summary>
+    /// <summary>Calculates portrait size for a given panel width, maintaining standard aspect ratio.</summary>
     /// <param name="availableWidth">Available width in pixels</param>
     /// <returns>Size with correct portrait aspect ratio</returns>
     public static Size CalculatePortraitSize(double availableWidth)
@@ -98,9 +84,7 @@ public static class ImageHelper
         return new Size(Math.Round(availableWidth), Math.Round(height));
     }
 
-    /// <summary>
-    /// Gets the nearest standard portrait size for a given dimension.
-    /// </summary>
+    /// <summary>Gets the nearest standard portrait size for a given dimension.</summary>
     /// <param name="width">Target width</param>
     /// <returns>Nearest standard portrait size</returns>
     public static Size GetNearestPortraitSize(double width)
@@ -116,9 +100,7 @@ public static class ImageHelper
 
     #region Bitmap Resizing
 
-    /// <summary>
-    /// Resizes a bitmap to the target size with high quality filtering.
-    /// </summary>
+    /// <summary>Resizes a bitmap to the target size with high quality filtering.</summary>
     /// <param name="source">Source bitmap</param>
     /// <param name="targetSize">Target size</param>
     /// <param name="preserveAspect">If true, maintain aspect ratio within target bounds</param>
@@ -159,9 +141,7 @@ public static class ImageHelper
         return new Bitmap(resultStream);
     }
 
-    /// <summary>
-    /// Resizes a portrait to a standard size with high quality filtering.
-    /// </summary>
+    /// <summary>Resizes a portrait to a standard size with high quality filtering.</summary>
     /// <param name="source">Source portrait bitmap</param>
     /// <param name="targetSize">Target portrait size (use PortraitSmall, PortraitMedium, etc.)</param>
     /// <returns>Resized portrait bitmap</returns>
@@ -285,9 +265,7 @@ public static class ImageHelper
 
     #region Utility Methods
 
-    /// <summary>
-    /// Validates that an image has valid dimensions.
-    /// </summary>
+    /// <summary>Validates that an image has valid dimensions.</summary>
     /// <param name="bitmap">Bitmap to validate</param>
     /// <returns>True if bitmap has valid non-zero dimensions</returns>
     public static bool IsValidBitmap(Bitmap? bitmap)
@@ -297,9 +275,7 @@ public static class ImageHelper
                bitmap.PixelSize.Height > 0;
     }
 
-    /// <summary>
-    /// Gets the aspect ratio of a bitmap.
-    /// </summary>
+    /// <summary>Gets the aspect ratio of a bitmap.</summary>
     /// <param name="bitmap">Bitmap to measure</param>
     /// <returns>Width/Height ratio, or 1.0 if bitmap is null/invalid</returns>
     public static double GetAspectRatio(Bitmap? bitmap)
@@ -310,9 +286,7 @@ public static class ImageHelper
         return (double)bitmap!.PixelSize.Width / bitmap.PixelSize.Height;
     }
 
-    /// <summary>
-    /// Checks if a bitmap appears to be a portrait (roughly 5:8 aspect ratio).
-    /// </summary>
+    /// <summary>Checks if a bitmap appears to be a portrait (roughly 5:8 aspect ratio).</summary>
     /// <param name="bitmap">Bitmap to check</param>
     /// <param name="tolerance">Aspect ratio tolerance (default 0.1)</param>
     /// <returns>True if bitmap has portrait-like aspect ratio</returns>

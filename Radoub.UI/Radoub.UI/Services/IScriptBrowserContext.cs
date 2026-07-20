@@ -3,33 +3,23 @@ using Radoub.Formats.Erf;
 
 namespace Radoub.UI.Services;
 
-/// <summary>
-/// Represents a script entry in the browser with source information.
-/// </summary>
+/// <summary>Represents a script entry in the browser with source information.</summary>
 public class ScriptEntry
 {
     public string Name { get; set; } = "";
     public bool IsBuiltIn { get; set; }
     public string Source { get; set; } = ""; // "Module", "Override", "BIF: filename", "HAK: filename"
 
-    /// <summary>
-    /// If from HAK, the path to the HAK file.
-    /// </summary>
+    /// <summary>If from HAK, the path to the HAK file.</summary>
     public string? HakPath { get; set; }
 
-    /// <summary>
-    /// If from HAK, the ERF resource entry for extraction.
-    /// </summary>
+    /// <summary>If from HAK, the ERF resource entry for extraction.</summary>
     public ErfResourceEntry? ErfEntry { get; set; }
 
-    /// <summary>
-    /// True if this script comes from a HAK file (requires extraction for preview).
-    /// </summary>
+    /// <summary>True if this script comes from a HAK file (requires extraction for preview).</summary>
     public bool IsFromHak => HakPath != null && ErfEntry != null;
 
-    /// <summary>
-    /// Full file path for filesystem scripts.
-    /// </summary>
+    /// <summary>Full file path for filesystem scripts.</summary>
     public string? FilePath { get; set; }
 
     public string DisplayName => IsBuiltIn ? $"○ {Name}" : IsFromHak ? $"☐ {Name}" : Name;
@@ -55,24 +45,16 @@ public interface IScriptBrowserContext
     /// </summary>
     string? NeverwinterNightsPath { get; }
 
-    /// <summary>
-    /// Path to external script editor (optional).
-    /// </summary>
+    /// <summary>Path to external script editor (optional).</summary>
     string? ExternalEditorPath { get; }
 
-    /// <summary>
-    /// Whether game resources (BIF files) are available for built-in script lookup.
-    /// </summary>
+    /// <summary>Whether game resources (BIF files) are available for built-in script lookup.</summary>
     bool GameResourcesAvailable { get; }
 
-    /// <summary>
-    /// Lists all built-in scripts from game BIF files.
-    /// </summary>
+    /// <summary>Lists all built-in scripts from game BIF files.</summary>
     IEnumerable<(string ResRef, string SourcePath)> ListBuiltInScripts();
 
-    /// <summary>
-    /// Finds a resource from game BIF files.
-    /// </summary>
+    /// <summary>Finds a resource from game BIF files.</summary>
     /// <param name="resRef">Resource reference name</param>
     /// <param name="resourceType">Resource type (use ResourceTypes.Nss for scripts)</param>
     byte[]? FindBuiltInResource(string resRef, ushort resourceType);

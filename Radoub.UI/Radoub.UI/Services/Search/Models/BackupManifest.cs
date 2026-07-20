@@ -1,8 +1,6 @@
 namespace Radoub.UI.Services.Search;
 
-/// <summary>
-/// Tracks all files backed up during a batch replace operation.
-/// </summary>
+/// <summary>Tracks all files backed up during a batch replace operation.</summary>
 public class BackupManifest
 {
     /// <summary>Directory containing all backup copies</summary>
@@ -18,9 +16,7 @@ public class BackupManifest
     public List<BackupEntry> Entries { get; init; } = new();
 }
 
-/// <summary>
-/// A single file's backup record with hash for integrity verification.
-/// </summary>
+/// <summary>A single file's backup record with hash for integrity verification.</summary>
 public class BackupEntry
 {
     /// <summary>Original file path that was backed up</summary>

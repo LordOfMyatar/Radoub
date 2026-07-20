@@ -2,9 +2,7 @@ using Radoub.Formats.Search;
 
 namespace Radoub.UI.Services.Search;
 
-/// <summary>
-/// Search results for a single file within a module scan.
-/// </summary>
+/// <summary>Search results for a single file within a module scan.</summary>
 public class FileSearchResult
 {
     /// <summary>Full path to the file that was searched</summary>

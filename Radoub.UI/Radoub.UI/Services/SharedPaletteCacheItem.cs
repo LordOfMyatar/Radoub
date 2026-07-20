@@ -41,9 +41,7 @@ public class SharedPaletteCacheItem
     public bool IsStandard => Source == GameResourceSource.Bif;
 }
 
-/// <summary>
-/// Wrapper for per-source cache files with validation metadata.
-/// </summary>
+/// <summary>Wrapper for per-source cache files with validation metadata.</summary>
 public class SourcePaletteCacheWrapper
 {
     public int Version { get; set; }
@@ -54,9 +52,7 @@ public class SourcePaletteCacheWrapper
     public List<SharedPaletteCacheItem> Items { get; set; } = new();
 }
 
-/// <summary>
-/// Cache statistics for display in settings or diagnostics.
-/// </summary>
+/// <summary>Cache statistics for display in settings or diagnostics.</summary>
 public class SharedPaletteCacheStatistics
 {
     public int TotalItems { get; set; }

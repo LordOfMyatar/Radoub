@@ -6,9 +6,7 @@ using Radoub.Formats.Tlk;
 
 namespace Radoub.UI.Services;
 
-/// <summary>
-/// Information about a LocString's source and available translations.
-/// </summary>
+/// <summary>Information about a LocString's source and available translations.</summary>
 public class LocStringInfo
 {
     public bool HasEmbeddedStrings { get; init; }
@@ -335,9 +333,7 @@ public class TlkService : ITlkService
         }
     }
 
-    /// <summary>
-    /// Invalidate all cached TLK files.
-    /// </summary>
+    /// <summary>Invalidate all cached TLK files.</summary>
     public void InvalidateCache()
     {
         lock (_lock)
@@ -349,14 +345,10 @@ public class TlkService : ITlkService
         }
     }
 
-    /// <summary>
-    /// Check if TLK resources are available (game paths configured).
-    /// </summary>
+    /// <summary>Check if TLK resources are available (game paths configured).</summary>
     public bool IsAvailable => RadoubSettings.Instance.HasGamePaths;
 
-    /// <summary>
-    /// Get available languages from RadoubSettings.
-    /// </summary>
+    /// <summary>Get available languages from RadoubSettings.</summary>
     public IReadOnlyList<Language> GetAvailableLanguages()
     {
         return RadoubSettings.Instance.GetAvailableTlkLanguages().ToList();
@@ -371,9 +363,7 @@ public class TlkService : ITlkService
         return ResolveStrRef(strRef, RadoubSettings.Instance.EffectiveLanguage);
     }
 
-    /// <summary>
-    /// Resolve a StrRef in a specific language with settings-driven TLK auto-loading.
-    /// </summary>
+    /// <summary>Resolve a StrRef in a specific language with settings-driven TLK auto-loading.</summary>
     public string? ResolveStrRef(uint strRef, Language language)
     {
         if (!LanguageHelper.IsValidStrRef(strRef))
@@ -420,9 +410,7 @@ public class TlkService : ITlkService
         return null;
     }
 
-    /// <summary>
-    /// Resolve a CExoLocString using settings-driven language/gender preferences.
-    /// </summary>
+    /// <summary>Resolve a CExoLocString using settings-driven language/gender preferences.</summary>
     public string ResolveLocStringFromSettings(CExoLocString locString, Language? preferredLanguage = null)
     {
         var language = preferredLanguage ?? RadoubSettings.Instance.EffectiveLanguage;
@@ -461,9 +449,7 @@ public class TlkService : ITlkService
         return string.Empty;
     }
 
-    /// <summary>
-    /// Get information about a LocString's source.
-    /// </summary>
+    /// <summary>Get information about a LocString's source.</summary>
     public LocStringInfo GetLocStringInfo(CExoLocString locString)
     {
         var hasEmbedded = locString.LocalizedStrings.Count > 0;
@@ -515,9 +501,7 @@ public class TlkService : ITlkService
         return "Empty";
     }
 
-    /// <summary>
-    /// Get all available translations for a LocString.
-    /// </summary>
+    /// <summary>Get all available translations for a LocString.</summary>
     public Dictionary<Language, string> GetAllTranslations(CExoLocString locString)
     {
         var translations = new Dictionary<Language, string>();
@@ -551,9 +535,7 @@ public class TlkService : ITlkService
         return translations;
     }
 
-    /// <summary>
-    /// Get the TLK file path for the effective language from settings.
-    /// </summary>
+    /// <summary>Get the TLK file path for the effective language from settings.</summary>
     public string? GetCurrentTlkPath()
     {
         return RadoubSettings.Instance.GetTlkPath(
@@ -561,9 +543,7 @@ public class TlkService : ITlkService
             RadoubSettings.Instance.PreferredGender);
     }
 
-    /// <summary>
-    /// Get a summary of TLK status for display.
-    /// </summary>
+    /// <summary>Get a summary of TLK status for display.</summary>
     public string GetTlkStatusSummary()
     {
         if (!IsAvailable)
@@ -579,9 +559,7 @@ public class TlkService : ITlkService
         return $"TLK: {langName} - {displayPath}";
     }
 
-    /// <summary>
-    /// Load a TLK from cache or disk for the given language (settings-driven).
-    /// </summary>
+    /// <summary>Load a TLK from cache or disk for the given language (settings-driven).</summary>
     private TlkFile? GetCachedTlk(Language language)
     {
         lock (_lock)
@@ -614,9 +592,7 @@ public class TlkService : ITlkService
         }
     }
 
-    /// <summary>
-    /// Load custom TLK from cache or disk (settings-driven).
-    /// </summary>
+    /// <summary>Load custom TLK from cache or disk (settings-driven).</summary>
     private TlkFile? GetCachedCustomTlk()
     {
         lock (_lock)

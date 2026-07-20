@@ -33,9 +33,7 @@ public class TextureService
         _gameDataService = gameDataService;
     }
 
-    /// <summary>
-    /// Load and render a PLT texture with the specified colors.
-    /// </summary>
+    /// <summary>Load and render a PLT texture with the specified colors.</summary>
     /// <param name="pltResRef">PLT texture resource reference (without extension)</param>
     /// <param name="colorIndices">Color indices for all PLT layers (optional, uses defaults if null)</param>
     /// <returns>RGBA texture data (width, height, pixels), or null if not found</returns>
@@ -48,7 +46,6 @@ public class TextureService
 
         colorIndices ??= new PltColorIndices();
 
-        // Try to load PLT file
         var pltData = _gameDataService.FindResource(pltResRef.ToLowerInvariant(), ResourceTypes.Plt);
         if (pltData == null || pltData.Length == 0)
         {
@@ -62,7 +59,6 @@ public class TextureService
         {
             var pltFile = PltReader.Read(pltData);
 
-            // Load all required palettes
             var palettes = new Dictionary<int, PaletteData>();
             for (int layerId = 0; layerId <= 9; layerId++)
             {
@@ -92,9 +88,7 @@ public class TextureService
         }
     }
 
-    /// <summary>
-    /// Legacy overload for backward compatibility.
-    /// </summary>
+    /// <summary>Legacy overload for backward compatibility.</summary>
     public (int width, int height, byte[] pixels)? RenderPltTexture(
         string pltResRef,
         int skinColor,
@@ -111,9 +105,7 @@ public class TextureService
         });
     }
 
-    /// <summary>
-    /// Load a regular TGA texture.
-    /// </summary>
+    /// <summary>Load a regular TGA texture.</summary>
     /// <param name="tgaResRef">TGA resource reference (without extension)</param>
     /// <returns>RGBA texture data (width, height, pixels), or null if not found</returns>
     public (int width, int height, byte[] pixels)? LoadTgaTexture(string tgaResRef)
@@ -530,9 +522,7 @@ public class TextureService
         _ => $"layer{layerId}",
     };
 
-    /// <summary>
-    /// Build layer color mapping from PltColorIndices.
-    /// </summary>
+    /// <summary>Build layer color mapping from PltColorIndices.</summary>
     internal static Dictionary<int, int> BuildLayerColors(PltColorIndices colorIndices)
     {
         return new Dictionary<int, int>
@@ -550,9 +540,7 @@ public class TextureService
         };
     }
 
-    /// <summary>
-    /// Load a texture (tries PLT first, then TGA, then DDS, with human fallback).
-    /// </summary>
+    /// <summary>Load a texture (tries PLT first, then TGA, then DDS, with human fallback).</summary>
     public (int width, int height, byte[] pixels)? LoadTexture(
         string resRef,
         PltColorIndices? colorIndices = null)
@@ -561,11 +549,6 @@ public class TextureService
         return result.HasValue ? (result.Value.width, result.Value.height, result.Value.pixels) : null;
     }
 
-    /// <summary>
-    /// Same as <see cref="LoadTexture"/> but also reports whether the texture came from
-    /// a PLT (color-index-dependent) source. Callers can use this to cache non-PLT
-    /// textures across color changes.
-    /// </summary>
     /// <summary>
     /// Reports whether the texture <paramref name="resRef"/> resolves from base-game
     /// BIF rather than a HAK/Module/Override. Used by the preview to warn when a CEP
@@ -653,9 +636,7 @@ public class TextureService
         return LoadTextureWithKind(resRef, colorIndices);
     }
 
-    /// <summary>
-    /// Diagnostic helper: list the non-empty MTR sampler slots as <c>texN=name</c> for logging.
-    /// </summary>
+    /// <summary>Diagnostic helper: list the non-empty MTR sampler slots as <c>texN=name</c> for logging.</summary>
     private static IEnumerable<string> DescribeMtrTextures(MtrFile mtr)
     {
         for (int i = 0; i < mtr.Textures.Length; i++)
@@ -771,9 +752,7 @@ public class TextureService
         return tga ?? dds;
     }
 
-    /// <summary>
-    /// Legacy overload for backward compatibility.
-    /// </summary>
+    /// <summary>Legacy overload for backward compatibility.</summary>
     public (int width, int height, byte[] pixels)? LoadTexture(
         string resRef,
         int skinColor,
@@ -817,9 +796,7 @@ public class TextureService
         }
     }
 
-    /// <summary>
-    /// Clear all cached textures and palettes.
-    /// </summary>
+    /// <summary>Clear all cached textures and palettes.</summary>
     public void ClearCache()
     {
         _paletteCache.Clear();
@@ -952,14 +929,10 @@ public class PltColorIndices
     /// <summary>Tattoo2 color (0-175)</summary>
     public int Tattoo2 { get; set; }
 
-    /// <summary>
-    /// Create default color indices (all 0).
-    /// </summary>
+    /// <summary>Create default color indices (all 0).</summary>
     public PltColorIndices() { }
 
-    /// <summary>
-    /// Create color indices from creature body colors and armor colors.
-    /// </summary>
+    /// <summary>Create color indices from creature body colors and armor colors.</summary>
     public static PltColorIndices FromCreatureAndArmor(
         byte skinColor, byte hairColor, byte tattoo1, byte tattoo2,
         byte metal1 = 0, byte metal2 = 0,

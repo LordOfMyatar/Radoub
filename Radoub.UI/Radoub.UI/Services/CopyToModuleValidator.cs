@@ -9,9 +9,7 @@ namespace Radoub.UI.Services;
 /// </summary>
 public sealed record CopyToModuleResult(string NewResRef, string? NewTag, string? NewName);
 
-/// <summary>
-/// Validation state for the Copy-to-Module dialog's editable fields.
-/// </summary>
+/// <summary>Validation state for the Copy-to-Module dialog's editable fields.</summary>
 public enum CopyToModuleValidationState
 {
     Valid,
@@ -39,9 +37,7 @@ public static class CopyToModuleValidator
     /// <summary>NWN Tag field maximum length.</summary>
     public const int MaxTagLength = 32;
 
-    /// <summary>
-    /// Validate the dialog's current state against target module directory and extension.
-    /// </summary>
+    /// <summary>Validate the dialog's current state against target module directory and extension.</summary>
     /// <param name="resRef">New ResRef (filename stem)</param>
     /// <param name="tag">New Tag (ignored when showTagAndName is false)</param>
     /// <param name="originalResRef">Original ResRef — used to detect "unchanged"</param>

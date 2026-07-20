@@ -48,9 +48,7 @@ public class PaletteColorService
         _gameDataService = gameDataService;
     }
 
-    /// <summary>
-    /// Get the color for a palette index.
-    /// </summary>
+    /// <summary>Get the color for a palette index.</summary>
     /// <param name="paletteName">Palette file name (e.g., "pal_skin01")</param>
     /// <param name="colorIndex">Color index (0-175)</param>
     /// <returns>Avalonia Color, or gray if palette not found</returns>
@@ -64,19 +62,13 @@ public class PaletteColorService
         return Color.FromArgb(a, r, g, b);
     }
 
-    /// <summary>
-    /// Get the skin color for a palette index.
-    /// </summary>
+    /// <summary>Get the skin color for a palette index.</summary>
     public Color GetSkinColor(byte colorIndex) => GetPaletteColor(Palettes.Skin, colorIndex);
 
-    /// <summary>
-    /// Get the hair color for a palette index.
-    /// </summary>
+    /// <summary>Get the hair color for a palette index.</summary>
     public Color GetHairColor(byte colorIndex) => GetPaletteColor(Palettes.Hair, colorIndex);
 
-    /// <summary>
-    /// Get the tattoo color for a palette index (both tattoos use same palette).
-    /// </summary>
+    /// <summary>Get the tattoo color for a palette index (both tattoos use same palette).</summary>
     public Color GetTattooColor(byte colorIndex) => GetPaletteColor(Palettes.Tattoo1, colorIndex);
 
     /// <summary>
@@ -107,9 +99,7 @@ public class PaletteColorService
         return stops;
     }
 
-    /// <summary>
-    /// Create a LinearGradientBrush for a palette row.
-    /// </summary>
+    /// <summary>Create a LinearGradientBrush for a palette row.</summary>
     public LinearGradientBrush CreateGradientBrush(string paletteName, byte colorIndex)
     {
         var stops = GetPaletteGradient(paletteName, colorIndex);

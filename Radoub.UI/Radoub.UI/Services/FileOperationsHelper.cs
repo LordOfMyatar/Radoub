@@ -4,9 +4,7 @@ using Avalonia.Controls;
 
 namespace Radoub.UI.Services;
 
-/// <summary>
-/// Result of a dirty-check prompt.
-/// </summary>
+/// <summary>Result of a dirty-check prompt.</summary>
 public enum DirtyCheckResult
 {
     /// <summary>User chose to save first (caller should save, then proceed).</summary>
@@ -54,9 +52,7 @@ public static class FileOperationsHelper
         };
     }
 
-    /// <summary>
-    /// Checks if the document is dirty using an IDocumentState instance.
-    /// </summary>
+    /// <summary>Checks if the document is dirty using an IDocumentState instance.</summary>
     /// <param name="parent">Parent window for dialog centering</param>
     /// <param name="documentState">The document state tracker</param>
     /// <returns>The result indicating what the caller should do</returns>

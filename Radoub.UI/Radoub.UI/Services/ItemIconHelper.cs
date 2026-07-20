@@ -10,9 +10,7 @@ public static class ItemIconHelper
     // See: https://nwn.wiki/display/NWN1/baseitems.2da
     private const string IconsPath = "avares://Radoub.UI/Assets/Icons/";
 
-    /// <summary>
-    /// Gets the icon path for a base item type.
-    /// </summary>
+    /// <summary>Gets the icon path for a base item type.</summary>
     public static string GetIconPath(int baseItem)
     {
         return baseItem switch
@@ -154,9 +152,7 @@ public static class ItemIconHelper
         };
     }
 
-    /// <summary>
-    /// Gets the icon path for an equipment slot flag.
-    /// </summary>
+    /// <summary>Gets the icon path for an equipment slot flag.</summary>
     public static string GetSlotIconPath(int slotFlag)
     {
         return slotFlag switch

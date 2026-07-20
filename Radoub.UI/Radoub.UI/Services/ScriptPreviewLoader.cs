@@ -22,9 +22,7 @@ public class ScriptPreviewLoader
         _hakScanner = hakScanner;
     }
 
-    /// <summary>
-    /// Loads script content based on script source (module, HAK, or built-in).
-    /// </summary>
+    /// <summary>Loads script content based on script source (module, HAK, or built-in).</summary>
     /// <param name="scriptEntry">The script to load</param>
     /// <param name="overridePath">Optional override path for module scripts</param>
     /// <returns>Script content with source header, or error message if not found</returns>

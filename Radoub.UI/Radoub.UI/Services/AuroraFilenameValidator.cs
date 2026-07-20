@@ -7,14 +7,10 @@ namespace Radoub.UI.Services;
 /// </summary>
 public static class AuroraFilenameValidator
 {
-    /// <summary>
-    /// Maximum filename length for Aurora Engine (excluding extension).
-    /// </summary>
+    /// <summary>Maximum filename length for Aurora Engine (excluding extension).</summary>
     public const int MaxFilenameLength = 16;
 
-    /// <summary>
-    /// Validates a filename for Aurora Engine compatibility.
-    /// </summary>
+    /// <summary>Validates a filename for Aurora Engine compatibility.</summary>
     /// <param name="filename">Filename without extension</param>
     /// <returns>Validation result with any errors</returns>
     public static ValidationResult Validate(string filename)
@@ -50,9 +46,7 @@ public static class AuroraFilenameValidator
         return new ValidationResult(errors.Count == 0, errors);
     }
 
-    /// <summary>
-    /// Suggests a valid filename based on the input.
-    /// </summary>
+    /// <summary>Suggests a valid filename based on the input.</summary>
     /// <param name="filename">Original filename</param>
     /// <returns>Sanitized filename that passes validation (may be truncated)</returns>
     public static string Sanitize(string filename)
@@ -85,9 +79,7 @@ public static class AuroraFilenameValidator
     }
 }
 
-/// <summary>
-/// Result of filename validation.
-/// </summary>
+/// <summary>Result of filename validation.</summary>
 public class ValidationResult
 {
     public bool IsValid { get; }
@@ -99,8 +91,6 @@ public class ValidationResult
         Errors = errors.ToList().AsReadOnly();
     }
 
-    /// <summary>
-    /// Gets all errors as a single string, one per line.
-    /// </summary>
+    /// <summary>Gets all errors as a single string, one per line.</summary>
     public string GetErrorMessage() => string.Join("\n", Errors);
 }

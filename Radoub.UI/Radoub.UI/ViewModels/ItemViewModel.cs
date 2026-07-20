@@ -21,9 +21,7 @@ public partial class ItemViewModel : ObservableObject
     private readonly int _cachedBaseItem;
     private readonly uint _cachedValue;
 
-    /// <summary>
-    /// Creates a new ItemViewModel wrapping a UtiFile.
-    /// </summary>
+    /// <summary>Creates a new ItemViewModel wrapping a UtiFile.</summary>
     /// <param name="item">The underlying item data.</param>
     /// <param name="resolvedName">Display name (from TLK or LocalizedName).</param>
     /// <param name="baseItemName">Name of base item type (from baseitems.2da).</param>
@@ -55,9 +53,7 @@ public partial class ItemViewModel : ObservableObject
         Source = GameResourceSource.Bif;
     }
 
-    /// <summary>
-    /// Creates a new ItemViewModel for a backpack item with inventory metadata.
-    /// </summary>
+    /// <summary>Creates a new ItemViewModel for a backpack item with inventory metadata.</summary>
     public ItemViewModel(
         UtiFile item,
         string resolvedName,
@@ -81,101 +77,69 @@ public partial class ItemViewModel : ObservableObject
     /// </summary>
     public UtiFile? Item => _item;
 
-    /// <summary>
-    /// Display name resolved from TLK or LocalizedName.
-    /// </summary>
+    /// <summary>Display name resolved from TLK or LocalizedName.</summary>
     public string Name { get; set; }
 
-    /// <summary>
-    /// Blueprint resource reference (filename without extension).
-    /// </summary>
+    /// <summary>Blueprint resource reference (filename without extension).</summary>
     public string ResRef
     {
         get => _item?.TemplateResRef ?? _cachedResRef ?? string.Empty;
         init => _cachedResRef = value;
     }
 
-    /// <summary>
-    /// Item tag for scripting reference.
-    /// </summary>
+    /// <summary>Item tag for scripting reference.</summary>
     public string Tag
     {
         get => _item?.Tag ?? _cachedTag ?? string.Empty;
         init => _cachedTag = value;
     }
 
-    /// <summary>
-    /// Base item type name (e.g., "Longsword", "Ring", "Amulet").
-    /// </summary>
+    /// <summary>Base item type name (e.g., "Longsword", "Ring", "Amulet").</summary>
     public string BaseItemName { get; set; }
 
-    /// <summary>
-    /// Base item type index into baseitems.2da.
-    /// </summary>
+    /// <summary>Base item type index into baseitems.2da.</summary>
     public int BaseItem
     {
         get => _item?.BaseItem ?? _cachedBaseItem;
         init => _cachedBaseItem = value;
     }
 
-    /// <summary>
-    /// Item value (Cost + AddCost).
-    /// </summary>
+    /// <summary>Item value (Cost + AddCost).</summary>
     public uint Value
     {
         get => _item != null ? _item.Cost + _item.AddCost : _cachedValue;
         init => _cachedValue = value;
     }
 
-    /// <summary>
-    /// Formatted display of item properties.
-    /// </summary>
+    /// <summary>Formatted display of item properties.</summary>
     public string PropertiesDisplay { get; set; }
 
-    /// <summary>
-    /// Number of item properties.
-    /// </summary>
+    /// <summary>Number of item properties.</summary>
     public int PropertyCount => _item?.Properties.Count ?? 0;
 
-    /// <summary>
-    /// Selection state for checkbox column.
-    /// </summary>
+    /// <summary>Selection state for checkbox column.</summary>
     [ObservableProperty]
     private bool _isSelected;
 
-    /// <summary>
-    /// Stack size for stackable items.
-    /// </summary>
+    /// <summary>Stack size for stackable items.</summary>
     public ushort StackSize => _item?.StackSize ?? 1;
 
-    /// <summary>
-    /// True if item is a plot item.
-    /// </summary>
+    /// <summary>True if item is a plot item.</summary>
     public bool IsPlot => _item?.Plot ?? false;
 
-    /// <summary>
-    /// True if item is cursed (undroppable).
-    /// </summary>
+    /// <summary>True if item is cursed (undroppable).</summary>
     public bool IsCursed => _item?.Cursed ?? false;
 
-    /// <summary>
-    /// Source of the item resource.
-    /// </summary>
+    /// <summary>Source of the item resource.</summary>
     public GameResourceSource Source { get; init; }
 
-    /// <summary>
-    /// True if item is from base game (BIF).
-    /// </summary>
+    /// <summary>True if item is from base game (BIF).</summary>
     public bool IsStandard => Source == GameResourceSource.Bif;
 
-    /// <summary>
-    /// True if item is from custom content (Override, HAK, or Module).
-    /// </summary>
+    /// <summary>True if item is from custom content (Override, HAK, or Module).</summary>
     public bool IsCustom => Source != GameResourceSource.Bif;
 
-    /// <summary>
-    /// Specific source file or archive name (e.g., "templates.bif", "cep2_add_wpn.hak").
-    /// </summary>
+    /// <summary>Specific source file or archive name (e.g., "templates.bif", "cep2_add_wpn.hak").</summary>
     public string SourceLocation { get; set; } = string.Empty;
 
     /// <summary>
@@ -184,9 +148,7 @@ public partial class ItemViewModel : ObservableObject
     /// </summary>
     public string IconPath => ItemIconHelper.GetIconPath(BaseItem);
 
-    /// <summary>
-    /// Delegate for lazy loading icon bitmaps.
-    /// </summary>
+    /// <summary>Delegate for lazy loading icon bitmaps.</summary>
     public delegate Bitmap? IconLoader(UtiFile item);
 
     private Bitmap? _iconBitmap;
@@ -261,9 +223,7 @@ public partial class ItemViewModel : ObservableObject
     [ObservableProperty]
     private int _equipableSlotFlags;
 
-    /// <summary>
-    /// True if this item can be equipped in at least one slot.
-    /// </summary>
+    /// <summary>True if this item can be equipped in at least one slot.</summary>
     public bool IsEquipable => EquipableSlotFlags != 0;
 
     #endregion
@@ -288,9 +248,7 @@ public partial class ItemViewModel : ObservableObject
     [ObservableProperty]
     private bool _isDropable;
 
-    /// <summary>
-    /// If true, item can be pickpocketed from creature.
-    /// </summary>
+    /// <summary>If true, item can be pickpocketed from creature.</summary>
     [ObservableProperty]
     private bool _isPickpocketable;
 

@@ -29,9 +29,7 @@ public class GameDataCacheService<T> where T : class
         WriteIndented = false // Compact for faster read/write
     };
 
-    /// <summary>
-    /// Create a cache service for a specific tool and cache type.
-    /// </summary>
+    /// <summary>Create a cache service for a specific tool and cache type.</summary>
     /// <param name="toolName">Tool name (e.g., "Quartermaster", "Fence")</param>
     /// <param name="cacheName">Cache identifier (e.g., "palette", "feats")</param>
     /// <param name="version">Cache version - bump to invalidate existing caches</param>
@@ -45,9 +43,7 @@ public class GameDataCacheService<T> where T : class
         _cacheFilePath = Path.Combine(_cacheDirectory, $"{cacheName}_cache.json");
     }
 
-    /// <summary>
-    /// Check if a valid cache exists for the current game paths.
-    /// </summary>
+    /// <summary>Check if a valid cache exists for the current game paths.</summary>
     public bool HasValidCache()
     {
         if (!File.Exists(_cacheFilePath))
@@ -87,9 +83,7 @@ public class GameDataCacheService<T> where T : class
         }
     }
 
-    /// <summary>
-    /// Load cached items.
-    /// </summary>
+    /// <summary>Load cached items.</summary>
     public List<T>? LoadCache()
     {
         try
@@ -111,9 +105,7 @@ public class GameDataCacheService<T> where T : class
         return null;
     }
 
-    /// <summary>
-    /// Save items to cache.
-    /// </summary>
+    /// <summary>Save items to cache.</summary>
     public async Task SaveCacheAsync(List<T> items)
     {
         try
@@ -145,9 +137,7 @@ public class GameDataCacheService<T> where T : class
         }
     }
 
-    /// <summary>
-    /// Delete the cache file.
-    /// </summary>
+    /// <summary>Delete the cache file.</summary>
     public void ClearCache()
     {
         try
@@ -164,9 +154,7 @@ public class GameDataCacheService<T> where T : class
         }
     }
 
-    /// <summary>
-    /// Get cache file info for display.
-    /// </summary>
+    /// <summary>Get cache file info for display.</summary>
     public CacheInfo? GetCacheInfo()
     {
         if (!File.Exists(_cacheFilePath))
@@ -197,15 +185,11 @@ public class GameDataCacheService<T> where T : class
         return null;
     }
 
-    /// <summary>
-    /// Get the cache file path (for debugging/display).
-    /// </summary>
+    /// <summary>Get the cache file path (for debugging/display).</summary>
     public string CacheFilePath => _cacheFilePath;
 }
 
-/// <summary>
-/// Generic cache wrapper that stores metadata alongside items.
-/// </summary>
+/// <summary>Generic cache wrapper that stores metadata alongside items.</summary>
 /// <typeparam name="T">The type of items being cached</typeparam>
 public class CacheWrapper<T>
 {
@@ -216,9 +200,7 @@ public class CacheWrapper<T>
     public List<T> Items { get; set; } = new();
 }
 
-/// <summary>
-/// Cache metadata for display in settings UI.
-/// </summary>
+/// <summary>Cache metadata for display in settings UI.</summary>
 public class CacheInfo
 {
     public string CacheName { get; set; } = string.Empty;

@@ -24,9 +24,7 @@ public interface ISharedPaletteCacheService
     /// </summary>
     List<SharedPaletteCacheItem>? LoadSourceCache(string source, string? sourcePath = null);
 
-    /// <summary>
-    /// Save items to a source-specific cache file.
-    /// </summary>
+    /// <summary>Save items to a source-specific cache file.</summary>
     Task SaveSourceCacheAsync(
         string source,
         List<SharedPaletteCacheItem> items,
@@ -68,29 +66,19 @@ public interface ISharedPaletteCacheService
         int categoryId,
         IEnumerable<string>? activeHakPaths = null);
 
-    /// <summary>
-    /// Clear the in-memory aggregated cache (forces reload from disk).
-    /// </summary>
+    /// <summary>Clear the in-memory aggregated cache (forces reload from disk).</summary>
     void InvalidateAggregatedCache();
 
-    /// <summary>
-    /// Clear a specific source cache file.
-    /// </summary>
+    /// <summary>Clear a specific source cache file.</summary>
     void ClearSourceCache(string source, string? sourcePath = null);
 
-    /// <summary>
-    /// Clear all cache files.
-    /// </summary>
+    /// <summary>Clear all cache files.</summary>
     void ClearAllCaches();
 
-    /// <summary>
-    /// Get cache statistics for display.
-    /// </summary>
+    /// <summary>Get cache statistics for display.</summary>
     SharedPaletteCacheStatistics GetCacheStatistics();
 
-    /// <summary>
-    /// Get the cache directory path.
-    /// </summary>
+    /// <summary>Get the cache directory path.</summary>
     string CacheDirectory { get; }
 
     /// <summary>

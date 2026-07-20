@@ -49,9 +49,7 @@ public static class VersionHelper
         return "1.0.0";
     }
 
-    /// <summary>
-    /// Gets the semantic version string for the entry assembly (main application).
-    /// </summary>
+    /// <summary>Gets the semantic version string for the entry assembly (main application).</summary>
     /// <returns>Version string (e.g., "0.1.0-alpha")</returns>
     public static string GetEntryAssemblyVersion()
     {

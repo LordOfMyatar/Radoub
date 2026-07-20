@@ -68,9 +68,7 @@ namespace Radoub.UI.Services
                    _state.ToolsLaunched.Contains("quartermaster");
         }
 
-        /// <summary>
-        /// Gets a list of tools that still need to be launched to unlock Sea-Sick.
-        /// </summary>
+        /// <summary>Gets a list of tools that still need to be launched to unlock Sea-Sick.</summary>
         public List<string> GetMissingTools()
         {
             var missing = new List<string>();
