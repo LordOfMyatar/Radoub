@@ -1,129 +1,89 @@
 # Documentation Updates
 
-Update wiki documentation after code changes. Handles user docs (requires review) and developer docs (Claude-authored).
-
-## Upfront Questions
-
-**IMPORTANT**: Gather ALL required user input at the start, then execute autonomously.
-
-Before analyzing or updating documentation, collect these answers in ONE interaction:
-
-1. **Scope**: "Which documentation to update?" [both/dev-only/user-only]
-2. **Commit Confirmation**: "Auto-commit and push developer docs when complete?" [y/n]
-3. **User Docs Location**: "Stage user docs in NonPublic folder for review?" [y/n]
-
-After collecting answers, proceed through all steps without further prompts unless errors occur.
+Update wiki documentation after code changes. Developer docs are Claude-authored and
+committed; user docs are staged for human review.
 
 ## Usage
 
 ```
-/documentation --dev-docs          # Developer documentation only
-/documentation --user-docs         # User documentation only (staged for review)
-/documentation                     # Both types
+/documentation [--dev-docs | --user-docs] [--dry-run] [--verbose]
 ```
 
-## Scope
+No flag does both. Ask once, up front: scope (both / dev-only / user-only), whether to
+auto-commit and push the developer docs, and whether to stage user docs in NonPublic. Then run
+without further prompts unless something errors.
 
-### User Documentation
-- Getting started guides
-- Feature explanations
-- Screenshots and tutorials
-- **Requires human review before publishing**
+Wiki repo: `d:/LOM/workspace/Radoub.wiki/`
 
-### Developer Documentation
-- Architecture diagrams (Mermaid)
-- Data flows
-- Code relationships
-- **Claude-authored, clinical and terse**
+| Doc type | Authored by | Published |
+|----------|-------------|-----------|
+| Developer — architecture, data flows, code relationships | Claude, clinical and terse | Committed after confirmation |
+| User — getting started, feature guides, tutorials | Drafted only | Staged for human review |
 
-## Triggers
+Check developer docs whenever tool code, `Radoub.Formats`, or `Radoub.UI` changes. Refactors
+especially — they move relationships the diagrams describe.
 
-Developer documentation updates should be checked when:
-- Parley code changes
-- Manifest code changes
-- Quartermaster code changes
-- Fence code changes
-- Relique code changes
-- Trebuchet code changes
-- Radoub.Formats changes
-- Radoub.UI changes
-- Refactors (change relationships/references)
+## Phase 1 — Identify
 
-## Workflow
-
-### Step 1: Identify Changed Areas
+### 1.1 Changed files
 
 ```bash
-# Get changed files from current branch vs main
-git diff main...HEAD --name-only
+# Triple-dot (main...HEAD) trips the sandbox path-traversal guard (#2468).
+git diff --name-only "$(git merge-base main HEAD)" HEAD
 ```
 
-Categorize by tool:
-- `Parley/**` → Parley wiki pages
-- `Manifest/**` → Manifest wiki pages
-- `Quartermaster/**` → Quartermaster wiki pages
-- `Radoub.Formats/**` → Radoub-Formats wiki pages
+### 1.2 Map to wiki pages
 
-### Step 2: Map Changes to Wiki Pages
-
-| Code Path | Wiki Page |
+| Code path | Wiki page |
 |-----------|-----------|
-| `Parley/Parley/Services/` | Parley-Developer-Architecture |
-| `Parley/Parley/ViewModels/` | Parley-Developer-Architecture |
+| `Parley/Parley/Services/`, `ViewModels/` | Parley-Developer-Architecture |
 | `Parley/Parley/Views/` | Parley-Developer-Architecture (UI section) |
-| `Manifest/Manifest/Services/` | Manifest-Developer-Architecture |
-| `Quartermaster/Quartermaster/` | Quartermaster-Developer-Architecture |
-| `Relique/Relique/` | Relique-Developer-Architecture |
-| `Radoub.Formats/Radoub.Formats/` | Radoub-Formats |
-| `Radoub.UI/` | Radoub-UI-Developer |
 | Copy/paste logic | Parley-Developer-CopyPaste |
 | Delete behavior | Parley-Developer-Delete-Behavior |
 | Scrap system | Parley-Developer-Scrap-System |
 | Test infrastructure | Parley-Developer-Testing |
+| `Manifest/Manifest/Services/` | Manifest-Developer-Architecture |
+| `Quartermaster/Quartermaster/` | Quartermaster-Developer-Architecture |
+| `Relique/Relique/` | Relique-Developer-Architecture |
+| `Reliquary/Reliquary/` | Reliquary-Developer-Architecture |
+| `Fence/Fence/` | Fence-Developer-Architecture |
+| `Trebuchet/Trebuchet/` | Trebuchet-Developer-Architecture |
+| `Radoub.Formats/` | Radoub-Formats plus the specific format page |
+| `Radoub.UI/` | Radoub-UI-Developer |
 
-### Step 3: Check Freshness Dates
-
-Wiki repo: `d:\LOM\workspace\Radoub.wiki\`
+### 1.3 Check freshness
 
 ```bash
-cd d:\LOM\workspace\Radoub.wiki
-# Check freshness dates at bottom of relevant pages
-grep -l "Page freshness:" *.md | xargs grep "Page freshness:"
+grep -r "Page freshness:" d:/LOM/workspace/Radoub.wiki/*.md
 ```
 
-**Staleness thresholds** (pages older than this with related code changes are STALE):
+A page is stale when it exceeds its threshold **and** related code changed:
 
 | Tool | Threshold |
 |------|-----------|
-| Parley | 60 days |
-| Manifest | 60 days |
-| Quartermaster | 30 days |
-| Fence | 30 days |
-| Relique | 30 days |
-| Trebuchet | 30 days |
-| Radoub.Formats | 30 days |
-| Radoub.UI | 30 days |
+| Parley, Manifest | 60 days |
+| Everything else | 30 days |
 
-Parley and Manifest use the longer window because their codebases are winding down and most changes affecting them are Radoub-wide refactors rather than tool-specific feature work.
+Parley and Manifest get the longer window because their codebases are winding down — most
+changes touching them are Radoub-wide refactors rather than tool work.
 
-### Step 4: Developer Docs Updates
+## Phase 2 — Update developer docs
 
-**Style requirements:**
-- Clinical, terse language
-- No marketing speak
-- Technical accuracy over readability
-- Data flows shown with Mermaid diagrams
-- Small relationships use arrows: `A → B → C`
+Read the page, find the sections the code changed, update the architecture description and
+any Mermaid diagram whose relationships moved, then set the freshness date to today. Stage
+without committing yet.
 
-**Mermaid diagram standards:**
+Correct anything the change made false. A page describing behavior that no longer exists is
+worse than an old date, because it reads as current.
+
+Style: clinical and terse, no marketing, technical accuracy over readability. Small
+relationships inline as `A → B → C`; larger ones as diagrams.
 
 ```mermaid
 flowchart LR
     A[Component] --> B[Service]
     B --> C[Model]
 ```
-
-For complex flows:
 
 ```mermaid
 sequenceDiagram
@@ -136,49 +96,30 @@ sequenceDiagram
     VM-->>UI: Update
 ```
 
-**Update process:**
+## Phase 3 — Draft user docs
 
-1. Read current wiki page
-2. Identify sections affected by code changes
-3. Update architecture descriptions
-4. Update/add Mermaid diagrams for changed data flows
-5. Update freshness date to today
-6. Stage changes (don't commit yet for dev docs)
+Identify user-facing changes from the CHANGELOG, list the pages needing updates, and draft
+them at `NonPublic/[Tool]/wiki-draft-[page-name].md`.
 
-### Step 5: User Docs Updates
+**Never edit user wiki pages directly.** Stage the draft and report it; the human reviews and
+publishes.
 
-**For `--user-docs` flag:**
+## Phase 4 — Commit and report
 
-1. Identify user-facing changes from CHANGELOG
-2. List wiki pages that need updates
-3. Draft updates in NonPublic folder: `[Tool]/NonPublic/wiki-draft-[page-name].md`
-4. Report drafts to user for review
-
-**Do NOT directly update user wiki pages. Stage for review.**
-
-### Step 6: Commit Developer Docs
+Only developer docs, only after confirmation. Use `git -C` rather than `cd` — a `cd` prefix
+is blocked by `.claude/hooks/check-cd-prefix.sh`.
 
 ```bash
-cd d:\LOM\workspace\Radoub.wiki
-git add .
-git status
-```
-
-**Note**: User already answered commit confirmation in upfront questions. If confirmed:
-```bash
-git commit -m "Update developer docs for PR #[number]
+git -C d:/LOM/workspace/Radoub.wiki add .
+git -C d:/LOM/workspace/Radoub.wiki commit -m "Update developer docs for PR #[number]
 
 Pages updated:
 - [page1]
 - [page2]
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
-git push
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
+git -C d:/LOM/workspace/Radoub.wiki push
 ```
-
-### Step 7: Generate Summary
 
 ```markdown
 ## Documentation Update Summary
@@ -186,49 +127,28 @@ git push
 **PR**: #[number]
 **Date**: [today]
 
----
-
 ### Developer Documentation
-
 | Page | Status | Changes |
 |------|--------|---------|
 | [Page-Name] | ✅ Updated | [brief description] |
 | [Page-Name] | ⏭️ No changes needed | - |
 
-**Freshness dates updated**: [list pages]
-
 ### User Documentation
-
-| Page | Status | Draft Location |
-|------|--------|----------------|
-| [Page-Name] | 📝 Draft ready | [Tool]/NonPublic/wiki-draft-[name].md |
-| [Page-Name] | ⏭️ No changes needed | - |
-
-**Note**: User docs require review before publishing.
-
----
-
-### Files Updated
-
-Wiki pages:
-- `d:\LOM\workspace\Radoub.wiki\[Page-Name].md`
-
-Draft files (if any):
-- `[Tool]/NonPublic/wiki-draft-[name].md`
+| Page | Status | Draft |
+|------|--------|-------|
+| [Page-Name] | 📝 Ready for review | NonPublic/[Tool]/wiki-draft-[name].md |
 ```
 
-## Page Templates
+## New developer page template
 
-### New Developer Architecture Page
-
-```markdown
+````markdown
 # [Tool]-Developer-Architecture
 
 Technical architecture for [Tool].
 
 ## Overview
 
-[1-2 sentences describing the tool's purpose]
+[1-2 sentences on the tool's purpose]
 
 ## Component Structure
 
@@ -236,15 +156,12 @@ Technical architecture for [Tool].
 flowchart TD
     subgraph Views
         V1[MainWindow]
-        V2[...]
     end
     subgraph ViewModels
         VM1[MainViewModel]
-        VM2[...]
     end
     subgraph Services
         S1[FileService]
-        S2[...]
     end
     V1 --> VM1
     VM1 --> S1
@@ -282,18 +199,4 @@ Dependencies: `ServiceA` → `ServiceB`
 ---
 
 *Page freshness: YYYY-MM-DD*
-```
-
-## Flags
-
-- `--dev-docs`: Developer documentation only (Claude-authored)
-- `--user-docs`: User documentation only (staged for review)
-- `--dry-run`: Show what would be updated without making changes
-- `--verbose`: Show detailed analysis
-
-## Notes
-
-- Always update freshness dates when modifying pages
-- Developer docs are pushed directly after user confirmation
-- User docs are staged in NonPublic for human review
-- Refactors especially need diagram updates (relationships change)
+````

@@ -278,127 +278,100 @@ UI uniformity, file-browser adoption, versioning, common mistakes). Not auto-loa
 
 ## Testing Requirements
 
-**Before Committing**:
-- Run tool-specific tests (see tool CLAUDE.md)
-- Verify affected tool(s) build successfully
-- Check for hardcoded paths (privacy)
-- Verify cross-platform compatibility if applicable
+**Before committing**: run the affected tool's tests, confirm it builds, and check for
+hardcoded paths.
 
-**UI Test Stability (FlaUI + Avalonia)**:
-- Avalonia apps can crash with `SkiaSharp.SKCanvas.Flush()` errors if closed during mid-render
-- Use `App.Close()` to target the specific test process (not Alt+F4, which goes to focused window)
-- Add delays before closing to let Avalonia's compositor finish pending renders
-- Wait for process to fully exit between tests to prevent resource conflicts
-- See `FlaUITestBase.StopApplication()` for reference implementation
-- **Sequential execution is enforced (#1526)**: `Radoub.IntegrationTests/AssemblyInfo.cs` carries `[assembly: CollectionBehavior(DisableTestParallelization = true)]` for within-assembly serialization. `FlaUITestBase` acquires a named system mutex (`Global\Radoub.FlaUI.SerialExecution`, 30 s timeout) for cross-process serialization — terminal + IDE Test Explorer collisions block on the mutex with a clear error rather than racing for desktop focus.
+**Before a PR to main**: all tools build, all tests pass, private docs are in
+`NonPublic/`, public docs are approved, and each affected tool's CHANGELOG has a
+versioned section — never `[Unreleased]`.
 
-**FlaUI Window Focus (CRITICAL)**:
-- **NEVER use direct `Keyboard.TypeSimultaneously()` calls** - keystrokes go to focused window, not necessarily test app
-- **ALWAYS use focus-safe helpers** from `FlaUITestBase`:
-  - `SendCtrlS()`, `SendCtrlZ()`, `SendCtrlY()`, `SendCtrlD()` etc.
-  - `SendKeyboardShortcut(VirtualKeyShort.CONTROL, VirtualKeyShort.KEY_X)` for custom shortcuts
-  - `EnsureFocused()` before any keyboard input if not using helpers
-- **Why**: During test runs, VSCode or other apps can steal focus. Keyboard shortcuts like Ctrl+Shift+E open VSCode's file explorer instead of triggering test app actions.
-- See `FlaUITestBase.EnsureFocused()` for focus verification pattern
+### Test output (MANDATORY)
 
-**Test Output (MANDATORY)**:
-- **NEVER pipe test output through `tail` or `head`** — this discards failures and leads to false "all tests pass" claims
-- Run tests with `run_in_background`, then grep the output file for results:
-  ```bash
-  # Run tests (output goes to a file automatically)
-  dotnet test Radoub.sln --no-build  # with run_in_background=true
+**Never pipe test output through `tail` or `head`.** It discards failures and produces
+false "all tests pass" claims. Run in the background, then grep the output file:
 
-  # After completion, grep the output file for summary + failures
-  grep -E "^(Failed|Passed|  Failed)" $OUTPUT_FILE
-  ```
-- The `Failed!` and `Passed!` summary lines plus any `  Failed` detail lines give full visibility without reading thousands of lines
-- If failures appear, read the full output file for stack traces and error details
+```bash
+dotnet test Radoub.sln --no-build   # with run_in_background=true
+grep -E "^(Failed|Passed|  Failed)" $OUTPUT_FILE
+```
 
-**Before PRs to Main**:
-- All tools must build
-- All tool tests must pass
-- Private documentation to the Private folder
-- Public Documentation approved before push
-- CHANGELOG updated for affected tools (highlights only — see CHANGELOG Management)
-- **CHANGELOG uses versioned sections only** — never use `[Unreleased]`
+The `Failed!`/`Passed!` summary plus `  Failed` detail lines give full visibility. Read
+the whole file when failures appear.
+
+### FlaUI window focus (CRITICAL)
+
+**Never call `Keyboard.TypeSimultaneously()` directly** — keystrokes reach the focused
+window, which may not be the test app. VSCode stealing focus turns Ctrl+Shift+E into its
+file explorer instead of a test action.
+
+Use `FlaUITestBase` helpers instead: `SendCtrlS()`, `SendCtrlZ()`, `SendCtrlY()`,
+`SendCtrlD()`, or `SendKeyboardShortcut(VirtualKeyShort.CONTROL, VirtualKeyShort.KEY_X)`
+for custom combinations. Call `EnsureFocused()` before any raw keyboard input.
+
+### FlaUI stability (Avalonia)
+
+Closing an Avalonia app mid-render crashes it in `SkiaSharp.SKCanvas.Flush()`. Close via
+`App.Close()` — not Alt+F4, which hits whatever holds focus — after a delay that lets the
+compositor drain, and wait for the process to exit before the next test. See
+`FlaUITestBase.StopApplication()`.
+
+Execution is serialized two ways (#1526): `AssemblyInfo.cs` carries
+`[assembly: CollectionBehavior(DisableTestParallelization = true)]` within the assembly,
+and `FlaUITestBase` holds a named system mutex (`Global\Radoub.FlaUI.SerialExecution`,
+30 s timeout) across processes. A terminal run colliding with IDE Test Explorer blocks on
+the mutex with a clear error instead of racing for the desktop.
 
 ---
 
 ## Sprint Workflow
 
-**Per Sprint Item**: For each item, follow this order:
-1. **TDD check** — does this item need tests first? (See TDD Policy table above)
-2. **Implement** — write code (after tests if TDD required)
-3. **Verify** — run tests, confirm build
-4. **Commit and push** — one commit per item
+Per item: TDD check (see the TDD Policy table) → implement → verify → commit and
+push. One commit per discrete item, each referencing the sprint issue. Every commit
+should leave a working state, so a bad item is easy to revert or bisect.
 
-**Commit Between Sprint Items**:
-- Commit after completing each discrete item within a sprint
-- This provides clear history and makes rollback easier
-- Use descriptive commit messages that reference the sprint issue
-
-**Example Sprint Workflow**:
 ```
-# After completing UTC reader
 git add . && git commit -m "[Radoub] feat: Add UTC reader for creature blueprints (#549)"
-
-# After completing UTC writer
-git add . && git commit -m "[Radoub] feat: Add UTC writer for creature blueprints (#549)"
-
-# After completing tests
-git add . && git commit -m "[Radoub] test: Add UTC round-trip tests (#549)"
 ```
 
-**Benefits**:
-- Each commit represents a working state
-- Easier to review individual changes
-- Simpler to bisect if issues arise
-- Clear progress tracking in git history
+### Sprint completion — manual spot-check list
 
-**Sprint Completion — Manual Spot-Check List**:
+Before `/pre-merge`, list what a human must verify. Skip the list only when the
+sprint is purely internal — refactoring, tests, or docs — or fully covered by
+automated tests.
 
-When all sprint items are done (before `/pre-merge`), generate a **manual spot-check list** if the sprint included any changes that need human visual/behavioral verification.
+Write spot-checks for:
 
-**Include spot-checks when the sprint has:**
-- UI visual changes (new icons, color changes, layout, theme updates)
-- User-facing behavior (new shortcuts, menu items, dialog behavior)
-- Event/notification wiring (events that should trigger visible UI updates)
-- File format changes (round-trip with real files)
-- **Platform-dependent behavior — flag with a `(Linux)` tag** when a change touches code
-  whose behavior or backend differs between Windows and Linux/macOS. Development happens on
-  Windows, so anything with a Linux-specific dependency needs a human to verify it on a Linux
-  box. Common triggers:
-  - **Filesystem**: path handling, case sensitivity, separators, symlinks, permissions, temp-dir
-    resolution (`Path.GetTempPath()`, `SpecialFolder`), file locking/delete-while-open semantics
-  - **Audio / TTS**: different backends per platform (e.g. Windows `System.Speech` vs Linux
-    Piper/`espeak-ng`, macOS `say`), sound playback (`aplay`/`afplay`), stop/cancel semantics
-    that differ (see #2523 — `Stop()` fires completion sync on Windows, silent on Piper)
-  - **Process launch**: external editors, spawned CLIs, argument quoting, PATH lookup
-  - **Native/interop**: SkiaSharp/OpenGL rendering, platform packages, `[SupportedOSPlatform]` code
+- UI visuals: icons, colors, layout, themes
+- User-facing behavior: shortcuts, menu items, dialogs
+- Event wiring that should produce a visible update
+- File format changes — round-trip a real file
+- Platform-dependent behavior, tagged `(Linux)` (see below)
 
-**Skip spot-checks when:**
-- Changes are purely internal (refactoring, test-only, documentation)
-- Everything is fully covered by automated tests with no visual component
+Format:
 
-**Format:**
 ```markdown
 ### Manual Spot-Checks
 
 Verify in the running app before `/pre-merge`:
 
-- [ ] [Specific thing to check] — [where/how to verify]
-- [ ] [Another thing] — [steps to reproduce]
+- [ ] [Specific thing] — [where/how to verify]
 - [ ] (Linux) [Platform-specific thing] — verify on a Linux box, not just Windows
 ```
 
-**Rules:**
-- Be specific — "check the UI" is not useful
-- Include how to trigger the behavior
-- Only list things automated tests can't verify
-- **Tag Linux-specific items with `(Linux)`** and say what Linux dependency makes it differ
-  (filesystem, TTS/audio backend, process launch, native interop). If unsure whether behavior
-  is platform-identical, err toward flagging it — a Windows-only check can silently pass while
-  the Linux path is broken.
+Be specific and say how to trigger the behavior; "check the UI" helps nobody. List
+only what automated tests cannot cover.
+
+**Linux tagging.** Development happens on Windows, so a Windows-only check can pass
+while the Linux path is broken. Tag any item whose backend differs and name the
+dependency. When unsure, tag it. Common triggers:
+
+- **Filesystem**: case sensitivity, separators, symlinks, permissions, temp-dir
+  resolution (`Path.GetTempPath()`, `SpecialFolder`), delete-while-open semantics
+- **Audio/TTS**: Windows `System.Speech` vs Linux Piper/`espeak-ng` vs macOS `say`;
+  playback (`aplay`/`afplay`); stop semantics (#2523 — `Stop()` fires completion
+  synchronously on Windows, silently on Piper)
+- **Process launch**: external editors, spawned CLIs, argument quoting, PATH lookup
+- **Native/interop**: SkiaSharp/OpenGL, platform packages, `[SupportedOSPlatform]`
 - Keep it short (3-8 items typical)
 
 **Example** (for a sprint with a new FlowView icon + theme fixes + a TTS stop fix):
@@ -533,29 +506,68 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 
 ## Shell Usage on Windows
 
-### Prefer Script Files Over Inline Commands
+### Launch every .ps1 from the Bash tool (HARD RULE)
 
-**DO**: Use `powershell.exe -File` with PowerShell scripts (NEVER use `pwsh` — it launches Microsoft Store)
+PowerShell-tool permission rules never match on Windows, so that tool prompts on
+every call however the allow rule is written. This is an upstream bug
+(anthropics/claude-code#57013, #60289, #42318). Adding allow rules does not fix it;
+they become dead entries.
+
+Canonical form — never `pwsh`, which launches the Microsoft Store:
+
 ```bash
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View status
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1" -Force
 ```
 
-**AVOID**: Inline PowerShell with `-Command` (escaping nightmare)
+Controlled test, 2026-07-20, varying only the tool and path:
+
+| Tool | Path | Result |
+|------|------|--------|
+| Bash | relative | no prompt |
+| Bash | absolute | no prompt |
+| PowerShell | absolute, with `&` | prompts |
+| PowerShell | relative, no `&` | prompts |
+
+The tool decides. Path form and the `&` call operator do not matter.
+
+Reserve the PowerShell tool for work that is not a script call — `Get-Process`,
+`Stop-Process`, PS7 loading net9.0 DLLs. Those prompt unavoidably.
+
+Avoid inline `-Command`; escaping breaks it:
+
 ```bash
-# BAD - requires \$ escaping, breaks easily
+# BAD - requires \$ escaping
 powershell.exe -Command "\$data = Get-Content file.json | ConvertFrom-Json; \$data.property"
 ```
 
-### When to Use Each Shell
+### Which tool for which task
 
-| Task | Use | Example |
-|------|-----|---------|
-| Git operations | Bash | `git status`, `git commit` |
-| GitHub CLI | Bash | `gh issue view 123`, `gh pr create` |
-| File operations | Bash | `cp`, `mkdir -p`, `rm -f` |
-| Complex data processing | PowerShell script | `Get-CacheData.ps1` |
-| JSON parsing | PowerShell script | Custom `.ps1` files |
+The column names the Claude Code **tool** that dispatches the call, not the language you
+write in. Launching a `.ps1` from Bash still runs PowerShell — Bash is only the dispatcher
+whose allowlist works.
+
+| Task | Tool |
+|------|------|
+| Git, GitHub CLI, simple file operations | Bash |
+| Any `.ps1` — data processing, JSON parsing | Bash |
+| Process control, PS7 loading net9.0 DLLs | PowerShell |
+
+**Write the logic in PowerShell, not POSIX pipelines.** This is a Windows box: `jq` is not
+installed, and `sed`/`awk`/`xargs` differ from their Linux behavior or mangle Windows paths.
+Reaching for them wastes a cycle on a command that fails or, worse, silently produces the
+wrong answer. Put real work in a `.ps1` and launch it from Bash.
+
+| Instead of | Use |
+|------------|-----|
+| `jq '.field' f.json` | `Get-Content f.json \| ConvertFrom-Json` then `.field` |
+| `sed`/`awk` field munging | `Select-String`, `-split`, `-replace`, `ForEach-Object` |
+| `xargs` | `ForEach-Object` over the pipeline |
+| `wc -l` | `(Get-Content f \| Measure-Object -Line).Lines` |
+| `grep -c` on structured data | parse it as an object, then `.Count` |
+
+Bash is fine for what it does well here: `git`, `gh`, `ls`, `cp`, `mkdir`, and single-purpose
+`grep` over plain text. Anything involving JSON, objects, or multi-step transformation belongs
+in PowerShell.
 
 ### Bash on Windows (Git Bash)
 
@@ -605,30 +617,42 @@ Write-Host "Found $($results.Count) items"
 
 ## Code Quality Standards
 
-**Game Data Sourcing (MANDATORY)**:
-- **NEVER hardcode game data** (races, classes, feats, skills, appearances, etc.)
-- **ALWAYS populate from 2DA files and TLK strings** via IGameDataService
-- Support custom content (CEP, PRC, etc.) that adds/modifies 2DA entries
-- Hardcoded fallbacks are acceptable ONLY when 2DA/TLK lookup fails
-- If the data exists in a game file, load it from the game file
-- This ensures compatibility with all modules, custom content packs, and community expansions
+**Game data (MANDATORY)**: never hardcode races, classes, feats, skills, appearances, or
+anything else the game files carry. Load it from 2DA and TLK through `IGameDataService`,
+so CEP, PRC, and other custom content that adds or modifies entries keeps working.
+Hardcode a fallback only for when the lookup itself fails.
 
-**Path Handling**:
-- Use `Environment.GetFolderPath()` with `SpecialFolder` constants
-- Validate paths with `Path.GetFullPath()` for traversal prevention
-- Use `ProcessStartInfo.ArgumentList` instead of string concatenation
+**Paths**: resolve with `Environment.GetFolderPath()` and `SpecialFolder` constants,
+validate with `Path.GetFullPath()` against traversal, and pass arguments via
+`ProcessStartInfo.ArgumentList` rather than string concatenation.
 
-**Exception Handling**:
-- Never use bare `catch` blocks - catch specific types
-- Always log exceptions (at minimum `LogLevel.WARN`)
-- Never silently swallow exceptions
-- **UI handlers that mutate the editor model must wrap the `model.Add(...) → RefreshUI() → MarkDirty()` sequence in try/catch and roll back the model change if the refresh throws.** A populate-time validation filter is not enough — UI controls (ComboBox selections, tree expansion) hold stale state across refreshes, and a bad-state combo can crash deep in the Avalonia render loop instead of in your handler. See `MainWindow.ItemProperties.TryAddProperty` (Relique, #2166) for the canonical single-add pattern: outer catch for `CreateItemProperty`, inner catch for `RefreshAssignedProperties` that removes the just-added entry. Combine with a validation-table recheck at add-time (defense in depth) so each layer covers the other's gaps. **The same rollback discipline applies to batch-add, remove, and clear-all handlers** — these are easy to miss because the mutation is a loop or a single `Clear()`/`RemoveAt()` rather than one `Add()`. Extract the mutate-refresh-rollback logic into a pure helper so it is unit-testable without FlaUI: see `Relique/Services/PropertyListMutator.cs` (`BatchAdd`/`RemoveAt`/`ClearAll`, #2258) for the reusable pattern. **Reliquary and other single-resource blueprint editors derive their handler structure from Relique — fixes to this pattern in Relique should propagate to sibling tools.**
+**Hygiene**: no commented-out code — git remembers. TODOs cite an issue
+(`// TODO (#123): description`). Methods stay under 100 lines. Debug code goes before
+the commit.
 
-**Code Hygiene**:
-- No commented-out code blocks - use git history
-- TODOs must reference GitHub issues: `// TODO (#123): description`
-- Keep methods under 100 lines
-- Remove debug/test code before committing
+### Exception handling
+
+Catch specific types, never bare `catch`. Log every exception at `LogLevel.WARN` or
+above. Never swallow one silently.
+
+**UI handlers that mutate the editor model must roll back when the refresh throws.**
+Wrap the `model.Add(...)` → `RefreshUI()` → `MarkDirty()` sequence in try/catch and undo
+the model change on failure. Validation at populate time is not enough: ComboBox
+selections and tree expansion hold stale state across refreshes, so a bad-state combo
+crashes deep in the Avalonia render loop rather than in your handler. Recheck the
+validation table at add time too — each layer covers the other's gaps.
+
+The canonical single-add pattern is `MainWindow.ItemProperties.TryAddProperty` (Relique,
+#2166): an outer catch for `CreateItemProperty`, an inner catch for
+`RefreshAssignedProperties` that removes the entry it just added.
+
+**Batch-add, remove, and clear-all handlers need the same discipline** and are easy to
+miss, because the mutation is a loop or a lone `Clear()`/`RemoveAt()` instead of an
+`Add()`. Extract mutate-refresh-rollback into a pure helper so it unit-tests without
+FlaUI — see `Relique/Services/PropertyListMutator.cs` (#2258).
+
+Reliquary and the other single-resource blueprint editors inherit their handler
+structure from Relique, so propagate fixes to this pattern across the siblings.
 
 ---
 
@@ -837,64 +861,26 @@ Claude compares, fixes, regenerates. Remove the temporary diagnostic logging bef
 
 ## Agent Skills (Radoub-tuned, originally from obra/superpowers)
 
-Skills in `.claude/skills/` provide structured methodologies. Claude **must** follow these skills when their trigger conditions are met — no user invocation needed, no skipping without explicit user override.
+Skills in `.claude/skills/<name>/SKILL.md` are mandatory when their trigger fires — no
+user invocation needed, no skipping without an explicit override.
 
-**These are project-owned copies, not a vendored upstream mirror.** They started as
-obra/superpowers skills and are tuned for Radoub. Edit them freely to fit this repo; do not
-"resync" them from upstream. The `superpowers:*` plugin skills may also be present in a
-session — when both exist, the unprefixed `.claude/skills/` copy is the Radoub-authoritative
-one.
+**Where a skill conflicts with this file, CLAUDE.md wins.** Most often the TDD Policy
+table above, whose **No** rows (AXAML, config, docs, investigation-first bug fixes) are
+narrower than the generic skill's "always".
 
-**Where a skill conflicts with this file, CLAUDE.md wins** — in particular the TDD Policy
-table above, whose **No** rows (UI layout/AXAML, config, docs, investigation-first bug fixes)
-are narrower than the generic skill's "always".
+| Skill | Apply when |
+|-------|------------|
+| **systematic-debugging** | Any bug, test failure, build error, round-trip failure, or unexplained behavior — especially when tempted to try a quick fix. Work all four phases: root cause → pattern → hypothesis → implementation. |
+| **test-driven-development** | Implementing a feature or fixing a reproducible bug. Scope is the TDD Policy table, not the skill's broader claim. |
+| **verification-before-completion** | Before any completion claim, commit, PR, or next sprint item. Run the command, show the output, then claim. |
 
-### Installed Skills
+They chain: debug to find root cause → TDD to write the failing test and fix → verify with
+evidence.
 
-| Skill | Location | Trigger |
-|-------|----------|---------|
-| **systematic-debugging** | `.claude/skills/systematic-debugging/` | Any bug, test failure, unexpected behavior, or build error |
-| **test-driven-development** | `.claude/skills/test-driven-development/` | Implementing new features or bug fixes that need tests |
-| **verification-before-completion** | `.claude/skills/verification-before-completion/` | Before claiming work is done, tests pass, or build succeeds |
-
-### When to Apply Each Skill
-
-**systematic-debugging** — Apply when:
-- Test failures occur (unit, integration, or FlaUI)
-- Build errors or warnings appear
-- Binary format round-trip validation fails
-- Unexpected runtime behavior reported
-- **Especially** when tempted to "just try a quick fix"
-- Follow all four phases: Root Cause → Pattern Analysis → Hypothesis → Implementation
-
-**test-driven-development** — Apply when:
-- Adding new features (format parsers, UI controls, services)
-- Fixing bugs (write failing test reproducing the bug first)
-- Adding to Radoub.Formats (GFF fields, 2DA parsing, etc.)
-- **Exception**: UI layout/styling work, generated code, config files — ask user
-
-**verification-before-completion** — Apply when:
-- About to mark a TodoWrite task as completed
-- About to commit or create a PR
-- About to claim "tests pass" or "build succeeds"
-- Moving to the next sprint item
-- **Rule**: Run `dotnet test` or `dotnet build` and show the output. No "should work" claims.
-
-### Skill Interaction
-
-The skills chain naturally:
-1. Bug reported → **systematic-debugging** (find root cause)
-2. Root cause found → **test-driven-development** (write failing test, then fix)
-3. Fix implemented → **verification-before-completion** (prove it works with evidence)
-
-### Managing Skills
-
-Skill files live in `.claude/skills/<name>/SKILL.md` — one tree, no symlinks, committed to
-the repo. To change a skill's guidance, edit that file directly.
-
-Originally seeded from https://github.com/obra/superpowers (MIT License). Re-running the
-upstream installer would overwrite Radoub-specific tuning — don't, unless you intend to
-re-apply the local changes afterward.
+These are project-owned copies, seeded from https://github.com/obra/superpowers (MIT) and
+tuned for Radoub. Edit them freely; do not resync from upstream, which would overwrite the
+tuning. When a session also loads the `superpowers:*` plugin skills, the unprefixed local
+copy is authoritative.
 
 ---
 

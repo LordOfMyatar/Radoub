@@ -24,7 +24,7 @@ If no PR numbers provided, discovers all open dependabot PRs.
 
 ## Workflow
 
-### Phase 0: Discovery
+### Phase 1: Discovery
 
 ```bash
 # Find all open dependabot PRs
@@ -42,7 +42,7 @@ Present findings as a table:
 
 **Group overlapping PRs**: If multiple PRs bump the same framework (e.g., Avalonia), note they should be applied together.
 
-### Phase 1: Analysis
+### Phase 2: Analysis
 
 For each PR, assess:
 
@@ -67,7 +67,7 @@ cat Directory.Packages.props | grep -i "[package-name]"
 
 If using `Directory.Packages.props` (Radoub does), all version changes go in ONE file.
 
-### Phase 2: Apply Updates
+### Phase 3: Apply Updates
 
 **Verify clean state**:
 ```bash
@@ -95,7 +95,7 @@ git add Directory.Packages.props
 git commit -m "[Radoub] chore: Initialize dependabot sprint branch for #[anchor]"
 ```
 
-### Phase 3: Build & Test
+### Phase 4: Build & Test
 
 **Restore packages**:
 ```bash
@@ -125,12 +125,12 @@ Record: passed, failed, skipped counts.
 
 | Result | Action |
 |--------|--------|
-| Build + tests pass | Continue to Phase 4 |
+| Build + tests pass | Continue to Phase 5 |
 | Build fails | Investigate, fix if possible, report if not |
 | New test failures | Compare with main branch baseline to confirm they're new |
 | Only pre-existing failures | Note in PR, continue |
 
-### Phase 4: Commit, PR & Report
+### Phase 5: Commit, PR & Report
 
 **Commit the version changes**:
 ```bash
