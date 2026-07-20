@@ -55,12 +55,8 @@ public partial class App : Application
         // via Dispatcher.Post, so our inline ApplyFontSettings above runs too early)
         ThemeManager.Instance.ThemeApplied += (_, _) => ApplyFontSettings();
 
-        // Clean up old log sessions
-        UnifiedLogger.CleanupOldSessions(SettingsService.Instance.LogRetentionSessions);
-
-        // Clean up old backups
-        Radoub.UI.Services.BackupCleanupService.CleanupExpiredBackups(
-            Radoub.Formats.Settings.RadoubSettings.Instance.BackupRetentionDays);
+        // Log-session and backup cleanup run after first paint (#2647) — see
+        // MainWindow's Opened handler.
     }
 
     public override void OnFrameworkInitializationCompleted()

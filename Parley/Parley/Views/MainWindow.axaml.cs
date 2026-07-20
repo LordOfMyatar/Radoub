@@ -305,13 +305,8 @@ namespace DialogEditor.Views
             UnifiedLogger.LogApplication(LogLevel.INFO, "Parley MainWindow initialized");
             UnifiedLogger.LogStartupMilestone("Parley MainWindow constructed");
 
-            // Cleanup old log sessions on startup (#1232: use DI-resolved settings)
-            var retentionCount = _services.Settings.LogRetentionSessions;
-            UnifiedLogger.CleanupOldSessions(retentionCount);
-
-            // Clean up old backups
-            Radoub.UI.Services.BackupCleanupService.CleanupExpiredBackups(
-                Radoub.Formats.Settings.RadoubSettings.Instance.BackupRetentionDays);
+            // Log-session and backup cleanup run after first paint (#2647) — see
+            // OnWindowOpened.
         }
 
         /// <summary>

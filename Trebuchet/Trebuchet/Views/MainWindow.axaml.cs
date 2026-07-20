@@ -100,6 +100,12 @@ public partial class MainWindow : Window
     {
         Opened -= OnWindowOpened;
 
+        // Startup housekeeping, off the first-paint path (#2647). Kicked off first so a throw
+        // from the module/faction loads below cannot skip retention cleanup.
+        Radoub.UI.Services.StartupCleanupCoordinator.RunDeferredCleanup(
+            SettingsService.Instance.LogRetentionSessions,
+            Radoub.Formats.Settings.RadoubSettings.Instance.BackupRetentionDays);
+
         if (_viewModel != null)
             UpdateModuleNameColor(_viewModel);
 

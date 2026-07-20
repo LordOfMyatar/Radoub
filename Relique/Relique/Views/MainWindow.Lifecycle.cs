@@ -20,6 +20,12 @@ public partial class MainWindow
     {
         Opened -= OnWindowOpened;
 
+        // Startup housekeeping, off the first-paint path (#2647). Kicked off first so a throw
+        // from the loads below cannot skip retention cleanup.
+        Radoub.UI.Services.StartupCleanupCoordinator.RunDeferredCleanup(
+            SettingsService.Instance.LogRetentionSessions,
+            RadoubSettings.Instance.BackupRetentionDays);
+
         // Initialize game data service on background thread (#1959)
         await InitializeGameDataAsync();
 

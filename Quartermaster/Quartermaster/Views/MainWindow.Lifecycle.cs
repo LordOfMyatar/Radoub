@@ -24,6 +24,12 @@ public partial class MainWindow
     {
         Opened -= OnWindowOpened;
 
+        // Startup housekeeping, off the first-paint path (#2647). Kicked off first so it
+        // cannot be skipped by a startup failure below.
+        Radoub.UI.Services.StartupCleanupCoordinator.RunDeferredCleanup(
+            SettingsService.Instance.LogRetentionSessions,
+            Radoub.Formats.Settings.RadoubSettings.Instance.BackupRetentionDays);
+
         // Create cancellation token for async operations
         _windowCts = new CancellationTokenSource();
 

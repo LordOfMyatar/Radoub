@@ -130,6 +130,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Only handle once
         Opened -= OnWindowOpened;
 
+        // Startup housekeeping, off the first-paint path (#2647). Kicked off before the try
+        // block so a startup-load failure cannot skip retention cleanup.
+        Radoub.UI.Services.StartupCleanupCoordinator.RunDeferredCleanup(
+            SettingsService.Instance.LogRetentionSessions,
+            Radoub.Formats.Settings.RadoubSettings.Instance.BackupRetentionDays);
+
         // #2254 — async void with no guard previously swallowed any startup exception,
         // leaving the app silently empty. Wrap in try/catch + cancellation (QM Lifecycle pattern).
         _windowCts = new System.Threading.CancellationTokenSource();
