@@ -300,15 +300,12 @@ public class EquipmentSlotControl : TemplatedControl
 
     public EquipmentSlotControl()
     {
-        // Enable drag-drop
         DragDrop.SetAllowDrop(this, true);
         AddHandler(DragDrop.DropEvent, OnDrop);
         AddHandler(DragDrop.DragOverEvent, OnDragOver);
 
-        // Handle double-tap via event
         DoubleTapped += OnDoubleTapped;
 
-        // Build context menu
         BuildContextMenu();
     }
 
@@ -373,27 +370,18 @@ public class EquipmentSlotControl : TemplatedControl
         ContextMenu = menu;
     }
 
-    /// <summary>
-    /// The slot view model.
-    /// </summary>
     public EquipmentSlotViewModel? Slot
     {
         get => GetValue(SlotProperty);
         set => SetValue(SlotProperty, value);
     }
 
-    /// <summary>
-    /// Width of the slot icon area.
-    /// </summary>
     public double SlotWidth
     {
         get => GetValue(SlotWidthProperty);
         set => SetValue(SlotWidthProperty, value);
     }
 
-    /// <summary>
-    /// Height of the slot icon area.
-    /// </summary>
     public double SlotHeight
     {
         get => GetValue(SlotHeightProperty);
@@ -481,24 +469,15 @@ public class EquipmentSlotControl : TemplatedControl
     }
 }
 
-/// <summary>
-/// Event args for drag operations from equipment slots.
-/// </summary>
+/// <summary>Event args for drag operations from equipment slots.</summary>
 public class EquipmentSlotDragEventArgs : EventArgs
 {
-    /// <summary>
-    /// The slot being dragged from.
-    /// </summary>
+    /// <summary>The slot being dragged from.</summary>
     public EquipmentSlotViewModel Slot { get; }
 
-    /// <summary>
-    /// Data to include in drag operation. Set by event handler.
-    /// </summary>
+    /// <summary>Data to include in the drag operation. Set by the event handler.</summary>
     public object? Data { get; set; }
 
-    /// <summary>
-    /// Data format string.
-    /// </summary>
     public string? DataFormat { get; set; }
 
     public EquipmentSlotDragEventArgs(EquipmentSlotViewModel slot)
@@ -507,14 +486,10 @@ public class EquipmentSlotDragEventArgs : EventArgs
     }
 }
 
-/// <summary>
-/// Event args for drop operations on equipment slots.
-/// </summary>
+/// <summary>Event args for drop operations on equipment slots.</summary>
 public class EquipmentSlotDropEventArgs : EventArgs
 {
-    /// <summary>
-    /// The slot receiving the drop.
-    /// </summary>
+    /// <summary>The slot receiving the drop.</summary>
     public EquipmentSlotViewModel TargetSlot { get; }
 
     /// <summary>
