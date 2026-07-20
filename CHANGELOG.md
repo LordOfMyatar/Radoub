@@ -8,6 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Cross-Tool-UX] - 2026-07-19
+**Branch**: `radoub/issue-2653` | **PR**: #TBD
+
+### Sprint: Cross-Tool UX Debt Cleanup (#2653)
+
+- Shared `ItemPropertyPanel` control extracted to `Radoub.UI` (#1506).
+- Title bar and taskbar text standardized across tools (#1572).
+- Reduced faded/muted text and improved tooltip readability (#1567).
+- Menu structure standardized across all tools (#2061).
+- Chore: reviewed and tuned the project's agent skills.
+
+---
+
 ## [Save-Integrity] - 2026-07-08
 **Branch**: `radoub/sprint/save-integrity` | **PR**: #2656
 
