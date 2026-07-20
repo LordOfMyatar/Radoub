@@ -799,6 +799,14 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void OpenDocumentation()
+    {
+        // #2061: every tool links to its own Radoub wiki page.
+        if (!Radoub.UI.Utils.WikiHelper.OpenToolDocumentation("Trebuchet"))
+            UpdateStatusText = "Could not open documentation URL";
+    }
+
+    [RelayCommand]
     private void OpenAbout()
     {
         if (_parentWindow == null) return;

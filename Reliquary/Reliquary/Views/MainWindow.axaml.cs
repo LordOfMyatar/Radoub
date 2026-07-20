@@ -204,6 +204,9 @@ public partial class MainWindow : Window
         LoadPlaceable(path);
     }
 
+    private void OnDocumentationClick(object? sender, RoutedEventArgs e)
+        => Radoub.UI.Utils.WikiHelper.OpenToolDocumentation("Reliquary");
+
     private void OnAboutClick(object? sender, RoutedEventArgs e)
     {
         try

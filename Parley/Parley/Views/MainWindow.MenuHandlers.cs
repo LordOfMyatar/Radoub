@@ -138,20 +138,9 @@ namespace DialogEditor.Views
 
         private void OnDocumentationClick(object? sender, RoutedEventArgs e)
         {
-            try
-            {
-                var url = "https://github.com/LordOfMyatar/Radoub/wiki";
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = url,
-                    UseShellExecute = true
-                });
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error opening documentation: {ex.Message}");
+            // #2061: point at Parley's own wiki page rather than the wiki root.
+            if (!Radoub.UI.Utils.WikiHelper.OpenToolDocumentation("Parley"))
                 _viewModel.StatusMessage = "Could not open documentation URL";
-            }
         }
 
         private void OnReportIssueClick(object? sender, RoutedEventArgs e)

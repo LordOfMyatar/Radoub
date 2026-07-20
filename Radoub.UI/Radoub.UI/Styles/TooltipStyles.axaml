@@ -1,0 +1,46 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+    Shared Tooltip Styles for Radoub Tools (#1567)
+
+    Include in App.axaml with:
+    <StyleInclude Source="avares://Radoub.UI/Styles/TooltipStyles.axaml"/>
+
+    Two problems this solves:
+
+    1. THEME OBEDIENCE. Tooltips previously fell back to Avalonia defaults, which do
+       not follow the active theme. That bypassed every custom theme, including the
+       three colour-blind accessibility themes (deuteranopia, protanopia,
+       tritanopia).
+
+    2. SIZING. An unbounded tooltip bound to a long string — e.g. a full TLK feat or
+       spell description — renders as one enormous unreadable block. MaxWidth plus
+       wrapping keeps tooltips to a readable column.
+
+    Guideline: tooltips are for SHORT supplementary hints. Anything longer than a
+    sentence or two belongs in a details panel or an info popup, not a tooltip.
+    -->
+
+    <Style Selector="ToolTip">
+        <!-- Follow the active theme rather than Avalonia's defaults -->
+        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+
+        <!-- Respect the user's font-size preference (large-font support) -->
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeSmall}"/>
+
+        <!-- Cap the width so long text wraps into a readable column instead of
+             stretching across the screen. -->
+        <Setter Property="MaxWidth" Value="400"/>
+        <Setter Property="Padding" Value="8,5"/>
+    </Style>
+
+    <!-- Tooltip content wraps rather than forming one long line. -->
+    <Style Selector="ToolTip TextBlock">
+        <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+
+</Styles>

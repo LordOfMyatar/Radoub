@@ -188,6 +188,9 @@ public partial class MainWindow
         }
     }
 
+    private void OnDocumentationClick(object? sender, RoutedEventArgs e)
+        => Radoub.UI.Utils.WikiHelper.OpenToolDocumentation("Relique");
+
     private void OnAboutClick(object? sender, RoutedEventArgs e)
     {
         var aboutWindow = Radoub.UI.Views.AboutWindow.Create(new Radoub.UI.Views.AboutWindowConfig
