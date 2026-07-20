@@ -132,6 +132,44 @@ public class CharacterSheetServiceTests
     }
 
     [Fact]
+    public void GenerateTextSheet_AbilityRow_FinalIsBasePlusRacial()
+    {
+        // UTC stores base scores (BioWare Creature Format 3.2), so the Final column
+        // must be base + racial. The row previously printed the stored score in both
+        // the Base and Final columns while still showing a racial modifier between
+        // them, so the arithmetic on screen did not add up.
+        _mockGameData.Set2DAValue("racialtypes", 0, "ConAdjust", "2");
+        var creature = CreateTestCreature();
+        creature.Race = 0;
+        creature.Con = 14;
+
+        var text = _sheetService.GenerateTextSheet(creature);
+
+        var conRow = text.Split('\n').First(l => l.TrimStart().StartsWith("CON"));
+        var numbers = conRow.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        // Layout: CON <base> <racial> <final> <modifier>
+        Assert.Equal("14", numbers[1]);
+        Assert.Equal("16", numbers[3]);
+    }
+
+    [Fact]
+    public void GenerateTextSheet_AbilityRow_NoRacialModifier_FinalMatchesBase()
+    {
+        var creature = CreateTestCreature();
+        creature.Race = 6; // Human: no racial ability modifiers
+        creature.Con = 14;
+
+        var text = _sheetService.GenerateTextSheet(creature);
+
+        var conRow = text.Split('\n').First(l => l.TrimStart().StartsWith("CON"));
+        var numbers = conRow.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        Assert.Equal("14", numbers[1]);
+        Assert.Equal("14", numbers[3]);
+    }
+
+    [Fact]
     public void GenerateTextSheet_ContainsCombatStats()
     {
         var creature = CreateTestCreature();

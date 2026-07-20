@@ -204,12 +204,15 @@ public class CharacterSheetService
 
     private static void AppendAbilityRow(StringBuilder sb, string name, byte score, int racialMod)
     {
-        var baseScore = score; // Note: UTC stores final scores, not base
-        var modifier = CreatureDisplayService.CalculateAbilityBonus(score);
+        // UTC stores base scores; the racial modifier is applied at display time.
+        // BioWare Creature Format 3.2: "Only the base values themselves are saved
+        // in a Creature Struct."
+        var totalScore = score + racialMod;
+        var modifier = CreatureDisplayService.CalculateAbilityBonus(totalScore);
         var modStr = CreatureDisplayService.FormatBonus(modifier);
         var racialStr = racialMod != 0 ? CreatureDisplayService.FormatBonus(racialMod) : "  -";
 
-        sb.AppendLine($"  {name,-8}  {baseScore,4}    {racialStr,6}    {score,5}    {modStr,8}");
+        sb.AppendLine($"  {name,-8}  {score,4}    {racialStr,6}    {totalScore,5}    {modStr,8}");
     }
 
     private void AppendCombatSection(StringBuilder sb, UtcFile creature)
