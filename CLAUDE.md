@@ -154,7 +154,29 @@ If work affects multiple tools:
 
 ---
 
-## Commit Standards
+## Commit & PR Standards
+
+### Concision pass (MANDATORY)
+
+Before publishing any authored prose — a commit message, PR body, PR review comment, or
+GitHub issue body or comment — run the draft through the
+`elements-of-style:writing-clearly-and-concisely` skill.
+
+Verbosity is the target, not style debate. The skill runs as a compression pass on text you
+have already drafted; it does not decide what to say. Four rules carry most of the weight:
+omit needless words, use active voice, prefer definite and concrete language, and put the
+emphatic word at the end.
+
+The existing sentence caps — 3 sentences for a commit, 15 for a PR — are hard limits, not
+goals. The concision pass tightens what fits inside them, so a commit already under three
+sentences still gets the pass.
+
+The skill's `elements-of-style.md` reference costs ~12,000 tokens. Do not read it for a
+one-line commit message; apply the four rules directly. Read it, or dispatch a subagent to
+copyedit against it, when the text is long enough to be worth the tokens — a substantial PR
+body or issue.
+
+### Commit messages
 
 Use tool prefixes in commit messages:
 

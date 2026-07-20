@@ -77,7 +77,9 @@ Correct anything the change made false. A page describing behavior that no longe
 worse than an old date, because it reads as current.
 
 Style: clinical and terse, no marketing, technical accuracy over readability. Small
-relationships inline as `A → B → C`; larger ones as diagrams.
+relationships inline as `A → B → C`; larger ones as diagrams. Run drafted prose through the
+concision pass (`elements-of-style:writing-clearly-and-concisely`) — wiki pages are long-lived
+and read often, so they repay the tokens. See Commit & PR Standards in CLAUDE.md.
 
 ```mermaid
 flowchart LR

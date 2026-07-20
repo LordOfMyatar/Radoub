@@ -90,6 +90,9 @@ EOF
 
 Tech-debt issues use **Current State** / **Proposed Change** / **Files Affected** instead.
 
+**Before creating**: run the drafted body through the concision pass
+(`elements-of-style:writing-clearly-and-concisely`). See Commit & PR Standards in CLAUDE.md.
+
 **Long or pattern-heavy bodies**: stage the text in `NonPublic/_scratch/` and pass
 `--body-file`. Heredocs are fine for short bodies, but a body containing `..`, quotes, or
 backticks can trip the permission guard, and `--body-file` sidesteps the escaping entirely.

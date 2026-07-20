@@ -178,7 +178,8 @@ gh issue create --title "[Tool] Tech Debt: Split [filename] ([N] lines)" \
 ```
 
 Files in the 800–1000 range only need a checklist line. Always search first — a warning is
-"new" only when no issue, open or closed, tracks it.
+"new" only when no issue, open or closed, tracks it. Run the issue body through the concision
+pass (`elements-of-style:writing-clearly-and-concisely`) before creating it.
 
 ### 3.3 Code review
 
@@ -315,6 +316,10 @@ Flag when over 30 days old and code changed.
 
 **PR**: https://github.com/LordOfMyatar/Radoub/pull/[number]
 ```
+
+Run the generated body through the concision pass
+(`elements-of-style:writing-clearly-and-concisely`) before publishing it — this is the PR
+description reviewers actually read. See Commit & PR Standards in CLAUDE.md.
 
 ```bash
 gh pr edit [number] --body "[generated body]" && gh pr ready [number] 2>/dev/null || true

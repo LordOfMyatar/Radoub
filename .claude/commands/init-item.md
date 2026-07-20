@@ -160,7 +160,9 @@ git push -u origin [branch-name]
 
 ### 3.4 Draft PR
 
-Always draft initially.
+Always draft initially. Run the PR body through the concision pass
+(`elements-of-style:writing-clearly-and-concisely`) before creating it — see Commit & PR
+Standards in CLAUDE.md.
 
 ```bash
 gh pr create --draft --title "[Tool] [Type]: [Title]" --body "$(cat <<'EOF'
