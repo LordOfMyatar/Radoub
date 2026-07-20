@@ -10,27 +10,21 @@ namespace Radoub.Formats.Utd;
 /// </summary>
 public static class UtdWriter
 {
-    /// <summary>
-    /// Write a UTD file to a file path.
-    /// </summary>
+    /// <summary>Write a UTD file to a file path.</summary>
     public static void Write(UtdFile utd, string filePath)
     {
         var buffer = Write(utd);
         File.WriteAllBytes(filePath, buffer);
     }
 
-    /// <summary>
-    /// Write a UTD file to a stream.
-    /// </summary>
+    /// <summary>Write a UTD file to a stream.</summary>
     public static void Write(UtdFile utd, Stream stream)
     {
         var buffer = Write(utd);
         stream.Write(buffer, 0, buffer.Length);
     }
 
-    /// <summary>
-    /// Write a UTD file to a byte buffer.
-    /// </summary>
+    /// <summary>Write a UTD file to a byte buffer.</summary>
     public static byte[] Write(UtdFile utd)
     {
         var gff = BuildGffFile(utd);
@@ -138,7 +132,6 @@ public static class UtdWriter
             AddCExoStringField(root, "Comment", utd.Comment);
         AddByteField(root, "PaletteID", utd.PaletteID);
 
-        // Local variables
         VarTableHelper.WriteVarTable(root, utd.VarTable);
 
         return root;

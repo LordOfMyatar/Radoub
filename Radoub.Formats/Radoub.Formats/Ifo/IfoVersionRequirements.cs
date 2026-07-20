@@ -6,34 +6,22 @@ namespace Radoub.Formats.Ifo;
 /// </summary>
 public static class IfoVersionRequirements
 {
-    /// <summary>
-    /// Base NWN 1.69 (Diamond Edition) - universal compatibility.
-    /// </summary>
+    /// <summary>Base NWN 1.69 (Diamond Edition) - universal compatibility.</summary>
     public const string Version169 = "1.69";
 
-    /// <summary>
-    /// NWN:EE initial release.
-    /// </summary>
+    /// <summary>NWN:EE initial release.</summary>
     public const string Version174 = "1.74";
 
-    /// <summary>
-    /// NWSync support added.
-    /// </summary>
+    /// <summary>NWSync support added.</summary>
     public const string Version177 = "1.77";
 
-    /// <summary>
-    /// Targeting mode scripts added.
-    /// </summary>
+    /// <summary>Targeting mode scripts added.</summary>
     public const string Version180 = "1.80";
 
-    /// <summary>
-    /// GUI and tile action events added.
-    /// </summary>
+    /// <summary>GUI and tile action events added.</summary>
     public const string Version185 = "1.85";
 
-    /// <summary>
-    /// DefaultBic and PartyControl added.
-    /// </summary>
+    /// <summary>DefaultBic and PartyControl added.</summary>
     public const string Version187 = "1.87";
 
     /// <summary>
@@ -98,13 +86,11 @@ public static class IfoVersionRequirements
     /// <summary>
     /// Gets information about EE-only fields that have values in the given IFO file.
     /// </summary>
-    /// <param name="ifo">The IFO file to check.</param>
     /// <returns>List of (fieldName, displayName, minVersion, currentValue) for fields with values.</returns>
     public static List<(string FieldName, string DisplayName, string MinVersion, string Value)> GetPopulatedEeFields(IfoFile ifo)
     {
         var result = new List<(string, string, string, string)>();
 
-        // Check each EE-only field
         if (!string.IsNullOrEmpty(ifo.OnModuleStart))
             result.Add(("Mod_OnModStart", "OnModuleStart script", Version174, ifo.OnModuleStart));
 
@@ -136,11 +122,7 @@ public static class IfoVersionRequirements
         return result;
     }
 
-    /// <summary>
-    /// Gets fields that would be incompatible with a target version.
-    /// </summary>
-    /// <param name="ifo">The IFO file to check.</param>
-    /// <param name="targetVersion">The target minimum game version.</param>
+    /// <summary>Gets fields that would be incompatible with a target version.</summary>
     /// <returns>Fields that require a higher version than the target.</returns>
     public static List<(string FieldName, string DisplayName, string MinVersion, string Value)> GetIncompatibleFields(
         IfoFile ifo, string targetVersion)
@@ -151,10 +133,7 @@ public static class IfoVersionRequirements
             .ToList();
     }
 
-    /// <summary>
-    /// Gets the highest version required by any populated field in the IFO.
-    /// </summary>
-    /// <param name="ifo">The IFO file to check.</param>
+    /// <summary>Gets the highest version required by any populated field in the IFO.</summary>
     /// <returns>The highest required version, or "1.69" if no EE fields are populated.</returns>
     public static string GetRequiredVersion(IfoFile ifo)
     {
@@ -174,14 +153,9 @@ public static class IfoVersionRequirements
 /// </summary>
 public class GameVersionComparer : IComparer<string>
 {
-    /// <summary>
-    /// Singleton instance for use in LINQ operations.
-    /// </summary>
+    /// <summary>Singleton instance for use in LINQ operations.</summary>
     public static readonly GameVersionComparer Instance = new();
 
-    /// <summary>
-    /// Compares two version strings.
-    /// </summary>
     /// <returns>
     /// Less than 0 if x &lt; y, 0 if equal, greater than 0 if x &gt; y.
     /// </returns>
@@ -207,11 +181,8 @@ public class GameVersionComparer : IComparer<string>
         return 0;
     }
 
-    /// <summary>
-    /// Checks if a module version supports a required version.
-    /// </summary>
+    /// <summary>Checks if a module version supports a required version.</summary>
     /// <param name="moduleVersion">The module's MinGameVersion.</param>
-    /// <param name="requiredVersion">The version required by a field.</param>
     /// <returns>True if moduleVersion >= requiredVersion.</returns>
     public static bool Supports(string moduleVersion, string requiredVersion)
     {

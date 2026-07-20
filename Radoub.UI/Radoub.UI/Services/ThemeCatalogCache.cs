@@ -24,9 +24,7 @@ public class ThemeCatalogCache
         _cachePath = cachePath;
     }
 
-    /// <summary>
-    /// Creates a cache using the shared theme catalog path ~/Radoub/Themes/ThemeCatalog.json.
-    /// </summary>
+    /// <summary>Creates a cache using the shared theme catalog path ~/Radoub/Themes/ThemeCatalog.json.</summary>
     public static ThemeCatalogCache ForShared()
     {
         var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -91,9 +89,7 @@ public class ThemeCatalogCache
         return true;
     }
 
-    /// <summary>
-    /// Get the last write timestamp for a directory, or null if it doesn't exist.
-    /// </summary>
+    /// <summary>Get the last write timestamp for a directory, or null if it doesn't exist.</summary>
     public static string? GetDirectoryTimestamp(string directory)
     {
         if (!Directory.Exists(directory))
@@ -102,9 +98,7 @@ public class ThemeCatalogCache
         return Directory.GetLastWriteTimeUtc(directory).ToString("O");
     }
 
-    /// <summary>
-    /// Build the current timestamps dictionary for the given directories.
-    /// </summary>
+    /// <summary>Build the current timestamps dictionary for the given directories.</summary>
     public static Dictionary<string, string?> BuildTimestamps(IReadOnlyList<string> directories)
     {
         var timestamps = new Dictionary<string, string?>();
@@ -136,9 +130,7 @@ public class ThemeCatalogCache
         }
     }
 
-    /// <summary>
-    /// Save catalog data to cache file.
-    /// </summary>
+    /// <summary>Save catalog data to cache file.</summary>
     public void Save(ThemeCatalogData data)
     {
         try
@@ -164,9 +156,7 @@ public class ThemeCatalogCache
     };
 }
 
-/// <summary>
-/// Serializable cache data for discovered themes.
-/// </summary>
+/// <summary>Serializable cache data for discovered themes.</summary>
 public class ThemeCatalogData
 {
     [JsonPropertyName("cacheVersion")]

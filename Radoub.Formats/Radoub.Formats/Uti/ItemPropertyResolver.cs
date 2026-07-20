@@ -31,9 +31,7 @@ public class ItemPropertyResolver : IDisposable
     private TwoDAFile? _costTable;
     private TwoDAFile? _paramTable;
 
-    /// <summary>
-    /// Create a resolver using a GameResourceResolver for 2DA access.
-    /// </summary>
+    /// <summary>Create a resolver using a GameResourceResolver for 2DA access.</summary>
     public ItemPropertyResolver(GameResourceResolver resolver, TlkFile? tlk = null, TlkFile? customTlk = null)
     {
         _resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
@@ -49,31 +47,27 @@ public class ItemPropertyResolver : IDisposable
     {
         var result = new ResolvedItemProperty();
 
-        // Get property definition from itempropdef.2da
         var propDef = GetItemPropDef();
         if (propDef == null || property.PropertyName >= propDef.RowCount)
             return FormatUnknown(property);
 
-        // Get property name from TLK
+        // Property name from TLK
         var nameStrRef = propDef.GetValue(property.PropertyName, "Name");
         var gameStrRef = propDef.GetValue(property.PropertyName, "GameStrRef");
         result.PropertyName = GetTlkString(gameStrRef) ?? GetTlkString(nameStrRef) ?? $"Property {property.PropertyName}";
 
-        // Get subtype name if applicable
         var subtypeResRef = propDef.GetValue(property.PropertyName, "SubTypeResRef");
         if (!string.IsNullOrEmpty(subtypeResRef) && subtypeResRef != "****")
         {
             result.SubtypeName = ResolveSubtype(subtypeResRef, property.Subtype);
         }
 
-        // Get cost value name if applicable
         var costTableIdx = propDef.GetValue(property.PropertyName, "CostTableResRef");
         if (!string.IsNullOrEmpty(costTableIdx) && costTableIdx != "****" && int.TryParse(costTableIdx, out int costIdx))
         {
             result.CostValueName = ResolveCostValue(costIdx, property.CostValue);
         }
 
-        // Get param value name if applicable
         var paramIdx = property.Param1;
         if (paramIdx != 0xFF)
         {
@@ -92,9 +86,7 @@ public class ItemPropertyResolver : IDisposable
         return result.Format();
     }
 
-    /// <summary>
-    /// Resolve multiple item properties.
-    /// </summary>
+    /// <summary>Resolve multiple item properties.</summary>
     public IEnumerable<string> Resolve(IEnumerable<ItemProperty> properties)
     {
         return properties.Select(Resolve);
@@ -297,9 +289,7 @@ public class ItemPropertyResolver : IDisposable
     }
 }
 
-/// <summary>
-/// Detailed resolution result for an item property.
-/// </summary>
+/// <summary>Detailed resolution result for an item property.</summary>
 public class ResolvedItemProperty
 {
     public int PropertyIndex { get; set; }
@@ -329,15 +319,14 @@ public class ResolvedItemProperty
         var propName = PropertyName.TrimEnd(':');
         parts.Add(propName);
 
-        // Add subtype if present
         if (!string.IsNullOrEmpty(SubtypeName))
             parts.Add(SubtypeName);
 
-        // Add cost value if present (often the "amount" like +1, +2, etc.)
+        // Cost value is often the "amount" like +1, +2, etc.
         if (!string.IsNullOrEmpty(CostValueName))
             parts.Add(CostValueName);
 
-        // Add param value if present (often a target like damage type, skill, etc.)
+        // Param value is often a target like damage type, skill, etc.
         if (!string.IsNullOrEmpty(ParamValueName))
             parts.Add(ParamValueName);
 

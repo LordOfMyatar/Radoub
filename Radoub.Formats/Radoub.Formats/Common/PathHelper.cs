@@ -73,9 +73,7 @@ public static class PathHelper
         }
     }
 
-    /// <summary>
-    /// Expands a path from storage - replaces ~ with user home directory.
-    /// </summary>
+    /// <summary>Expands a path from storage - replaces ~ with user home directory.</summary>
     /// <param name="path">The contracted path to expand.</param>
     /// <returns>Path with ~ replaced by user home directory, or original path if no ~.</returns>
     /// <example>
@@ -190,9 +188,7 @@ public static class PathHelper
         return null;
     }
 
-    /// <summary>
-    /// Contracts a list of paths for storage.
-    /// </summary>
+    /// <summary>Contracts a list of paths for storage.</summary>
     /// <param name="paths">List of paths to contract.</param>
     /// <returns>New list with all paths contracted.</returns>
     public static List<string> ContractPaths(IEnumerable<string> paths)
@@ -200,9 +196,7 @@ public static class PathHelper
         return paths.Select(ContractPath).ToList();
     }
 
-    /// <summary>
-    /// Expands a list of paths from storage.
-    /// </summary>
+    /// <summary>Expands a list of paths from storage.</summary>
     /// <param name="paths">List of paths to expand.</param>
     /// <returns>New list with all paths expanded.</returns>
     public static List<string> ExpandPaths(IEnumerable<string> paths)

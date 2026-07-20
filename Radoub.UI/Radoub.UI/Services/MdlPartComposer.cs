@@ -808,9 +808,7 @@ public sealed class MdlPartComposer
         }
     }
 
-    /// <summary>
-    /// Aggregate the bounding box across all attached meshes, using each mesh's local S*R*T transform.
-    /// </summary>
+    /// <summary>Aggregate the bounding box across all attached meshes, using each mesh's local S*R*T transform.</summary>
     public static void UpdateCompositeBounds(MdlModel model)
     {
         var minX = float.MaxValue;

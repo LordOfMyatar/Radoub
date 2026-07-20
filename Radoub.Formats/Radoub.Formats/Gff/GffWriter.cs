@@ -18,27 +18,21 @@ public static class GffWriter
         NwnEncoding = Encoding.GetEncoding(1252);
     }
 
-    /// <summary>
-    /// Write a GFF file to a file path.
-    /// </summary>
+    /// <summary>Write a GFF file to a file path.</summary>
     public static void Write(GffFile gff, string filePath)
     {
         var buffer = Write(gff);
         File.WriteAllBytes(filePath, buffer);
     }
 
-    /// <summary>
-    /// Write a GFF file to a stream.
-    /// </summary>
+    /// <summary>Write a GFF file to a stream.</summary>
     public static void Write(GffFile gff, Stream stream)
     {
         var buffer = Write(gff);
         stream.Write(buffer, 0, buffer.Length);
     }
 
-    /// <summary>
-    /// Write a GFF file to a byte buffer.
-    /// </summary>
+    /// <summary>Write a GFF file to a byte buffer.</summary>
     public static byte[] Write(GffFile gff)
     {
         // Collect all unique items

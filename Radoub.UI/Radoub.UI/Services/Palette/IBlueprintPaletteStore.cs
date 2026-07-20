@@ -31,9 +31,7 @@ public interface IBlueprintPaletteStore
     /// </summary>
     bool SetPaletteId(string resRef, byte paletteId);
 
-    /// <summary>
-    /// True if the pool contains a blueprint with this ResRef.
-    /// </summary>
+    /// <summary>True if the pool contains a blueprint with this ResRef.</summary>
     bool Contains(string resRef);
 
     /// <summary>

@@ -9,18 +9,14 @@ namespace Radoub.Formats.Dlg;
 /// </summary>
 public static class DlgReader
 {
-    /// <summary>
-    /// Read a DLG file from a file path.
-    /// </summary>
+    /// <summary>Read a DLG file from a file path.</summary>
     public static DlgFile Read(string filePath)
     {
         var buffer = File.ReadAllBytes(filePath);
         return Read(buffer);
     }
 
-    /// <summary>
-    /// Read a DLG file from a stream.
-    /// </summary>
+    /// <summary>Read a DLG file from a stream.</summary>
     public static DlgFile Read(Stream stream)
     {
         using var ms = new MemoryStream();
@@ -28,15 +24,11 @@ public static class DlgReader
         return Read(ms.ToArray());
     }
 
-    /// <summary>
-    /// Read a DLG file from a byte buffer.
-    /// </summary>
+    /// <summary>Read a DLG file from a byte buffer.</summary>
     public static DlgFile Read(byte[] buffer)
     {
-        // Parse as GFF first
         var gff = GffReader.Read(buffer);
 
-        // Validate file type
         if (gff.FileType.TrimEnd() != "DLG")
         {
             throw new InvalidDataException(
@@ -55,7 +47,6 @@ public static class DlgReader
             FileType = gff.FileType,
             FileVersion = gff.FileVersion,
 
-            // Root level fields
             DelayEntry = root.GetFieldValue<uint>("DelayEntry", 0),
             DelayReply = root.GetFieldValue<uint>("DelayReply", 0),
             NumWords = root.GetFieldValue<uint>("NumWords", 0),
@@ -64,7 +55,6 @@ public static class DlgReader
             PreventZoomIn = root.GetFieldValue<byte>("PreventZoomIn", 0) != 0
         };
 
-        // Parse EntryList
         var entriesField = root.GetField("EntryList");
         if (entriesField?.Value is GffList entriesList)
         {
@@ -74,7 +64,6 @@ public static class DlgReader
             }
         }
 
-        // Parse ReplyList
         var repliesField = root.GetField("ReplyList");
         if (repliesField?.Value is GffList repliesList)
         {
@@ -84,7 +73,6 @@ public static class DlgReader
             }
         }
 
-        // Parse StartingList
         var startingField = root.GetField("StartingList");
         if (startingField?.Value is GffList startingList)
         {
@@ -112,10 +100,8 @@ public static class DlgReader
             QuestEntry = entryStruct.GetFieldValue<uint>("QuestEntry", 0xFFFFFFFF)
         };
 
-        // Parse localized text
         entry.Text = ParseLocString(entryStruct, "Text") ?? new CExoLocString();
 
-        // Parse ActionParams
         var actionParamsField = entryStruct.GetField("ActionParams");
         if (actionParamsField?.Value is GffList actionParamsList)
         {
@@ -125,7 +111,7 @@ public static class DlgReader
             }
         }
 
-        // Parse RepliesList (links to replies)
+        // RepliesList holds links to replies, not the replies themselves
         var repliesListField = entryStruct.GetField("RepliesList");
         if (repliesListField?.Value is GffList repliesList)
         {
@@ -152,10 +138,8 @@ public static class DlgReader
             QuestEntry = replyStruct.GetFieldValue<uint>("QuestEntry", 0xFFFFFFFF)
         };
 
-        // Parse localized text
         reply.Text = ParseLocString(replyStruct, "Text") ?? new CExoLocString();
 
-        // Parse ActionParams
         var actionParamsField = replyStruct.GetField("ActionParams");
         if (actionParamsField?.Value is GffList actionParamsList)
         {
@@ -165,7 +149,7 @@ public static class DlgReader
             }
         }
 
-        // Parse EntriesList (links to entries)
+        // EntriesList holds links to entries, not the entries themselves
         var entriesListField = replyStruct.GetField("EntriesList");
         if (entriesListField?.Value is GffList entriesList)
         {
@@ -188,7 +172,6 @@ public static class DlgReader
             LinkComment = linkStruct.GetFieldValue<string>("LinkComment", string.Empty)
         };
 
-        // Parse ConditionParams
         var conditionParamsField = linkStruct.GetField("ConditionParams");
         if (conditionParamsField?.Value is GffList conditionParamsList)
         {

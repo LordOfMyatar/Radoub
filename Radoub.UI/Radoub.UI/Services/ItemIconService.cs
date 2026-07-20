@@ -34,9 +34,7 @@ public class ItemIconService
     public int CacheCount => _bitmapCache.Count;
     public int CacheCapacity => _bitmapCache.Capacity;
 
-    /// <summary>
-    /// Get the icon for an item.
-    /// </summary>
+    /// <summary>Get the icon for an item.</summary>
     public Bitmap? GetItemIcon(UtiFile item)
     {
         if (item == null)
@@ -45,9 +43,7 @@ public class ItemIconService
         return GetItemIcon(item.BaseItem, item.ModelPart1);
     }
 
-    /// <summary>
-    /// Get the icon for a base item type.
-    /// </summary>
+    /// <summary>Get the icon for a base item type.</summary>
     /// <param name="baseItemType">Base item type ID from baseitems.2da</param>
     /// <param name="modelNumber">Model variation number (default 0 uses minimum from 2DA)</param>
     public Bitmap? GetItemIcon(int baseItemType, int modelNumber = 0)
@@ -75,9 +71,7 @@ public class ItemIconService
         return bitmap;
     }
 
-    /// <summary>
-    /// Get a portrait image.
-    /// </summary>
+    /// <summary>Get a portrait image.</summary>
     public Bitmap? GetPortrait(string resRef)
     {
         if (string.IsNullOrWhiteSpace(resRef))
@@ -100,41 +94,31 @@ public class ItemIconService
         return bitmap;
     }
 
-    /// <summary>
-    /// Get a spell icon.
-    /// </summary>
+    /// <summary>Get a spell icon.</summary>
     public Bitmap? GetSpellIcon(int spellId)
     {
         return GetCachedIcon($"spell:{spellId}", () => _imageService.GetSpellIcon(spellId));
     }
 
-    /// <summary>
-    /// Get a feat icon.
-    /// </summary>
+    /// <summary>Get a feat icon.</summary>
     public Bitmap? GetFeatIcon(int featId)
     {
         return GetCachedIcon($"feat:{featId}", () => _imageService.GetFeatIcon(featId));
     }
 
-    /// <summary>
-    /// Get a skill icon.
-    /// </summary>
+    /// <summary>Get a skill icon.</summary>
     public Bitmap? GetSkillIcon(int skillId)
     {
         return GetCachedIcon($"skill:{skillId}", () => _imageService.GetSkillIcon(skillId));
     }
 
-    /// <summary>
-    /// Get a class icon.
-    /// </summary>
+    /// <summary>Get a class icon.</summary>
     public Bitmap? GetClassIcon(int classId)
     {
         return GetCachedIcon($"class:{classId}", () => _imageService.GetClassIcon(classId));
     }
 
-    /// <summary>
-    /// Helper to get cached icon with lazy loading.
-    /// </summary>
+    /// <summary>Helper to get cached icon with lazy loading.</summary>
     private Bitmap? GetCachedIcon(string cacheKey, Func<ImageData?> loader)
     {
         if (_bitmapCache.TryGetValue(cacheKey, out var cached))
@@ -161,14 +145,10 @@ public class ItemIconService
         }
     }
 
-    /// <summary>
-    /// Check if game data is available for loading real icons.
-    /// </summary>
+    /// <summary>Check if game data is available for loading real icons.</summary>
     public bool IsGameDataAvailable => _gameDataService.IsConfigured;
 
-    /// <summary>
-    /// Clear the bitmap cache.
-    /// </summary>
+    /// <summary>Clear the bitmap cache.</summary>
     public void ClearCache()
     {
         // NOTE: Do NOT dispose bitmaps here - they may still be bound to UI Image controls.
@@ -178,9 +158,7 @@ public class ItemIconService
         _imageService.ClearCache();
     }
 
-    /// <summary>
-    /// Convert ImageData (RGBA bytes) to Avalonia Bitmap.
-    /// </summary>
+    /// <summary>Convert ImageData (RGBA bytes) to Avalonia Bitmap.</summary>
     private static Bitmap? ImageDataToBitmap(ImageData imageData)
     {
         try

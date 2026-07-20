@@ -4,25 +4,19 @@ using Radoub.UI.ViewModels;
 
 namespace Radoub.UI.Services;
 
-/// <summary>
-/// Validates equipment slot assignments using baseitems.2da.
-/// </summary>
+/// <summary>Validates equipment slot assignments using baseitems.2da.</summary>
 public class EquipmentSlotValidator
 {
     private readonly IGameDataService _gameData;
 
-    /// <summary>
-    /// Creates a new equipment slot validator.
-    /// </summary>
+    /// <summary>Creates a new equipment slot validator.</summary>
     /// <param name="gameData">Game data service for 2DA access.</param>
     public EquipmentSlotValidator(IGameDataService gameData)
     {
         _gameData = gameData;
     }
 
-    /// <summary>
-    /// Validates an item in a slot and returns a warning message if invalid.
-    /// </summary>
+    /// <summary>Validates an item in a slot and returns a warning message if invalid.</summary>
     /// <param name="slot">The equipment slot.</param>
     /// <returns>Warning message if invalid, null if valid or no item equipped.</returns>
     public string? ValidateSlot(EquipmentSlotViewModel slot)
@@ -46,9 +40,7 @@ public class EquipmentSlotValidator
         return null;
     }
 
-    /// <summary>
-    /// Validates all slots and sets their warning messages.
-    /// </summary>
+    /// <summary>Validates all slots and sets their warning messages.</summary>
     /// <param name="slots">Equipment slots to validate.</param>
     public void ValidateAllSlots(IEnumerable<EquipmentSlotViewModel> slots)
     {
@@ -58,9 +50,7 @@ public class EquipmentSlotValidator
         }
     }
 
-    /// <summary>
-    /// Checks if an item can be equipped in a specific slot.
-    /// </summary>
+    /// <summary>Checks if an item can be equipped in a specific slot.</summary>
     /// <param name="baseItem">Base item index from UTI.</param>
     /// <param name="slotFlag">Slot bit flag to check.</param>
     /// <returns>True if item can be equipped in the slot.</returns>
@@ -73,9 +63,7 @@ public class EquipmentSlotValidator
         return (equipableSlots.Value & slotFlag) != 0;
     }
 
-    /// <summary>
-    /// Gets the valid slot flags for a base item type.
-    /// </summary>
+    /// <summary>Gets the valid slot flags for a base item type.</summary>
     /// <param name="baseItem">Base item index from UTI.</param>
     /// <returns>Bit flags of valid equipment slots, or null if not found.</returns>
     public int? GetEquipableSlots(int baseItem)
@@ -127,9 +115,7 @@ public class EquipmentSlotValidator
         return null;
     }
 
-    /// <summary>
-    /// Validates all slots for creature compatibility and sets their warning messages.
-    /// </summary>
+    /// <summary>Validates all slots for creature compatibility and sets their warning messages.</summary>
     /// <param name="slots">Equipment slots to validate.</param>
     /// <param name="creatureSize">Creature size category.</param>
     public void ValidateAllCreatureCompatibility(IEnumerable<EquipmentSlotViewModel> slots, int creatureSize)
@@ -140,9 +126,7 @@ public class EquipmentSlotValidator
         }
     }
 
-    /// <summary>
-    /// Gets the weapon size for a base item type from baseitems.2da WeaponSize column.
-    /// </summary>
+    /// <summary>Gets the weapon size for a base item type from baseitems.2da WeaponSize column.</summary>
     /// <param name="baseItem">Base item index from UTI.</param>
     /// <returns>Weapon size (1-5), or null if not a weapon or data unavailable.</returns>
     public int? GetWeaponSize(int baseItem)
@@ -157,9 +141,7 @@ public class EquipmentSlotValidator
         return null;
     }
 
-    /// <summary>
-    /// Gets a human-readable name for a creature/weapon size category.
-    /// </summary>
+    /// <summary>Gets a human-readable name for a creature/weapon size category.</summary>
     private static string GetSizeName(int size) => size switch
     {
         1 => "Tiny",
@@ -172,9 +154,7 @@ public class EquipmentSlotValidator
 
     #region Feat Requirement Validation
 
-    /// <summary>
-    /// Gets the required feats for a base item type from baseitems.2da ReqFeat0-ReqFeat4 columns.
-    /// </summary>
+    /// <summary>Gets the required feats for a base item type from baseitems.2da ReqFeat0-ReqFeat4 columns.</summary>
     /// <param name="baseItem">Base item index from UTI.</param>
     /// <returns>List of (FeatId, FeatName) tuples for required feats.</returns>
     public IReadOnlyList<(int FeatId, string FeatName)> GetRequiredFeats(int baseItem)
@@ -347,9 +327,7 @@ public class EquipmentSlotValidator
         return null;
     }
 
-    /// <summary>
-    /// Validates all slots for feat requirements and sets their warning messages.
-    /// </summary>
+    /// <summary>Validates all slots for feat requirements and sets their warning messages.</summary>
     /// <param name="slots">Equipment slots to validate.</param>
     /// <param name="creatureFeats">Set of feat IDs the creature possesses.</param>
     public void ValidateAllFeatRequirements(IEnumerable<EquipmentSlotViewModel> slots, IReadOnlySet<int> creatureFeats)
@@ -385,9 +363,7 @@ public class EquipmentSlotValidator
 
     #endregion
 
-    /// <summary>
-    /// Gets the list of valid slot names for a base item type.
-    /// </summary>
+    /// <summary>Gets the list of valid slot names for a base item type.</summary>
     /// <param name="baseItem">Base item index from UTI.</param>
     /// <returns>List of valid slot names.</returns>
     public IReadOnlyList<string> GetValidSlotNames(int baseItem)

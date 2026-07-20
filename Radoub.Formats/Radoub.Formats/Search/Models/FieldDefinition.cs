@@ -1,8 +1,6 @@
 namespace Radoub.Formats.Search;
 
-/// <summary>
-/// Describes a single searchable field within a GFF file type.
-/// </summary>
+/// <summary>Describes a single searchable field within a GFF file type.</summary>
 public class FieldDefinition
 {
     /// <summary>Display name shown in UI (e.g., "Speaker", "First Name")</summary>

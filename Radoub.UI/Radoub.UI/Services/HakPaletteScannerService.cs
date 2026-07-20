@@ -167,9 +167,7 @@ public class HakPaletteScannerService
 
 }
 
-/// <summary>
-/// Result of scanning module HAK files.
-/// </summary>
+/// <summary>Result of scanning module HAK files.</summary>
 public class HakScanResult
 {
     /// <summary>Number of HAK files that were actually scanned (cache was stale/missing).</summary>

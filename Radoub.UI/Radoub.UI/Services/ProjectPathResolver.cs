@@ -11,9 +11,7 @@ namespace Radoub.UI.Services;
 /// </summary>
 public static class ProjectPathResolver
 {
-    /// <summary>
-    /// Resolve a module name and optional file path to an absolute file path.
-    /// </summary>
+    /// <summary>Resolve a module name and optional file path to an absolute file path.</summary>
     /// <param name="moduleName">Module name (e.g., "LNS")</param>
     /// <param name="filePath">File path — if absolute, returned as-is. If relative, resolved under module.</param>
     /// <param name="modulesDirectory">Base modules directory. If null, uses RadoubSettings.</param>
@@ -39,9 +37,7 @@ public static class ProjectPathResolver
         return Path.Combine(modulesDir, moduleName, filePath);
     }
 
-    /// <summary>
-    /// Resolve a module name to a module directory path.
-    /// </summary>
+    /// <summary>Resolve a module name to a module directory path.</summary>
     /// <param name="moduleName">Module name (e.g., "LNS")</param>
     /// <param name="modulesDirectory">Base modules directory. If null, uses RadoubSettings.</param>
     /// <returns>Absolute path to the module directory, or null.</returns>
@@ -57,9 +53,7 @@ public static class ProjectPathResolver
         return Path.Combine(modulesDir, moduleName);
     }
 
-    /// <summary>
-    /// Get the NWN modules directory from RadoubSettings.
-    /// </summary>
+    /// <summary>Get the NWN modules directory from RadoubSettings.</summary>
     private static string? GetModulesDirectory()
     {
         var nwnPath = RadoubSettings.Instance.NeverwinterNightsPath;

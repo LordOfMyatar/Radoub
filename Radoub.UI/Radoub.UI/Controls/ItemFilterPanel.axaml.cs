@@ -20,29 +20,18 @@ public partial class ItemFilterPanel : UserControl
 {
     #region Styled Properties
 
-    /// <summary>
-    /// Source items to filter.
-    /// </summary>
     public static readonly StyledProperty<ObservableCollection<ItemViewModel>?> ItemsProperty =
         AvaloniaProperty.Register<ItemFilterPanel, ObservableCollection<ItemViewModel>?>(nameof(Items));
 
-    /// <summary>
-    /// Filtered items output.
-    /// </summary>
     public static readonly StyledProperty<ObservableCollection<ItemViewModel>> FilteredItemsProperty =
         AvaloniaProperty.Register<ItemFilterPanel, ObservableCollection<ItemViewModel>>(
             nameof(FilteredItems),
             defaultValue: new ObservableCollection<ItemViewModel>());
 
-    /// <summary>
-    /// Search text for filtering.
-    /// </summary>
     public static readonly StyledProperty<string> SearchTextProperty =
         AvaloniaProperty.Register<ItemFilterPanel, string>(nameof(SearchText), defaultValue: string.Empty);
 
-    /// <summary>
-    /// Show items from base game (Standard).
-    /// </summary>
+    /// <summary>Show items from base game (Standard).</summary>
     public static readonly StyledProperty<bool> ShowStandardProperty =
         AvaloniaProperty.Register<ItemFilterPanel, bool>(nameof(ShowStandard), defaultValue: true);
 
@@ -53,15 +42,11 @@ public partial class ItemFilterPanel : UserControl
     public static readonly StyledProperty<bool> ShowOverrideProperty =
         AvaloniaProperty.Register<ItemFilterPanel, bool>(nameof(ShowOverride), defaultValue: false);
 
-    /// <summary>
-    /// Show items from module-referenced HAK packs. Default true.
-    /// </summary>
+    /// <summary>Show items from module-referenced HAK packs. Default true.</summary>
     public static readonly StyledProperty<bool> ShowHakProperty =
         AvaloniaProperty.Register<ItemFilterPanel, bool>(nameof(ShowHak), defaultValue: true);
 
-    /// <summary>
-    /// Show loose UTI files from the module directory. Default true.
-    /// </summary>
+    /// <summary>Show loose UTI files from the module directory. Default true.</summary>
     public static readonly StyledProperty<bool> ShowModuleProperty =
         AvaloniaProperty.Register<ItemFilterPanel, bool>(nameof(ShowModule), defaultValue: true);
 
@@ -73,55 +58,35 @@ public partial class ItemFilterPanel : UserControl
     public static readonly StyledProperty<bool> ShowCreatureItemsProperty =
         AvaloniaProperty.Register<ItemFilterPanel, bool>(nameof(ShowCreatureItems), defaultValue: false);
 
-    /// <summary>
-    /// Available item types for filtering.
-    /// </summary>
     public static readonly StyledProperty<ObservableCollection<ItemTypeInfo>> ItemTypesProperty =
         AvaloniaProperty.Register<ItemFilterPanel, ObservableCollection<ItemTypeInfo>>(
             nameof(ItemTypes),
             defaultValue: new ObservableCollection<ItemTypeInfo>());
 
-    /// <summary>
-    /// Currently selected item type filter.
-    /// </summary>
     public static readonly StyledProperty<ItemTypeInfo?> SelectedItemTypeProperty =
         AvaloniaProperty.Register<ItemFilterPanel, ItemTypeInfo?>(nameof(SelectedItemType));
 
-    /// <summary>
-    /// Game data service for loading item types from baseitems.2da.
-    /// </summary>
+    /// <summary>Game data service for loading item types from baseitems.2da.</summary>
     public static readonly StyledProperty<IGameDataService?> GameDataServiceProperty =
         AvaloniaProperty.Register<ItemFilterPanel, IGameDataService?>(nameof(GameDataService));
 
-    /// <summary>
-    /// Filter settings provider for state persistence.
-    /// </summary>
+    /// <summary>Filter settings provider for state persistence.</summary>
     public static readonly StyledProperty<IFilterSettings?> FilterSettingsProperty =
         AvaloniaProperty.Register<ItemFilterPanel, IFilterSettings?>(nameof(FilterSettings));
 
-    /// <summary>
-    /// Context key for filter state persistence.
-    /// </summary>
+    /// <summary>Context key for filter state persistence.</summary>
     public static readonly StyledProperty<string> ContextKeyProperty =
         AvaloniaProperty.Register<ItemFilterPanel, string>(nameof(ContextKey), defaultValue: "Default");
 
-    /// <summary>
-    /// Property search text for filtering by item properties.
-    /// </summary>
+    /// <summary>Property search text for filtering by item properties.</summary>
     public static readonly StyledProperty<string> PropertySearchTextProperty =
         AvaloniaProperty.Register<ItemFilterPanel, string>(nameof(PropertySearchText), defaultValue: string.Empty);
 
-    /// <summary>
-    /// Available slot filters for the dropdown.
-    /// </summary>
     public static readonly StyledProperty<ObservableCollection<SlotFilterInfo>> SlotFiltersProperty =
         AvaloniaProperty.Register<ItemFilterPanel, ObservableCollection<SlotFilterInfo>>(
             nameof(SlotFilters),
             defaultValue: new ObservableCollection<SlotFilterInfo>());
 
-    /// <summary>
-    /// Currently selected slot filter.
-    /// </summary>
     public static readonly StyledProperty<SlotFilterInfo?> SelectedSlotFilterProperty =
         AvaloniaProperty.Register<ItemFilterPanel, SlotFilterInfo?>(nameof(SelectedSlotFilter));
 
@@ -129,9 +94,6 @@ public partial class ItemFilterPanel : UserControl
 
     #region Events
 
-    /// <summary>
-    /// Raised when filter criteria change.
-    /// </summary>
     public event EventHandler? FilterChanged;
 
     #endregion
@@ -148,7 +110,6 @@ public partial class ItemFilterPanel : UserControl
     {
         InitializeComponent();
 
-        // Setup debounce timer for search
         _debounceTimer = new System.Timers.Timer(DebounceDelayMs);
         _debounceTimer.AutoReset = false;
         _debounceTimer.Elapsed += OnDebounceTimerElapsed;
@@ -159,63 +120,43 @@ public partial class ItemFilterPanel : UserControl
 
     #region Public Properties
 
-    /// <summary>
-    /// Source items to filter.
-    /// </summary>
     public ObservableCollection<ItemViewModel>? Items
     {
         get => GetValue(ItemsProperty);
         set => SetValue(ItemsProperty, value);
     }
 
-    /// <summary>
-    /// Filtered items output. Bind ItemListView.Items to this.
-    /// </summary>
+    /// <summary>Filtered items output. Bind ItemListView.Items to this.</summary>
     public ObservableCollection<ItemViewModel> FilteredItems
     {
         get => GetValue(FilteredItemsProperty);
         set => SetValue(FilteredItemsProperty, value);
     }
 
-    /// <summary>
-    /// Current search text.
-    /// </summary>
     public string SearchText
     {
         get => GetValue(SearchTextProperty);
         set => SetValue(SearchTextProperty, value);
     }
 
-    /// <summary>
-    /// Show base game items.
-    /// </summary>
     public bool ShowStandard
     {
         get => GetValue(ShowStandardProperty);
         set => SetValue(ShowStandardProperty, value);
     }
 
-    /// <summary>
-    /// Show Override-folder items.
-    /// </summary>
     public bool ShowOverride
     {
         get => GetValue(ShowOverrideProperty);
         set => SetValue(ShowOverrideProperty, value);
     }
 
-    /// <summary>
-    /// Show module-referenced HAK items.
-    /// </summary>
     public bool ShowHak
     {
         get => GetValue(ShowHakProperty);
         set => SetValue(ShowHakProperty, value);
     }
 
-    /// <summary>
-    /// Show loose module-directory items.
-    /// </summary>
     public bool ShowModule
     {
         get => GetValue(ShowModuleProperty);
@@ -228,72 +169,52 @@ public partial class ItemFilterPanel : UserControl
         set => SetValue(ShowCreatureItemsProperty, value);
     }
 
-    /// <summary>
-    /// Available item types from baseitems.2da.
-    /// </summary>
+    /// <summary>Available item types from baseitems.2da.</summary>
     public ObservableCollection<ItemTypeInfo> ItemTypes
     {
         get => GetValue(ItemTypesProperty);
         set => SetValue(ItemTypesProperty, value);
     }
 
-    /// <summary>
-    /// Currently selected item type filter. Null means "All Types".
-    /// </summary>
+    /// <summary>Currently selected item type filter. Null means "All Types".</summary>
     public ItemTypeInfo? SelectedItemType
     {
         get => GetValue(SelectedItemTypeProperty);
         set => SetValue(SelectedItemTypeProperty, value);
     }
 
-    /// <summary>
-    /// Game data service for loading item types.
-    /// </summary>
     public IGameDataService? GameDataService
     {
         get => GetValue(GameDataServiceProperty);
         set => SetValue(GameDataServiceProperty, value);
     }
 
-    /// <summary>
-    /// Filter settings provider for persistence.
-    /// </summary>
     public IFilterSettings? FilterSettings
     {
         get => GetValue(FilterSettingsProperty);
         set => SetValue(FilterSettingsProperty, value);
     }
 
-    /// <summary>
-    /// Context key for filter settings (e.g., "Backpack", "Palette").
-    /// </summary>
+    /// <summary>Context key for filter settings (e.g., "Backpack", "Palette").</summary>
     public string ContextKey
     {
         get => GetValue(ContextKeyProperty);
         set => SetValue(ContextKeyProperty, value);
     }
 
-    /// <summary>
-    /// Property search text for filtering by item properties.
-    /// </summary>
     public string PropertySearchText
     {
         get => GetValue(PropertySearchTextProperty);
         set => SetValue(PropertySearchTextProperty, value);
     }
 
-    /// <summary>
-    /// Available slot filters.
-    /// </summary>
     public ObservableCollection<SlotFilterInfo> SlotFilters
     {
         get => GetValue(SlotFiltersProperty);
         set => SetValue(SlotFiltersProperty, value);
     }
 
-    /// <summary>
-    /// Currently selected slot filter. Null or AllSlots means no filter.
-    /// </summary>
+    /// <summary>Currently selected slot filter. Null or AllSlots means no filter.</summary>
     public SlotFilterInfo? SelectedSlotFilter
     {
         get => GetValue(SelectedSlotFilterProperty);
@@ -319,7 +240,6 @@ public partial class ItemFilterPanel : UserControl
         _debounceTimer.Stop();
         _debounceTimer.Dispose();
 
-        // Unsubscribe from collection changes
         if (Items != null)
         {
             Items.CollectionChanged -= OnItemsCollectionChanged;
@@ -336,13 +256,11 @@ public partial class ItemFilterPanel : UserControl
 
         if (change.Property == ItemsProperty)
         {
-            // Unsubscribe from old collection
             if (change.OldValue is ObservableCollection<ItemViewModel> oldItems)
             {
                 oldItems.CollectionChanged -= OnItemsCollectionChanged;
             }
 
-            // Subscribe to new collection
             if (change.NewValue is ObservableCollection<ItemViewModel> newItems)
             {
                 newItems.CollectionChanged += OnItemsCollectionChanged;
@@ -381,7 +299,6 @@ public partial class ItemFilterPanel : UserControl
 
     private void OnItemsCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
     {
-        // Re-apply filter when source items change
         ApplyFilter();
     }
 
@@ -393,7 +310,6 @@ public partial class ItemFilterPanel : UserControl
     {
         ItemTypes.Clear();
 
-        // Always add "All Types" option
         ItemTypes.Add(ItemTypeInfo.AllTypes);
 
         if (GameDataService == null || !GameDataService.IsConfigured)
@@ -403,10 +319,8 @@ public partial class ItemFilterPanel : UserControl
         if (baseItems == null)
             return;
 
-        // Load valid base item types
         for (int i = 0; i < baseItems.Rows.Count; i++)
         {
-            // Skip invalid/unused entries
             var label = baseItems.GetValue(i, "label");
             if (string.IsNullOrEmpty(label) || label == "****")
                 continue;

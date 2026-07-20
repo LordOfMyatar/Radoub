@@ -21,9 +21,7 @@ namespace Radoub.UI.Services;
 /// </summary>
 public static class RecentFilesMenuHelper
 {
-    /// <summary>
-    /// Populates a MenuItem with recent file entries.
-    /// </summary>
+    /// <summary>Populates a MenuItem with recent file entries.</summary>
     /// <param name="menuItem">The parent MenuItem to populate (e.g., "Open Recent")</param>
     /// <param name="recentFiles">List of file paths from the settings service</param>
     /// <param name="onFileClick">Callback when a file is clicked. Receives the file path.

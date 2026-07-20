@@ -10,18 +10,12 @@ namespace Radoub.Formats.Bic;
 /// </summary>
 public static class BicReader
 {
-    /// <summary>
-    /// Read a BIC file from a file path.
-    /// </summary>
     public static BicFile Read(string filePath)
     {
         var buffer = File.ReadAllBytes(filePath);
         return Read(buffer);
     }
 
-    /// <summary>
-    /// Read a BIC file from a stream.
-    /// </summary>
     public static BicFile Read(Stream stream)
     {
         using var ms = new MemoryStream();
@@ -29,15 +23,10 @@ public static class BicReader
         return Read(ms.ToArray());
     }
 
-    /// <summary>
-    /// Read a BIC file from a byte buffer.
-    /// </summary>
     public static BicFile Read(byte[] buffer)
     {
-        // Parse as GFF first
         var gff = GffReader.Read(buffer);
 
-        // Validate file type
         if (gff.FileType.TrimEnd() != "BIC")
         {
             throw new InvalidDataException(
@@ -244,13 +233,13 @@ public static class BicReader
                 Domain2 = classStruct.GetFieldValue<byte>("Domain2", 0)
             };
 
-            // Parse known spells (KnownList0-9) - used by Bards, Sorcerers, PC Wizards
+            // KnownList0-9 - used by Bards, Sorcerers, PC Wizards
             for (int level = 0; level < 10; level++)
             {
                 ParseKnownSpellList(classStruct, creatureClass, level);
             }
 
-            // Parse memorized spells (MemorizedList0-9) - used by Wizards, Clerics, etc.
+            // MemorizedList0-9 - used by Wizards, Clerics, etc.
             for (int level = 0; level < 10; level++)
             {
                 ParseMemorizedSpellList(classStruct, creatureClass, level);
@@ -478,7 +467,6 @@ public static class BicReader
                 SkillPoints = lvlStruct.GetFieldValue<short>("SkillPoints", 0)
             };
 
-            // Parse SkillList
             var skillListField = lvlStruct.GetField("SkillList");
             if (skillListField?.Value is GffList skillList)
             {
@@ -489,7 +477,6 @@ public static class BicReader
                 }
             }
 
-            // Parse FeatList
             var featListField = lvlStruct.GetField("FeatList");
             if (featListField?.Value is GffList featList)
             {

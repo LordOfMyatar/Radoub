@@ -93,9 +93,7 @@ namespace Radoub.UI.Services
             return window;
         }
 
-        /// <summary>
-        /// Gets an existing window by key without creating a new one.
-        /// </summary>
+        /// <summary>Gets an existing window by key without creating a new one.</summary>
         /// <typeparam name="T">Window type</typeparam>
         /// <param name="key">Unique key for this window type</param>
         /// <returns>The window instance, or null if not exists or not visible</returns>
@@ -108,17 +106,13 @@ namespace Radoub.UI.Services
             return null;
         }
 
-        /// <summary>
-        /// Checks if a window exists and is visible.
-        /// </summary>
+        /// <summary>Checks if a window exists and is visible.</summary>
         public bool IsOpen(string key)
         {
             return _windows.TryGetValue(key, out var window) && window?.IsVisible == true;
         }
 
-        /// <summary>
-        /// Closes a specific window if it exists.
-        /// </summary>
+        /// <summary>Closes a specific window if it exists.</summary>
         /// <param name="key">Unique key for the window</param>
         /// <returns>True if window was closed, false if it didn't exist</returns>
         public bool Close(string key)
@@ -155,9 +149,7 @@ namespace Radoub.UI.Services
             _closedCallbacks.Clear();
         }
 
-        /// <summary>
-        /// Performs an action on a window if it exists and is visible.
-        /// </summary>
+        /// <summary>Performs an action on a window if it exists and is visible.</summary>
         /// <typeparam name="T">Window type</typeparam>
         /// <param name="key">Unique key for this window type</param>
         /// <param name="action">Action to perform on the window</param>

@@ -1,8 +1,6 @@
 namespace Radoub.UI.Services.Search;
 
-/// <summary>
-/// Outcome of a ResRefRenameOrchestrator.ExecuteAsync call.
-/// </summary>
+/// <summary>Outcome of a ResRefRenameOrchestrator.ExecuteAsync call.</summary>
 public class ResRefRenameResult
 {
     public required bool Success { get; init; }

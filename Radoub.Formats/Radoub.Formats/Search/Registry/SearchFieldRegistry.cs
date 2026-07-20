@@ -8,9 +8,7 @@ public class SearchFieldRegistry
 {
     private readonly Dictionary<ushort, List<FieldDefinition>> _fieldsByType = new();
 
-    /// <summary>
-    /// Register searchable fields for a file type.
-    /// </summary>
+    /// <summary>Register searchable fields for a file type.</summary>
     public void RegisterFileType(ushort resourceType, params FieldDefinition[] fields)
     {
         if (!_fieldsByType.ContainsKey(resourceType))
@@ -30,9 +28,7 @@ public class SearchFieldRegistry
             : Array.Empty<FieldDefinition>();
     }
 
-    /// <summary>
-    /// Get fields filtered by category for a file type.
-    /// </summary>
+    /// <summary>Get fields filtered by category for a file type.</summary>
     public IReadOnlyList<FieldDefinition> GetFieldsByCategory(
         ushort resourceType, SearchFieldCategory category)
     {
@@ -42,26 +38,20 @@ public class SearchFieldRegistry
             .AsReadOnly();
     }
 
-    /// <summary>
-    /// Get all registered file types.
-    /// </summary>
+    /// <summary>Get all registered file types.</summary>
     public IReadOnlyList<ushort> GetAllFileTypes()
     {
         return _fieldsByType.Keys.ToList().AsReadOnly();
     }
 
-    /// <summary>
-    /// Check if a field supports replace for a given file type.
-    /// </summary>
+    /// <summary>Check if a field supports replace for a given file type.</summary>
     public bool IsReplaceable(ushort resourceType, string fieldName)
     {
         return GetSearchableFields(resourceType)
             .Any(f => f.Name == fieldName && f.IsReplaceable);
     }
 
-    /// <summary>
-    /// Returns true if the file type has any registered fields.
-    /// </summary>
+    /// <summary>Returns true if the file type has any registered fields.</summary>
     public bool IsRegistered(ushort resourceType)
     {
         return _fieldsByType.ContainsKey(resourceType);

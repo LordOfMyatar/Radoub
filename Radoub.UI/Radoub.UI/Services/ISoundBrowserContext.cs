@@ -1,48 +1,30 @@
 namespace Radoub.UI.Services;
 
-/// <summary>
-/// Represents a sound entry in the browser with metadata.
-/// </summary>
+/// <summary>Represents a sound entry in the browser with metadata.</summary>
 public class SoundEntry
 {
-    /// <summary>
-    /// Sound filename without extension (e.g., "vs_femelf_att1").
-    /// </summary>
+    /// <summary>Sound filename without extension (e.g., "vs_femelf_att1").</summary>
     public string ResRef { get; set; } = "";
 
-    /// <summary>
-    /// Source of the sound file (e.g., "Override", "BIF: sounds", "HAK: custom.hak").
-    /// </summary>
+    /// <summary>Source of the sound file (e.g., "Override", "BIF: sounds", "HAK: custom.hak").</summary>
     public string Source { get; set; } = "";
 
-    /// <summary>
-    /// Full path to the file (for loose files) or null (for archived).
-    /// </summary>
+    /// <summary>Full path to the file (for loose files) or null (for archived).</summary>
     public string? FilePath { get; set; }
 
-    /// <summary>
-    /// Whether this is a mono sound (required for NWN voice/sfx).
-    /// </summary>
+    /// <summary>Whether this is a mono sound (required for NWN voice/sfx).</summary>
     public bool IsMono { get; set; }
 
-    /// <summary>
-    /// Whether this is a valid WAV file format.
-    /// </summary>
+    /// <summary>Whether this is a valid WAV file format.</summary>
     public bool IsValidWav { get; set; } = true;
 
-    /// <summary>
-    /// Whether this sound comes from a HAK archive.
-    /// </summary>
+    /// <summary>Whether this sound comes from a HAK archive.</summary>
     public bool IsFromHak { get; set; }
 
-    /// <summary>
-    /// Whether this sound comes from a BIF archive.
-    /// </summary>
+    /// <summary>Whether this sound comes from a BIF archive.</summary>
     public bool IsFromBif { get; set; }
 
-    /// <summary>
-    /// Display name for the sound.
-    /// </summary>
+    /// <summary>Display name for the sound.</summary>
     public string DisplayName => ResRef;
 }
 
@@ -53,9 +35,7 @@ public class SoundEntry
 /// </summary>
 public interface ISoundBrowserContext
 {
-    /// <summary>
-    /// The current file's directory (for local sound lookup).
-    /// </summary>
+    /// <summary>The current file's directory (for local sound lookup).</summary>
     string? CurrentFileDirectory { get; }
 
     /// <summary>
@@ -70,35 +50,25 @@ public interface ISoundBrowserContext
     /// </summary>
     string? BaseGameInstallPath { get; }
 
-    /// <summary>
-    /// Whether game resources (BIF files) are available for sound lookup.
-    /// </summary>
+    /// <summary>Whether game resources (BIF files) are available for sound lookup.</summary>
     bool GameResourcesAvailable { get; }
 
-    /// <summary>
-    /// Lists sounds from the specified sources.
-    /// </summary>
+    /// <summary>Lists sounds from the specified sources.</summary>
     /// <param name="includeOverride">Include override folder sounds</param>
     /// <param name="includeHak">Include HAK file sounds</param>
     /// <param name="includeBif">Include BIF archive sounds</param>
     /// <returns>List of sound entries</returns>
     IEnumerable<SoundEntry> ListSounds(bool includeOverride = true, bool includeHak = true, bool includeBif = true);
 
-    /// <summary>
-    /// Extracts a sound to a temporary file for playback.
-    /// </summary>
+    /// <summary>Extracts a sound to a temporary file for playback.</summary>
     /// <param name="entry">Sound entry to extract</param>
     /// <returns>Path to temporary file, or null if extraction failed</returns>
     string? ExtractToTemp(SoundEntry entry);
 
-    /// <summary>
-    /// Plays a sound by path.
-    /// </summary>
+    /// <summary>Plays a sound by path.</summary>
     /// <param name="path">Path to sound file</param>
     void Play(string path);
 
-    /// <summary>
-    /// Stops any currently playing sound.
-    /// </summary>
+    /// <summary>Stops any currently playing sound.</summary>
     void Stop();
 }

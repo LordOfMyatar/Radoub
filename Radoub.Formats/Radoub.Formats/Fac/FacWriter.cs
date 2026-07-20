@@ -8,27 +8,21 @@ namespace Radoub.Formats.Fac;
 /// </summary>
 public static class FacWriter
 {
-    /// <summary>
-    /// Write a FAC file to a file path.
-    /// </summary>
+    /// <summary>Write a FAC file to a file path.</summary>
     public static void Write(FacFile fac, string filePath)
     {
         var buffer = Write(fac);
         File.WriteAllBytes(filePath, buffer);
     }
 
-    /// <summary>
-    /// Write a FAC file to a stream.
-    /// </summary>
+    /// <summary>Write a FAC file to a stream.</summary>
     public static void Write(FacFile fac, Stream stream)
     {
         var buffer = Write(fac);
         stream.Write(buffer, 0, buffer.Length);
     }
 
-    /// <summary>
-    /// Write a FAC file to a byte buffer.
-    /// </summary>
+    /// <summary>Write a FAC file to a byte buffer.</summary>
     public static byte[] Write(FacFile fac)
     {
         var gff = new GffFile
@@ -39,7 +33,6 @@ public static class FacWriter
 
         gff.RootStruct = new GffStruct { Type = 0xFFFFFFFF };
 
-        // Build FactionList
         var factionStructs = new List<GffStruct>();
         foreach (var faction in fac.FactionList)
         {
@@ -51,7 +44,6 @@ public static class FacWriter
         }
         GffFieldBuilder.AddListField(gff.RootStruct, "FactionList", factionStructs);
 
-        // Build RepList
         var repStructs = new List<GffStruct>();
         foreach (var rep in fac.RepList)
         {

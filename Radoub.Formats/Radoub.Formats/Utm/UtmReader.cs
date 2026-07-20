@@ -9,18 +9,14 @@ namespace Radoub.Formats.Utm;
 /// </summary>
 public static class UtmReader
 {
-    /// <summary>
-    /// Read a UTM file from a file path.
-    /// </summary>
+    /// <summary>Read a UTM file from a file path.</summary>
     public static UtmFile Read(string filePath)
     {
         var buffer = File.ReadAllBytes(filePath);
         return Read(buffer);
     }
 
-    /// <summary>
-    /// Read a UTM file from a stream.
-    /// </summary>
+    /// <summary>Read a UTM file from a stream.</summary>
     public static UtmFile Read(Stream stream)
     {
         using var ms = new MemoryStream();
@@ -28,15 +24,11 @@ public static class UtmReader
         return Read(ms.ToArray());
     }
 
-    /// <summary>
-    /// Read a UTM file from a byte buffer.
-    /// </summary>
+    /// <summary>Read a UTM file from a byte buffer.</summary>
     public static UtmFile Read(byte[] buffer)
     {
-        // Parse as GFF first
         var gff = GffReader.Read(buffer);
 
-        // Validate file type
         if (gff.FileType.TrimEnd() != "UTM")
         {
             throw new InvalidDataException(
@@ -79,17 +71,13 @@ public static class UtmReader
             OnStoreClosed = root.GetFieldValue<string>("OnStoreClosed", string.Empty)
         };
 
-        // Localized name
         utm.LocName = ParseLocString(root, "LocName") ?? new CExoLocString();
 
-        // Store inventory panels
         ParseStoreList(root, utm);
 
-        // Buy restrictions
         ParseWillOnlyBuy(root, utm);
         ParseWillNotBuy(root, utm);
 
-        // Local variables
         utm.VarTable = VarTableHelper.ReadVarTable(root);
 
         return utm;
@@ -117,7 +105,6 @@ public static class UtmReader
                 PanelId = (int)panelStruct.Type
             };
 
-            // Parse ItemList within each panel
             ParsePanelItems(panelStruct, panel);
 
             utm.StoreList.Add(panel);

@@ -129,9 +129,7 @@ public static class ResourceTypes
     public const ushort Bif = 9998;
     public const ushort Key = 9999;
 
-    /// <summary>
-    /// Get the file extension for a resource type.
-    /// </summary>
+    /// <summary>Get the file extension for a resource type.</summary>
     public static string GetExtension(ushort resourceType)
     {
         return resourceType switch
@@ -194,9 +192,7 @@ public static class ResourceTypes
         };
     }
 
-    /// <summary>
-    /// Get the resource type from a file extension.
-    /// </summary>
+    /// <summary>Get the resource type from a file extension.</summary>
     public static ushort FromExtension(string extension)
     {
         var ext = extension.TrimStart('.').ToLowerInvariant();

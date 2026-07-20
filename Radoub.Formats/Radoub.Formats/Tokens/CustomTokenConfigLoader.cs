@@ -23,9 +23,7 @@ public static class CustomTokenConfigLoader
 
     private static readonly Regex CustomTagPattern = new(@"^<CUSTOM\d+>$", RegexOptions.Compiled);
 
-    /// <summary>
-    /// Get the default configuration file path.
-    /// </summary>
+    /// <summary>Get the default configuration file path.</summary>
     public static string GetDefaultConfigPath()
     {
         var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -61,17 +59,13 @@ public static class CustomTokenConfigLoader
         }
     }
 
-    /// <summary>
-    /// Load configuration from the default path, creating empty default if not exists.
-    /// </summary>
+    /// <summary>Load configuration from the default path, creating empty default if not exists.</summary>
     public static CustomTokenConfig LoadOrCreateDefault()
     {
         return LoadOrCreateDefault(GetDefaultConfigPath());
     }
 
-    /// <summary>
-    /// Load configuration from a specific path, creating empty default if not exists.
-    /// </summary>
+    /// <summary>Load configuration from a specific path, creating empty default if not exists.</summary>
     public static CustomTokenConfig LoadOrCreateDefault(string path)
     {
         if (File.Exists(path))
@@ -82,9 +76,7 @@ public static class CustomTokenConfigLoader
         return config;
     }
 
-    /// <summary>
-    /// Save configuration to a specific path.
-    /// </summary>
+    /// <summary>Save configuration to a specific path.</summary>
     public static void Save(CustomTokenConfig config, string path)
     {
         var json = JsonSerializer.Serialize(config, JsonOptions);

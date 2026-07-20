@@ -56,66 +56,38 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    /// <summary>
-    /// Tool name used for directory and logging (e.g., "Quartermaster", "Fence").
-    /// </summary>
+    /// <summary>Tool name used for directory and logging (e.g., "Quartermaster", "Fence").</summary>
     protected abstract string ToolName { get; }
 
-    /// <summary>
-    /// Environment variable name for settings directory override (e.g., "QUARTERMASTER_SETTINGS_DIR").
-    /// </summary>
+    /// <summary>Environment variable name for settings directory override (e.g., "QUARTERMASTER_SETTINGS_DIR").</summary>
     protected abstract string SettingsEnvironmentVariable { get; }
 
-    /// <summary>
-    /// Settings JSON filename (e.g., "QuartermasterSettings.json").
-    /// </summary>
+    /// <summary>Settings JSON filename (e.g., "QuartermasterSettings.json").</summary>
     protected abstract string SettingsFileName { get; }
 
-    /// <summary>
-    /// Default window width for this tool.
-    /// </summary>
     protected virtual double DefaultWindowWidth => 1200;
 
-    /// <summary>
-    /// Default window height for this tool.
-    /// </summary>
     protected virtual double DefaultWindowHeight => 800;
 
-    /// <summary>
-    /// Minimum window width constraint.
-    /// </summary>
     protected virtual double MinWindowWidth => 600;
 
-    /// <summary>
-    /// Minimum window height constraint.
-    /// </summary>
     protected virtual double MinWindowHeight => 400;
 
-    /// <summary>
-    /// Default width of the resizable browser/side-panel (#2356).
-    /// </summary>
+    /// <summary>Default width of the resizable browser/side-panel (#2356).</summary>
     protected virtual double DefaultBrowserPanelWidth => 250;
 
-    /// <summary>
-    /// Minimum browser-panel width constraint (#2356).
-    /// </summary>
+    /// <summary>Minimum browser-panel width constraint (#2356).</summary>
     protected virtual double MinBrowserPanelWidth => 150;
 
-    /// <summary>
-    /// Maximum browser-panel width constraint (#2356).
-    /// </summary>
+    /// <summary>Maximum browser-panel width constraint (#2356).</summary>
     protected virtual double MaxBrowserPanelWidth => 500;
 
-    /// <summary>
-    /// Shared settings for game paths and TLK configuration.
-    /// </summary>
+    /// <summary>Shared settings for game paths and TLK configuration.</summary>
     public static RadoubSettings SharedSettings => RadoubSettings.Instance;
 
     private string? _settingsDirectory;
 
-    /// <summary>
-    /// Gets the settings directory, supporting environment variable override for testing.
-    /// </summary>
+    /// <summary>Gets the settings directory, supporting environment variable override for testing.</summary>
     protected string SettingsDirectory
     {
         get
@@ -229,16 +201,10 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
         }
     }
 
-    /// <summary>
-    /// Override to perform additional actions when log retention changes.
-    /// Trebuchet uses this to sync to RadoubSettings.
-    /// </summary>
+    /// <summary>Override for extra actions on retention change. Trebuchet syncs to RadoubSettings.</summary>
     protected virtual void OnLoggingRetentionChanged(int sessions) { }
 
-    /// <summary>
-    /// Override to perform additional actions when log level changes.
-    /// Trebuchet uses this to sync to RadoubSettings.
-    /// </summary>
+    /// <summary>Override for extra actions on log-level change. Trebuchet syncs to RadoubSettings.</summary>
     protected virtual void OnLoggingLevelChanged(LogLevel level) { }
 
     #endregion
@@ -375,7 +341,6 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
 
                 if (settings != null)
                 {
-                    // Load common properties
                     _windowLeft = settings.WindowLeft;
                     _windowTop = settings.WindowTop;
                     _windowWidth = Math.Max(MinWindowWidth, settings.WindowWidth);
@@ -397,7 +362,6 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
                         UnifiedLogger.SetLogLevel(shared.SharedLogLevel);
                     }
 
-                    // Load recent files
                     _recentFiles = PathHelper.ExpandPaths(settings.RecentFiles ?? new List<string>()).ToList();
                     _maxRecentFiles = settings.MaxRecentFiles > 0 && settings.MaxRecentFiles <= 20
                         ? settings.MaxRecentFiles
@@ -411,7 +375,6 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
 
                     ValidateRecentFilesOnLoad();
 
-                    // Load tool-specific properties
                     LoadToolSettings(settings);
 
                     UnifiedLogger.LogApplication(LogLevel.INFO,
@@ -440,7 +403,6 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
         {
             var settings = new TSettings();
 
-            // Save common properties
             settings.WindowLeft = WindowLeft;
             settings.WindowTop = WindowTop;
             settings.WindowWidth = WindowWidth;
@@ -455,7 +417,6 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
             settings.BrowserPanelWidth = BrowserPanelWidth;
             settings.BrowserPanelVisible = BrowserPanelVisible;
 
-            // Save tool-specific properties
             SaveToolSettings(settings);
 
             var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
@@ -473,16 +434,10 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
         }
     }
 
-    /// <summary>
-    /// Load tool-specific properties from the deserialized settings data.
-    /// Called during LoadSettings() after common properties are loaded.
-    /// </summary>
+    /// <summary>Load tool-specific properties. Called by LoadSettings() after common properties.</summary>
     protected abstract void LoadToolSettings(TSettings settings);
 
-    /// <summary>
-    /// Save tool-specific properties to the settings data object.
-    /// Called during SaveSettings() after common properties are saved.
-    /// </summary>
+    /// <summary>Save tool-specific properties. Called by SaveSettings() after common properties.</summary>
     protected abstract void SaveToolSettings(TSettings settings);
 
     #endregion
@@ -509,9 +464,8 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
     #region Base Settings Data
 
     /// <summary>
-    /// Base class for the JSON-serializable settings data.
-    /// Contains all common properties. Tool-specific data classes
-    /// should inherit from this and add their own properties.
+    /// Base for the JSON-serializable settings data. Tool-specific data classes inherit
+    /// from this and add their own properties.
     /// </summary>
     public class BaseSettingsData
     {

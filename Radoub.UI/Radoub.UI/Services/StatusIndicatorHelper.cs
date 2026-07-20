@@ -24,9 +24,7 @@ public static class StatusIndicatorHelper
     /// <summary>Info indicator (information) - U+2139</summary>
     public const string Info = "\u2139";
 
-    /// <summary>
-    /// Formats a validation message with the appropriate status icon.
-    /// </summary>
+    /// <summary>Formats a validation message with the appropriate status icon.</summary>
     /// <param name="message">The validation message text</param>
     /// <param name="isValid">True for success icon, false for error icon</param>
     /// <returns>Message prefixed with status icon and space</returns>
@@ -39,9 +37,7 @@ public static class StatusIndicatorHelper
         return $"{icon} {message}";
     }
 
-    /// <summary>
-    /// Formats a message with a warning icon.
-    /// </summary>
+    /// <summary>Formats a message with a warning icon.</summary>
     /// <param name="message">The warning message text</param>
     /// <returns>Message prefixed with warning icon and space</returns>
     public static string FormatWarning(string message)
@@ -52,9 +48,7 @@ public static class StatusIndicatorHelper
         return $"{Warning} {message}";
     }
 
-    /// <summary>
-    /// Formats a message with an info icon.
-    /// </summary>
+    /// <summary>Formats a message with an info icon.</summary>
     /// <param name="message">The info message text</param>
     /// <returns>Message prefixed with info icon and space</returns>
     public static string FormatInfo(string message)

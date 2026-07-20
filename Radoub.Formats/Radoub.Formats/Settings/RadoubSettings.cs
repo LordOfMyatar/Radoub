@@ -15,9 +15,7 @@ public partial class RadoubSettings : INotifyPropertyChanged
     private static RadoubSettings? _instance;
     private static readonly object _lock = new();
 
-    /// <summary>
-    /// Singleton instance of shared settings.
-    /// </summary>
+    /// <summary>Singleton instance of shared settings.</summary>
     public static RadoubSettings Instance
     {
         get
@@ -156,9 +154,7 @@ public partial class RadoubSettings : INotifyPropertyChanged
             "RadoubSettings", "Settings");
     }
 
-    /// <summary>
-    /// Base game installation path (Steam/GOG - contains data\ folder with BIF/KEY files).
-    /// </summary>
+    /// <summary>Base game installation path (Steam/GOG - contains data\ folder with BIF/KEY files).</summary>
     public string BaseGameInstallPath
     {
         get => _baseGameInstallPath;
@@ -175,9 +171,7 @@ public partial class RadoubSettings : INotifyPropertyChanged
         set { if (SetProperty(ref _neverwinterNightsPath, value ?? "")) SaveSettings(); }
     }
 
-    /// <summary>
-    /// Currently active module path.
-    /// </summary>
+    /// <summary>Currently active module path.</summary>
     public string CurrentModulePath
     {
         get => _currentModulePath;
@@ -214,9 +208,7 @@ public partial class RadoubSettings : INotifyPropertyChanged
     /// </summary>
     public IReadOnlyList<string> HakSearchPaths => _hakSearchPaths.AsReadOnly();
 
-    /// <summary>
-    /// Add a HAK search path if not already present.
-    /// </summary>
+    /// <summary>Add a HAK search path if not already present.</summary>
     public void AddHakSearchPath(string path)
     {
         if (string.IsNullOrWhiteSpace(path)) return;
@@ -230,9 +222,6 @@ public partial class RadoubSettings : INotifyPropertyChanged
         }
     }
 
-    /// <summary>
-    /// Remove a HAK search path.
-    /// </summary>
     public bool RemoveHakSearchPath(string path)
     {
         if (string.IsNullOrWhiteSpace(path)) return false;
@@ -249,9 +238,7 @@ public partial class RadoubSettings : INotifyPropertyChanged
         return false;
     }
 
-    /// <summary>
-    /// Clear all additional HAK search paths.
-    /// </summary>
+    /// <summary>Clear all additional HAK search paths.</summary>
     public void ClearHakSearchPaths()
     {
         if (_hakSearchPaths.Count > 0)
@@ -262,9 +249,7 @@ public partial class RadoubSettings : INotifyPropertyChanged
         }
     }
 
-    /// <summary>
-    /// Set all HAK search paths at once.
-    /// </summary>
+    /// <summary>Set all HAK search paths at once.</summary>
     public void SetHakSearchPaths(IEnumerable<string> paths)
     {
         _hakSearchPaths.Clear();
@@ -289,7 +274,6 @@ public partial class RadoubSettings : INotifyPropertyChanged
     /// </summary>
     public IEnumerable<string> GetAllHakSearchPaths()
     {
-        // Default hak folder from NeverwinterNightsPath
         if (!string.IsNullOrEmpty(_neverwinterNightsPath))
         {
             var defaultHakPath = Path.Combine(_neverwinterNightsPath, "hak");
@@ -299,7 +283,6 @@ public partial class RadoubSettings : INotifyPropertyChanged
             }
         }
 
-        // Additional search paths
         foreach (var path in _hakSearchPaths)
         {
             if (Directory.Exists(path))
@@ -340,22 +323,16 @@ public partial class RadoubSettings : INotifyPropertyChanged
         set { if (SetProperty(ref _defaultLanguage, value)) SaveSettings(); }
     }
 
-    /// <summary>
-    /// Get the preferred language as enum, or DefaultLanguage if auto-detect.
-    /// </summary>
+    /// <summary>Preferred language as enum, or null when set to auto-detect.</summary>
     public Language? PreferredLanguage
     {
         get => string.IsNullOrEmpty(_tlkLanguage) ? null : LanguageHelper.FromLanguageCode(_tlkLanguage);
     }
 
-    /// <summary>
-    /// Get the effective language for display (PreferredLanguage or DefaultLanguage).
-    /// </summary>
+    /// <summary>Effective display language (PreferredLanguage or DefaultLanguage).</summary>
     public Language EffectiveLanguage => PreferredLanguage ?? _defaultLanguage;
 
-    /// <summary>
-    /// Get the preferred gender for TLK strings.
-    /// </summary>
+    /// <summary>Preferred gender for TLK strings.</summary>
     public Gender PreferredGender => _tlkUseFemale ? Gender.Female : Gender.Male;
 
     /// <summary>
@@ -368,41 +345,30 @@ public partial class RadoubSettings : INotifyPropertyChanged
         set { if (SetProperty(ref _sharedThemeId, value ?? "")) SaveSettings(); }
     }
 
-    /// <summary>
-    /// Check if a shared theme is configured.
-    /// </summary>
     public bool HasSharedTheme => !string.IsNullOrEmpty(_sharedThemeId);
 
-    /// <summary>
-    /// Shared font size applied to all tools. Trebuchet is the sole authority.
-    /// </summary>
+    /// <summary>Shared font size applied to all tools. Trebuchet is the sole authority.</summary>
     public double SharedFontSize
     {
         get => _sharedFontSize;
         set { if (SetProperty(ref _sharedFontSize, Math.Max(8, Math.Min(32, value)))) SaveSettings(); }
     }
 
-    /// <summary>
-    /// Shared font family applied to all tools. Trebuchet is the sole authority.
-    /// </summary>
+    /// <summary>Shared font family applied to all tools. Trebuchet is the sole authority.</summary>
     public string SharedFontFamily
     {
         get => _sharedFontFamily;
         set { if (SetProperty(ref _sharedFontFamily, value ?? "Segoe UI")) SaveSettings(); }
     }
 
-    /// <summary>
-    /// Shared log level for all tools.
-    /// </summary>
+    /// <summary>Shared log level for all tools.</summary>
     public LogLevel SharedLogLevel
     {
         get => _sharedLogLevel;
         set { if (SetProperty(ref _sharedLogLevel, value)) SaveSettings(); }
     }
 
-    /// <summary>
-    /// Shared log retention sessions (1-10).
-    /// </summary>
+    /// <summary>Shared log retention sessions (1-10).</summary>
     public int SharedLogRetentionSessions
     {
         get => _sharedLogRetentionSessions;
@@ -413,24 +379,16 @@ public partial class RadoubSettings : INotifyPropertyChanged
         }
     }
 
-    /// <summary>
-    /// If true, tools use shared logging settings instead of their own.
-    /// </summary>
+    /// <summary>If true, tools use shared logging settings instead of their own.</summary>
     public bool UseSharedLogging
     {
         get => _useSharedLogging;
         set { if (SetProperty(ref _useSharedLogging, value)) SaveSettings(); }
     }
 
-    /// <summary>
-    /// Check if shared logging is enabled.
-    /// </summary>
     public bool HasSharedLogging => _useSharedLogging;
 
-    /// <summary>
-    /// Get a LoggingSettings instance from shared settings.
-    /// Tools can use this to initialize their logging.
-    /// </summary>
+    /// <summary>LoggingSettings built from shared settings, for tools to initialize logging.</summary>
     public LoggingSettings GetSharedLoggingSettings()
     {
         return new LoggingSettings
@@ -440,9 +398,7 @@ public partial class RadoubSettings : INotifyPropertyChanged
         };
     }
 
-    /// <summary>
-    /// Backup retention in days (1-90). Backups older than this are deleted on startup.
-    /// </summary>
+    /// <summary>Backup retention in days (1-90). Backups older than this are deleted on startup.</summary>
     public int BackupRetentionDays
     {
         get => _backupRetentionDays;
@@ -460,9 +416,7 @@ public partial class RadoubSettings : INotifyPropertyChanged
     /// </summary>
     public IReadOnlyList<string> GarbageFilters => _garbageFilters.AsReadOnly();
 
-    /// <summary>
-    /// Replace all garbage filters.
-    /// </summary>
+    /// <summary>Replace all garbage filters.</summary>
     public void SetGarbageFilters(IEnumerable<string> filters)
     {
         _garbageFilters = filters.Where(f => !string.IsNullOrWhiteSpace(f)).ToList();
@@ -470,10 +424,7 @@ public partial class RadoubSettings : INotifyPropertyChanged
         SaveSettings();
     }
 
-    /// <summary>
-    /// Get the path to Radoub-level themes folder.
-    /// Location: ~/Radoub/Themes/
-    /// </summary>
+    /// <summary>Path to the Radoub-level themes folder (~/Radoub/Themes/); created if missing.</summary>
     public string GetSharedThemesPath()
     {
         var path = Path.Combine(SettingsDirectory, "Themes");
@@ -486,63 +437,49 @@ public partial class RadoubSettings : INotifyPropertyChanged
 
     // Tool path properties - auto-populated by tools for cross-tool discovery
 
-    /// <summary>
-    /// Path to Parley.exe. Auto-set when Parley runs.
-    /// </summary>
+    /// <summary>Path to Parley.exe. Auto-set when Parley runs.</summary>
     public string ParleyPath
     {
         get => _parleyPath;
         set { if (SetProperty(ref _parleyPath, value ?? "")) SaveSettings(); }
     }
 
-    /// <summary>
-    /// Path to Manifest.exe. Auto-set when Manifest runs.
-    /// </summary>
+    /// <summary>Path to Manifest.exe. Auto-set when Manifest runs.</summary>
     public string ManifestPath
     {
         get => _manifestPath;
         set { if (SetProperty(ref _manifestPath, value ?? "")) SaveSettings(); }
     }
 
-    /// <summary>
-    /// Path to Quartermaster.exe. Auto-set when Quartermaster runs.
-    /// </summary>
+    /// <summary>Path to Quartermaster.exe. Auto-set when Quartermaster runs.</summary>
     public string QuartermasterPath
     {
         get => _quartermasterPath;
         set { if (SetProperty(ref _quartermasterPath, value ?? "")) SaveSettings(); }
     }
 
-    /// <summary>
-    /// Path to Fence.exe. Auto-set when Fence runs.
-    /// </summary>
+    /// <summary>Path to Fence.exe. Auto-set when Fence runs.</summary>
     public string FencePath
     {
         get => _fencePath;
         set { if (SetProperty(ref _fencePath, value ?? "")) SaveSettings(); }
     }
 
-    /// <summary>
-    /// Path to Trebuchet.exe. Auto-set when Trebuchet runs.
-    /// </summary>
+    /// <summary>Path to Trebuchet.exe. Auto-set when Trebuchet runs.</summary>
     public string TrebuchetPath
     {
         get => _trebuchetPath;
         set { if (SetProperty(ref _trebuchetPath, value ?? "")) SaveSettings(); }
     }
 
-    /// <summary>
-    /// Path to Relique (ItemEditor) executable. Auto-set when Relique runs.
-    /// </summary>
+    /// <summary>Path to Relique (ItemEditor) executable. Auto-set when Relique runs.</summary>
     public string ReliquePath
     {
         get => _reliquePath;
         set { if (SetProperty(ref _reliquePath, value ?? "")) SaveSettings(); }
     }
 
-    /// <summary>
-    /// Path to Reliquary (PlaceableEditor) executable. Auto-set when Reliquary runs.
-    /// </summary>
+    /// <summary>Path to Reliquary (PlaceableEditor) executable. Auto-set when Reliquary runs.</summary>
     public string ReliquaryPath
     {
         get => _reliquaryPath;
@@ -559,9 +496,7 @@ public partial class RadoubSettings : INotifyPropertyChanged
         set { if (SetProperty(ref _codeEditorPath, value ?? "")) SaveSettings(); }
     }
 
-    /// <summary>
-    /// Check if game paths are configured.
-    /// </summary>
+    /// <summary>True when at least one of the two game paths is set.</summary>
     public bool HasGamePaths => !string.IsNullOrEmpty(_baseGameInstallPath) || !string.IsNullOrEmpty(_neverwinterNightsPath);
 
     /// <summary>
@@ -622,7 +557,6 @@ public partial class RadoubSettings : INotifyPropertyChanged
         if (string.IsNullOrEmpty(path))
             return false;
 
-        // .mod file
         if (File.Exists(path) && path.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
             return true;
 
@@ -679,9 +613,7 @@ public partial class RadoubSettings : INotifyPropertyChanged
         return null;
     }
 
-    /// <summary>
-    /// Find available TLK languages in the game installation.
-    /// </summary>
+    /// <summary>Find available TLK languages in the game installation.</summary>
     public IEnumerable<Language> GetAvailableTlkLanguages()
     {
         if (string.IsNullOrEmpty(_baseGameInstallPath))
@@ -705,9 +637,7 @@ public partial class RadoubSettings : INotifyPropertyChanged
         }
     }
 
-    /// <summary>
-    /// Get the TLK file path for a specific language.
-    /// </summary>
+    /// <summary>Get the TLK file path for a specific language.</summary>
     public string? GetTlkPath(Language language, Gender gender = Gender.Male)
     {
         if (string.IsNullOrEmpty(_baseGameInstallPath))

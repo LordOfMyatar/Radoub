@@ -101,16 +101,13 @@ public class DlgSearchProvider : SearchProviderBase, IFileSearchProvider
         return results;
     }
 
-    /// <summary>
-    /// Navigate the GFF tree to find the struct that contains the field to replace.
-    /// </summary>
+    /// <summary>Navigate the GFF tree to find the struct that contains the field to replace.</summary>
     private static GffStruct? FindTargetStruct(GffStruct root, DlgMatchLocation loc)
     {
         // Root-level fields (EndConversation, EndConverAbort) — NodeIndex is null
         if (loc.NodeIndex == null && !loc.IsOnLink)
             return root;
 
-        // Get the appropriate list (EntryList or ReplyList or StartingList)
         if (loc.IsOnLink)
             return FindLinkStruct(root, loc);
 
@@ -152,7 +149,6 @@ public class DlgSearchProvider : SearchProviderBase, IFileSearchProvider
             parentStruct = list.Elements[loc.NodeIndex.Value];
         }
 
-        // Now find the link list within the parent
         var linkListLabel = loc.NodeType == DlgNodeType.Entry ? "RepliesList" :
                             loc.NodeType == DlgNodeType.Reply ? "EntriesList" : "StartingList";
         var linkListField = parentStruct.GetField(linkListLabel);

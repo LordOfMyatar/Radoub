@@ -8,9 +8,7 @@ public static class PrivacyHelper
 {
     private static readonly string? UserProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
-    /// <summary>
-    /// Sanitize a file path for logging - replaces home directory with ~
-    /// </summary>
+    /// <summary>Sanitize a file path for logging - replaces home directory with ~</summary>
     public static string? SanitizePath(string? path)
     {
         if (path == null)
@@ -27,9 +25,7 @@ public static class PrivacyHelper
         return path;
     }
 
-    /// <summary>
-    /// Detects if a string appears to be a file path based on heuristics.
-    /// </summary>
+    /// <summary>Detects if a string appears to be a file path based on heuristics.</summary>
     private static bool LooksLikePath(string text)
     {
         if (string.IsNullOrEmpty(text) || text.Length < 3)

@@ -39,9 +39,6 @@ public partial class FileBrowserPanelBase
         CountLabel.Foreground = BrushManager.GetErrorBrush(this);
     }
 
-    /// <summary>
-    /// Update the status text during loading operations.
-    /// </summary>
     protected void UpdateLoadingStatus(string message)
     {
         StatusText.Text = message;

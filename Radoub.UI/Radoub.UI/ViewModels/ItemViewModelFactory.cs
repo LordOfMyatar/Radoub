@@ -15,9 +15,7 @@ public class ItemViewModelFactory
 {
     private readonly IGameDataService _gameData;
 
-    /// <summary>
-    /// Creates a new factory using the specified game data service.
-    /// </summary>
+    /// <summary>Creates a new factory using the specified game data service.</summary>
     public ItemViewModelFactory(IGameDataService gameData)
     {
         _gameData = gameData ?? throw new ArgumentNullException(nameof(gameData));
@@ -40,9 +38,7 @@ public class ItemViewModelFactory
         return vm;
     }
 
-    /// <summary>
-    /// Create an ItemViewModel for a backpack item with inventory metadata.
-    /// </summary>
+    /// <summary>Create an ItemViewModel for a backpack item with inventory metadata.</summary>
     /// <param name="item">The item to wrap.</param>
     /// <param name="gridPositionX">X position in inventory grid.</param>
     /// <param name="gridPositionY">Y position in inventory grid.</param>
@@ -68,9 +64,7 @@ public class ItemViewModelFactory
         return vm;
     }
 
-    /// <summary>
-    /// Create ItemViewModels for a collection of items (all assumed to be from same source).
-    /// </summary>
+    /// <summary>Create ItemViewModels for a collection of items (all assumed to be from same source).</summary>
     /// <param name="items">Items to wrap.</param>
     /// <param name="source">Source of all items (default: Bif for standard items).</param>
     public IEnumerable<ItemViewModel> Create(IEnumerable<UtiFile> items, GameResourceSource source = GameResourceSource.Bif)
@@ -78,27 +72,19 @@ public class ItemViewModelFactory
         return items.Select(i => Create(i, source));
     }
 
-    /// <summary>
-    /// Create ItemViewModels from items with their source information.
-    /// </summary>
+    /// <summary>Create ItemViewModels from items with their source information.</summary>
     public IEnumerable<ItemViewModel> Create(IEnumerable<(UtiFile item, GameResourceSource source)> itemsWithSource)
     {
         return itemsWithSource.Select(x => Create(x.item, x.source));
     }
 
-    /// <summary>
-    /// Get the display name for an item (for caching).
-    /// </summary>
+    /// <summary>Get the display name for an item (for caching).</summary>
     public string GetItemDisplayName(UtiFile item) => ResolveDisplayName(item);
 
-    /// <summary>
-    /// Get the base item type name (for caching).
-    /// </summary>
+    /// <summary>Get the base item type name (for caching).</summary>
     public string GetBaseItemTypeName(int baseItem) => ResolveBaseItemName(baseItem);
 
-    /// <summary>
-    /// Get the properties display string for caching.
-    /// </summary>
+    /// <summary>Get the properties display string for caching.</summary>
     public string GetPropertiesDisplay(List<ItemProperty> properties) => ResolvePropertiesDisplay(properties);
 
     /// <summary>

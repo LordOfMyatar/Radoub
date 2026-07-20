@@ -13,19 +13,13 @@ namespace Radoub.UI.Services;
 /// </summary>
 public interface IDocumentState
 {
-    /// <summary>
-    /// Whether the document has unsaved changes.
-    /// </summary>
+    /// <summary>Whether the document has unsaved changes.</summary>
     bool IsDirty { get; }
 
-    /// <summary>
-    /// Whether the document is currently loading (suppresses dirty marking).
-    /// </summary>
+    /// <summary>Whether the document is currently loading (suppresses dirty marking).</summary>
     bool IsLoading { get; set; }
 
-    /// <summary>
-    /// Current file path, or null if no file is loaded.
-    /// </summary>
+    /// <summary>Current file path, or null if no file is loaded.</summary>
     string? CurrentFilePath { get; set; }
 
     /// <summary>
@@ -40,9 +34,7 @@ public interface IDocumentState
     /// </summary>
     void ForceDirty();
 
-    /// <summary>
-    /// Clear the dirty flag (after save or load).
-    /// </summary>
+    /// <summary>Clear the dirty flag (after save or load).</summary>
     void ClearDirty();
 
     /// <summary>
@@ -71,9 +63,7 @@ public class DocumentState : IDocumentState
     private readonly string? _titleSuffix;
     private bool _isDirty;
 
-    /// <summary>
-    /// Creates a new DocumentState tracker.
-    /// </summary>
+    /// <summary>Creates a new DocumentState tracker.</summary>
     /// <param name="toolName">Tool name for title bar (e.g., "Quartermaster")</param>
     /// <param name="titleSuffix">Optional suffix for the tool name (e.g., " - Merchant Editor")</param>
     public DocumentState(string toolName, string? titleSuffix = null)

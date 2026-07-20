@@ -19,9 +19,7 @@ public class BaseItemTypeService
         _gameDataService = gameDataService;
     }
 
-    /// <summary>
-    /// Get all valid base item types from baseitems.2da.
-    /// </summary>
+    /// <summary>Get all valid base item types from baseitems.2da.</summary>
     public List<BaseItemTypeInfo> GetBaseItemTypes()
     {
         if (_cachedTypes != null)
@@ -51,7 +49,6 @@ public class BaseItemTypeService
             if (TlkHelper.IsGarbageLabel(label))
                 continue;
 
-            // Get display name from TLK
             var nameStrRef = baseItems.GetValue(i, "Name");
             string displayName;
             if (nameStrRef != null && nameStrRef != "****")
@@ -164,9 +161,7 @@ public class BaseItemTypeService
         };
     }
 
-    /// <summary>
-    /// Clear cached types (call when game paths change).
-    /// </summary>
+    /// <summary>Clear cached types (call when game paths change).</summary>
     public void ClearCache()
     {
         _cachedTypes = null;

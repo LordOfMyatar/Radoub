@@ -10,27 +10,18 @@ namespace Radoub.Formats.Utc;
 /// </summary>
 public static class UtcWriter
 {
-    /// <summary>
-    /// Write a UTC file to a file path.
-    /// </summary>
     public static void Write(UtcFile utc, string filePath)
     {
         var buffer = Write(utc);
         File.WriteAllBytes(filePath, buffer);
     }
 
-    /// <summary>
-    /// Write a UTC file to a stream.
-    /// </summary>
     public static void Write(UtcFile utc, Stream stream)
     {
         var buffer = Write(utc);
         stream.Write(buffer, 0, buffer.Length);
     }
 
-    /// <summary>
-    /// Write a UTC file to a byte buffer.
-    /// </summary>
     public static byte[] Write(UtcFile utc)
     {
         var gff = BuildGffFile(utc);
@@ -233,20 +224,18 @@ public static class UtcWriter
             AddIntField(classStruct, "Class", cls.Class);
             AddShortField(classStruct, "ClassLevel", cls.ClassLevel);
 
-            // Write domains (Cleric)
+            // Domains (Cleric)
             if (cls.Domain1 != 0 || cls.Domain2 != 0)
             {
                 AddByteField(classStruct, "Domain1", cls.Domain1);
                 AddByteField(classStruct, "Domain2", cls.Domain2);
             }
 
-            // Write known spells (KnownList0-9)
             for (int level = 0; level < 10; level++)
             {
                 AddKnownSpellList(classStruct, cls.KnownSpells[level], level);
             }
 
-            // Write memorized spells (MemorizedList0-9)
             for (int level = 0; level < 10; level++)
             {
                 AddMemorizedSpellList(classStruct, cls.MemorizedSpells[level], level);

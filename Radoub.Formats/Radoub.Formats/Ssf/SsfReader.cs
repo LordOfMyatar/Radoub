@@ -9,11 +9,7 @@ namespace Radoub.Formats.Ssf;
 /// </summary>
 public static class SsfReader
 {
-    /// <summary>
-    /// Reads an SSF file from binary data.
-    /// </summary>
-    /// <param name="data">Raw SSF file bytes.</param>
-    /// <returns>Parsed SsfFile, or null if parsing fails.</returns>
+    /// <summary>Reads an SSF file from binary data. Returns null if parsing fails.</summary>
     public static SsfFile? Read(byte[] data)
     {
         if (data == null || data.Length < 40)
@@ -27,7 +23,6 @@ public static class SsfReader
             using var stream = new MemoryStream(data);
             using var reader = new BinaryReader(stream, Encoding.ASCII);
 
-            // Read header
             var fileType = new string(reader.ReadChars(4));
             if (fileType != "SSF ")
             {
@@ -44,7 +39,6 @@ public static class SsfReader
 
             var ssf = new SsfFile { Version = version };
 
-            // Read entry offsets
             stream.Position = tableOffset;
             var entryOffsets = new uint[entryCount];
             for (int i = 0; i < entryCount; i++)
@@ -52,7 +46,6 @@ public static class SsfReader
                 entryOffsets[i] = reader.ReadUInt32();
             }
 
-            // Read each entry
             for (int i = 0; i < entryCount; i++)
             {
                 stream.Position = entryOffsets[i];

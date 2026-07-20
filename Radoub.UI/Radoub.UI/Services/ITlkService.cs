@@ -12,9 +12,7 @@ public interface ITlkService : IDisposable
 {
     #region TLK Loading
 
-    /// <summary>
-    /// Loads the primary TLK file (dialog.tlk or language-specific).
-    /// </summary>
+    /// <summary>Loads the primary TLK file (dialog.tlk or language-specific).</summary>
     /// <param name="path">Path to the TLK file</param>
     /// <returns>True if loaded successfully</returns>
     bool LoadPrimaryTlk(string path);
@@ -27,9 +25,7 @@ public interface ITlkService : IDisposable
     /// <returns>True if loaded successfully</returns>
     bool LoadCustomTlk(string path);
 
-    /// <summary>
-    /// Clears all loaded TLK files and cache.
-    /// </summary>
+    /// <summary>Clears all loaded TLK files and cache.</summary>
     void ClearTlk();
 
     #endregion
@@ -44,9 +40,7 @@ public interface ITlkService : IDisposable
     /// <returns>Resolved string, or null if not found</returns>
     string? GetString(uint strRef);
 
-    /// <summary>
-    /// Resolves a StrRef from a specific source.
-    /// </summary>
+    /// <summary>Resolves a StrRef from a specific source.</summary>
     /// <param name="strRef">String reference number</param>
     /// <param name="source">Which TLK to use</param>
     /// <returns>Resolved string, or null if not found</returns>
@@ -65,55 +59,37 @@ public interface ITlkService : IDisposable
 
     #region Status
 
-    /// <summary>
-    /// Whether a primary TLK file is loaded.
-    /// </summary>
+    /// <summary>Whether a primary TLK file is loaded.</summary>
     bool IsPrimaryLoaded { get; }
 
-    /// <summary>
-    /// Whether a custom TLK file is loaded.
-    /// </summary>
+    /// <summary>Whether a custom TLK file is loaded.</summary>
     bool IsCustomLoaded { get; }
 
-    /// <summary>
-    /// Number of entries in the primary TLK.
-    /// </summary>
+    /// <summary>Number of entries in the primary TLK.</summary>
     int PrimaryEntryCount { get; }
 
-    /// <summary>
-    /// Number of entries in the custom TLK.
-    /// </summary>
+    /// <summary>Number of entries in the custom TLK.</summary>
     int CustomEntryCount { get; }
 
     #endregion
 
     #region Language Support
 
-    /// <summary>
-    /// Current language for string resolution.
-    /// </summary>
+    /// <summary>Current language for string resolution.</summary>
     Language CurrentLanguage { get; set; }
 
-    /// <summary>
-    /// Current gender preference for gendered strings.
-    /// </summary>
+    /// <summary>Current gender preference for gendered strings.</summary>
     Gender CurrentGender { get; set; }
 
-    /// <summary>
-    /// List of available languages (detected from game installation).
-    /// </summary>
+    /// <summary>List of available languages (detected from game installation).</summary>
     IReadOnlyList<Language> AvailableLanguages { get; }
 
-    /// <summary>
-    /// Detect and return available languages in the game installation.
-    /// </summary>
+    /// <summary>Detect and return available languages in the game installation.</summary>
     /// <param name="gameInstallPath">Path to game installation</param>
     /// <returns>List of available languages</returns>
     IReadOnlyList<Language> DetectAvailableLanguages(string gameInstallPath);
 
-    /// <summary>
-    /// Gets the TLK file path for a specific language.
-    /// </summary>
+    /// <summary>Gets the TLK file path for a specific language.</summary>
     /// <param name="gameInstallPath">Path to game installation</param>
     /// <param name="language">Target language</param>
     /// <param name="gender">Gender variant (default Male)</param>
@@ -123,19 +99,13 @@ public interface ITlkService : IDisposable
     #endregion
 }
 
-/// <summary>
-/// Source for TLK string resolution.
-/// </summary>
+/// <summary>Source for TLK string resolution.</summary>
 public enum TlkSource
 {
-    /// <summary>
-    /// Primary TLK (dialog.tlk) - base game strings.
-    /// </summary>
+    /// <summary>Primary TLK (dialog.tlk) - base game strings.</summary>
     Primary,
 
-    /// <summary>
-    /// Custom TLK - module or server-specific strings.
-    /// </summary>
+    /// <summary>Custom TLK - module or server-specific strings.</summary>
     Custom,
 
     /// <summary>

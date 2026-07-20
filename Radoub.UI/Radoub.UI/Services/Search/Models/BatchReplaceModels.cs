@@ -2,9 +2,7 @@ using Radoub.Formats.Search;
 
 namespace Radoub.UI.Services.Search;
 
-/// <summary>
-/// A single pending change with selection state for the UI.
-/// </summary>
+/// <summary>A single pending change with selection state for the UI.</summary>
 public class PendingChange
 {
     /// <summary>The original search match</summary>
@@ -57,9 +55,7 @@ public class PendingChange
     }
 }
 
-/// <summary>
-/// Groups pending changes by file for preview display.
-/// </summary>
+/// <summary>Groups pending changes by file for preview display.</summary>
 public class FileChangeGroup
 {
     public required string FilePath { get; init; }
@@ -67,9 +63,7 @@ public class FileChangeGroup
     public List<PendingChange> Changes { get; init; } = new();
 }
 
-/// <summary>
-/// Preview of all changes before execution, with per-match selectability.
-/// </summary>
+/// <summary>Preview of all changes before execution, with per-match selectability.</summary>
 public class BatchReplacePreview
 {
     /// <summary>All individual pending changes (flat list)</summary>
@@ -107,9 +101,7 @@ public class BatchReplacePreview
     public int SkippedNssContentMatches { get; set; }
 }
 
-/// <summary>
-/// Result of a batch replace execution.
-/// </summary>
+/// <summary>Result of a batch replace execution.</summary>
 public class BatchReplaceResult
 {
     /// <summary>Whether the entire operation succeeded</summary>

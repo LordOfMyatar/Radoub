@@ -57,9 +57,7 @@ public class ModelViewController
     public float ModelRadius => _modelRadius;
     public bool HasVertexBounds => _hasVertexBounds;
 
-    /// <summary>
-    /// Rotate the model incrementally.
-    /// </summary>
+    /// <summary>Rotate the model incrementally.</summary>
     public void Rotate(float deltaY, float deltaX = 0)
     {
         _rotationY += deltaY;
@@ -133,9 +131,7 @@ public class ModelViewController
         _cameraTarget = Vector3.Zero;
     }
 
-    /// <summary>
-    /// Reset the view to default (facing front).
-    /// </summary>
+    /// <summary>Reset the view to default (facing front).</summary>
     public void ResetView()
     {
         _rotationY = MathF.PI;
@@ -234,17 +230,13 @@ public class ModelViewController
         bool HasOrientation, Quaternion Orientation,
         bool HasScale, float Scale);
 
-    /// <summary>
-    /// Transform a position vector by a matrix.
-    /// </summary>
+    /// <summary>Transform a position vector by a matrix.</summary>
     public static Vector3 TransformPosition(Vector3 position, Matrix4x4 matrix)
     {
         return Vector3.Transform(position, matrix);
     }
 
-    /// <summary>
-    /// Transform a normal vector by a matrix (ignores translation, handles non-uniform scale).
-    /// </summary>
+    /// <summary>Transform a normal vector by a matrix (ignores translation, handles non-uniform scale).</summary>
     public static Vector3 TransformNormal(Vector3 normal, Matrix4x4 matrix)
     {
         var transformed = Vector3.TransformNormal(normal, matrix);

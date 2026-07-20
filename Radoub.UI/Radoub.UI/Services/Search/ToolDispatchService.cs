@@ -5,9 +5,7 @@ using Radoub.Formats.Logging;
 
 namespace Radoub.UI.Services.Search;
 
-/// <summary>
-/// Information about a Radoub tool for dispatch.
-/// </summary>
+/// <summary>Information about a Radoub tool for dispatch.</summary>
 public class DispatchableToolInfo
 {
     /// <summary>Display name (e.g., "Parley")</summary>
@@ -48,9 +46,7 @@ public class ToolDispatchService
         return ToolMap.TryGetValue(resourceType, out var info) ? info : null;
     }
 
-    /// <summary>
-    /// Returns true if a tool can handle this resource type.
-    /// </summary>
+    /// <summary>Returns true if a tool can handle this resource type.</summary>
     public bool CanDispatch(ushort resourceType)
     {
         return ToolMap.ContainsKey(resourceType);

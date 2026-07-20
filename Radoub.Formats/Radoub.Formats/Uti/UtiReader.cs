@@ -9,18 +9,14 @@ namespace Radoub.Formats.Uti;
 /// </summary>
 public static class UtiReader
 {
-    /// <summary>
-    /// Read a UTI file from a file path.
-    /// </summary>
+    /// <summary>Read a UTI file from a file path.</summary>
     public static UtiFile Read(string filePath)
     {
         var buffer = File.ReadAllBytes(filePath);
         return Read(buffer);
     }
 
-    /// <summary>
-    /// Read a UTI file from a stream.
-    /// </summary>
+    /// <summary>Read a UTI file from a stream.</summary>
     public static UtiFile Read(Stream stream)
     {
         using var ms = new MemoryStream();
@@ -28,15 +24,11 @@ public static class UtiReader
         return Read(ms.ToArray());
     }
 
-    /// <summary>
-    /// Read a UTI file from a byte buffer.
-    /// </summary>
+    /// <summary>Read a UTI file from a byte buffer.</summary>
     public static UtiFile Read(byte[] buffer)
     {
-        // Parse as GFF first
         var gff = GffReader.Read(buffer);
 
-        // Validate file type
         if (gff.FileType.TrimEnd() != "UTI")
         {
             throw new InvalidDataException(
@@ -87,7 +79,6 @@ public static class UtiReader
             Metal2Color = root.GetFieldValue<byte>("Metal2Color", 0)
         };
 
-        // Localized strings
         uti.LocalizedName = ParseLocString(root, "LocalizedName") ?? ParseLocString(root, "LocName") ?? new CExoLocString();
         uti.Description = ParseLocString(root, "Description") ?? new CExoLocString();
         uti.DescIdentified = ParseLocString(root, "DescIdentified") ?? new CExoLocString();
@@ -98,7 +89,6 @@ public static class UtiReader
         // Properties list (Table 2.1.3)
         ParsePropertiesList(root, uti);
 
-        // Local variables
         uti.VarTable = VarTableHelper.ReadVarTable(root);
 
         return uti;

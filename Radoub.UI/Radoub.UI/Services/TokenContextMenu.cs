@@ -63,9 +63,7 @@ public static class TokenContextMenu
         return items;
     }
 
-    /// <summary>
-    /// Build the full "Insert Token" submenu with standard tokens, quick slots, and "All Tokens...".
-    /// </summary>
+    /// <summary>Build the full "Insert Token" submenu with standard tokens, quick slots, and "All Tokens...".</summary>
     public static MenuItem BuildInsertTokenMenu(
         TextBox targetTextBox,
         Action openTokenWindow,
@@ -119,9 +117,7 @@ public static class TokenContextMenu
         return insertMenu;
     }
 
-    /// <summary>
-    /// Append token menu items to an existing ContextMenu (for SpellCheckTextBox).
-    /// </summary>
+    /// <summary>Append token menu items to an existing ContextMenu (for SpellCheckTextBox).</summary>
     public static void AppendTokenMenu(
         ContextMenu menu,
         TextBox targetTextBox,
@@ -131,9 +127,7 @@ public static class TokenContextMenu
         menu.Items.Add(BuildInsertTokenMenu(targetTextBox, openTokenWindow, quickTokenService));
     }
 
-    /// <summary>
-    /// Attach a token-enabled context menu to a plain TextBox.
-    /// </summary>
+    /// <summary>Attach a token-enabled context menu to a plain TextBox.</summary>
     public static void Attach(
         TextBox textBox,
         Action openTokenWindow,

@@ -7,14 +7,10 @@ namespace Radoub.Formats.Fac;
 /// </summary>
 public class FacFile
 {
-    /// <summary>
-    /// File type signature - should be "FAC "
-    /// </summary>
+    /// <summary>File type signature - should be "FAC "</summary>
     public string FileType { get; set; } = "FAC ";
 
-    /// <summary>
-    /// File version - typically "V3.2"
-    /// </summary>
+    /// <summary>File version - typically "V3.2"</summary>
     public string FileVersion { get; set; } = "V3.2";
 
     /// <summary>
@@ -23,9 +19,7 @@ public class FacFile
     /// </summary>
     public List<Faction> FactionList { get; set; } = new();
 
-    /// <summary>
-    /// Reputation matrix - how each faction feels about every other faction.
-    /// </summary>
+    /// <summary>Reputation matrix - how each faction feels about every other faction.</summary>
     public List<Reputation> RepList { get; set; } = new();
 }
 
@@ -34,13 +28,10 @@ public class FacFile
 /// </summary>
 public class Faction
 {
-    /// <summary>
-    /// Name of the faction (e.g., "PC", "Hostile", "Commoner").
-    /// </summary>
+    /// <summary>Name of the faction (e.g., "PC", "Hostile", "Commoner").</summary>
     public string FactionName { get; set; } = string.Empty;
 
     /// <summary>
-    /// Global effect flag.
     /// If true (1), all members of this faction immediately change standings when one member does.
     /// If false (0), each member maintains individual standings.
     /// Example: Killing one Guard causes all Guards to hate you (global) vs killing a deer doesn't affect other deer (not global).
@@ -60,14 +51,10 @@ public class Faction
 /// </summary>
 public class Reputation
 {
-    /// <summary>
-    /// Index into FactionList - the faction being perceived.
-    /// </summary>
+    /// <summary>Index into FactionList - the faction being perceived.</summary>
     public uint FactionID1 { get; set; }
 
-    /// <summary>
-    /// Index into FactionList - the faction doing the perceiving.
-    /// </summary>
+    /// <summary>Index into FactionList - the faction doing the perceiving.</summary>
     public uint FactionID2 { get; set; }
 
     /// <summary>

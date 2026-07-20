@@ -117,9 +117,7 @@ public static class PaletteCategoryComboBinder
             combo.SelectedIndex = 0;
     }
 
-    /// <summary>
-    /// The PaletteID of the currently selected item, or null if nothing selected / wrong Tag type.
-    /// </summary>
+    /// <summary>The PaletteID of the currently selected item, or null if nothing selected / wrong Tag type.</summary>
     public static byte? GetSelectedId(ComboBox? combo)
         => ComboBoxHelper.GetSelectedTag<byte>(combo);
 }

@@ -20,9 +20,7 @@ public class AudioService : IDisposable
     public bool IsPlaying => _isPlaying;
     public string? CurrentFile => _currentFile;
 
-    /// <summary>
-    /// Event raised when playback stops (either naturally or via Stop()).
-    /// </summary>
+    /// <summary>Event raised when playback stops (either naturally or via Stop()).</summary>
     public event EventHandler? PlaybackStopped;
 
     public AudioService()
@@ -58,9 +56,7 @@ public class AudioService : IDisposable
         PlaybackStopped?.Invoke(this, EventArgs.Empty);
     }
 
-    /// <summary>
-    /// Play a sound file.
-    /// </summary>
+    /// <summary>Play a sound file.</summary>
     public void Play(string filePath)
     {
         if (!File.Exists(filePath))
@@ -88,9 +84,7 @@ public class AudioService : IDisposable
         }
     }
 
-    /// <summary>
-    /// Stop current playback.
-    /// </summary>
+    /// <summary>Stop current playback.</summary>
     public void Stop()
     {
         if (_isPlaying)
@@ -120,9 +114,7 @@ public class AudioService : IDisposable
     }
 }
 
-/// <summary>
-/// Platform-agnostic audio player interface.
-/// </summary>
+/// <summary>Platform-agnostic audio player interface.</summary>
 internal interface IAudioPlayer : IDisposable
 {
     void Play(string filePath);
@@ -140,9 +132,7 @@ internal class WindowsAudioPlayer : IAudioPlayer
     private NAudio.Wave.WaveOutEvent? _outputDevice;
     private NAudio.Wave.WaveStream? _waveStream;
 
-    /// <summary>
-    /// Event raised when playback stops (either naturally or via Stop()).
-    /// </summary>
+    /// <summary>Event raised when playback stops (either naturally or via Stop()).</summary>
     public event EventHandler? PlaybackStopped;
 
     public void Play(string filePath)
@@ -486,9 +476,7 @@ internal class LinuxAudioPlayer : IAudioPlayer
     }
 }
 
-/// <summary>
-/// macOS audio player using afplay command.
-/// </summary>
+/// <summary>macOS audio player using afplay command.</summary>
 internal class MacOSAudioPlayer : IAudioPlayer
 {
     private System.Diagnostics.Process? _process;

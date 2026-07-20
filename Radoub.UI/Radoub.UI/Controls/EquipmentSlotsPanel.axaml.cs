@@ -9,64 +9,39 @@ using Radoub.UI.ViewModels;
 namespace Radoub.UI.Controls;
 
 /// <summary>
-/// Visual equipment slot display showing creature's equipped items.
-/// Displays a grid of slots with item icons and validation warnings.
+/// Visual equipment slot display showing creature's equipped items, with item
+/// icons and validation warnings.
 /// </summary>
 public partial class EquipmentSlotsPanel : UserControl
 {
-    /// <summary>
-    /// All equipment slots (standard + natural).
-    /// </summary>
+    /// <summary>All equipment slots (standard + natural).</summary>
     public static readonly StyledProperty<ObservableCollection<EquipmentSlotViewModel>> SlotsProperty =
         AvaloniaProperty.Register<EquipmentSlotsPanel, ObservableCollection<EquipmentSlotViewModel>>(
             nameof(Slots),
             defaultValue: new ObservableCollection<EquipmentSlotViewModel>());
 
-    /// <summary>
-    /// Currently selected slot.
-    /// </summary>
     public static readonly StyledProperty<EquipmentSlotViewModel?> SelectedSlotProperty =
         AvaloniaProperty.Register<EquipmentSlotsPanel, EquipmentSlotViewModel?>(nameof(SelectedSlot));
 
-    /// <summary>
-    /// Whether to show natural equipment slots (creature-only).
-    /// </summary>
+    /// <summary>Whether to show natural equipment slots (creature-only).</summary>
     public static readonly StyledProperty<bool> ShowNaturalSlotsProperty =
         AvaloniaProperty.Register<EquipmentSlotsPanel, bool>(nameof(ShowNaturalSlots), defaultValue: false);
 
-    /// <summary>
-    /// Event raised when a slot is clicked.
-    /// </summary>
     public event EventHandler<EquipmentSlotViewModel>? SlotClicked;
 
-    /// <summary>
-    /// Event raised when a slot is double-clicked.
-    /// </summary>
     public event EventHandler<EquipmentSlotViewModel>? SlotDoubleClicked;
 
-    /// <summary>
-    /// Event raised when drag operation starts from a slot.
-    /// </summary>
     public event EventHandler<EquipmentSlotDragEventArgs>? DragStarting;
 
-    /// <summary>
-    /// Event raised when an item is dropped on a slot.
-    /// </summary>
     public event EventHandler<EquipmentSlotDropEventArgs>? ItemDropped;
 
-    /// <summary>
-    /// Event raised when "Unequip to Backpack" is requested from context menu.
-    /// </summary>
+    /// <summary>Raised when "Unequip to Backpack" is chosen from the context menu.</summary>
     public event EventHandler<EquipmentSlotViewModel>? UnequipRequested;
 
-    /// <summary>
-    /// Event raised when "Remove" (delete) is requested from context menu.
-    /// </summary>
+    /// <summary>Raised when "Remove" (delete) is chosen from the context menu.</summary>
     public event EventHandler<EquipmentSlotViewModel>? RemoveRequested;
 
-    /// <summary>
-    /// Event raised when "Copy ResRef" is requested from context menu.
-    /// </summary>
+    /// <summary>Raised when "Copy ResRef" is chosen from the context menu.</summary>
     public event EventHandler<EquipmentSlotViewModel>? CopyResRefRequested;
 
     // Slot controls mapped by slot ID
@@ -76,34 +51,25 @@ public partial class EquipmentSlotsPanel : UserControl
     {
         InitializeComponent();
 
-        // Wire up tab switching
         StandardTab.IsCheckedChanged += OnTabChanged;
         NaturalTab.IsCheckedChanged += OnTabChanged;
 
         Loaded += OnLoaded;
     }
 
-    /// <summary>
-    /// All equipment slots.
-    /// </summary>
     public ObservableCollection<EquipmentSlotViewModel> Slots
     {
         get => GetValue(SlotsProperty);
         set => SetValue(SlotsProperty, value);
     }
 
-    /// <summary>
-    /// Currently selected slot.
-    /// </summary>
     public EquipmentSlotViewModel? SelectedSlot
     {
         get => GetValue(SelectedSlotProperty);
         set => SetValue(SelectedSlotProperty, value);
     }
 
-    /// <summary>
-    /// Whether to show the natural slots tab.
-    /// </summary>
+    /// <summary>Whether to show the natural slots tab.</summary>
     public bool ShowNaturalSlots
     {
         get => GetValue(ShowNaturalSlotsProperty);
@@ -112,7 +78,6 @@ public partial class EquipmentSlotsPanel : UserControl
 
     private void OnLoaded(object? sender, RoutedEventArgs e)
     {
-        // Create slot controls if not yet created
         if (_slotControls.Count == 0)
         {
             CreateSlotControls();
@@ -163,9 +128,7 @@ public partial class EquipmentSlotsPanel : UserControl
         }
     }
 
-    /// <summary>
-    /// Apply slot size dimensions after slots are bound.
-    /// </summary>
+    /// <summary>Apply slot size dimensions after slots are bound.</summary>
     private void ApplySlotSizes()
     {
         foreach (var slot in Slots)
@@ -276,9 +239,7 @@ public partial class EquipmentSlotsPanel : UserControl
         CopyResRefRequested?.Invoke(this, slot);
     }
 
-    /// <summary>
-    /// Clears all equipped items from slots.
-    /// </summary>
+    /// <summary>Clears all equipped items from slots.</summary>
     public void ClearAllSlots()
     {
         foreach (var slot in Slots)
@@ -288,79 +249,48 @@ public partial class EquipmentSlotsPanel : UserControl
         }
     }
 
-    /// <summary>
-    /// Gets a slot by its bit flag.
-    /// </summary>
+    /// <summary>Gets a slot by its bit flag.</summary>
     public EquipmentSlotViewModel? GetSlotByFlag(int flag)
     {
         return Slots.FirstOrDefault(s => s.SlotFlag == flag);
     }
 
-    /// <summary>
-    /// Gets a slot by its ID.
-    /// </summary>
+    /// <summary>Gets a slot by its ID.</summary>
     public EquipmentSlotViewModel? GetSlotById(int slotId)
     {
         return Slots.FirstOrDefault(s => s.SlotId == slotId);
     }
 }
 
-/// <summary>
-/// Individual equipment slot control.
-/// </summary>
+/// <summary>Individual equipment slot control.</summary>
 public class EquipmentSlotControl : TemplatedControl
 {
-    /// <summary>
-    /// The slot view model.
-    /// </summary>
     public static readonly StyledProperty<EquipmentSlotViewModel?> SlotProperty =
         AvaloniaProperty.Register<EquipmentSlotControl, EquipmentSlotViewModel?>(nameof(Slot));
 
-    /// <summary>
-    /// Width of the slot icon area (varies by SlotSize).
-    /// </summary>
+    /// <summary>Width of the slot icon area (varies by SlotSize).</summary>
     public static readonly StyledProperty<double> SlotWidthProperty =
         AvaloniaProperty.Register<EquipmentSlotControl, double>(nameof(SlotWidth), defaultValue: 64);
 
-    /// <summary>
-    /// Height of the slot icon area (varies by SlotSize).
-    /// </summary>
+    /// <summary>Height of the slot icon area (varies by SlotSize).</summary>
     public static readonly StyledProperty<double> SlotHeightProperty =
         AvaloniaProperty.Register<EquipmentSlotControl, double>(nameof(SlotHeight), defaultValue: 64);
 
-    /// <summary>
-    /// Event raised when slot is clicked.
-    /// </summary>
     public event EventHandler<EquipmentSlotViewModel>? SlotClicked;
 
-    /// <summary>
-    /// Event raised when slot is double-clicked.
-    /// </summary>
     public event EventHandler<EquipmentSlotViewModel>? SlotDoubleClicked;
 
-    /// <summary>
-    /// Event raised when drag starts.
-    /// </summary>
     public event EventHandler<EquipmentSlotDragEventArgs>? DragStarting;
 
-    /// <summary>
-    /// Event raised when item is dropped.
-    /// </summary>
     public event EventHandler<EquipmentSlotDropEventArgs>? ItemDropped;
 
-    /// <summary>
-    /// Event raised when "Unequip to Backpack" is selected from context menu.
-    /// </summary>
+    /// <summary>Raised when "Unequip to Backpack" is chosen from the context menu.</summary>
     public event EventHandler<EquipmentSlotViewModel>? UnequipRequested;
 
-    /// <summary>
-    /// Event raised when "Remove" is selected from context menu.
-    /// </summary>
+    /// <summary>Raised when "Remove" is chosen from the context menu.</summary>
     public event EventHandler<EquipmentSlotViewModel>? RemoveRequested;
 
-    /// <summary>
-    /// Event raised when "Copy ResRef" is selected from context menu.
-    /// </summary>
+    /// <summary>Raised when "Copy ResRef" is chosen from the context menu.</summary>
     public event EventHandler<EquipmentSlotViewModel>? CopyResRefRequested;
 
     // Drag state
@@ -370,15 +300,12 @@ public class EquipmentSlotControl : TemplatedControl
 
     public EquipmentSlotControl()
     {
-        // Enable drag-drop
         DragDrop.SetAllowDrop(this, true);
         AddHandler(DragDrop.DropEvent, OnDrop);
         AddHandler(DragDrop.DragOverEvent, OnDragOver);
 
-        // Handle double-tap via event
         DoubleTapped += OnDoubleTapped;
 
-        // Build context menu
         BuildContextMenu();
     }
 
@@ -443,27 +370,18 @@ public class EquipmentSlotControl : TemplatedControl
         ContextMenu = menu;
     }
 
-    /// <summary>
-    /// The slot view model.
-    /// </summary>
     public EquipmentSlotViewModel? Slot
     {
         get => GetValue(SlotProperty);
         set => SetValue(SlotProperty, value);
     }
 
-    /// <summary>
-    /// Width of the slot icon area.
-    /// </summary>
     public double SlotWidth
     {
         get => GetValue(SlotWidthProperty);
         set => SetValue(SlotWidthProperty, value);
     }
 
-    /// <summary>
-    /// Height of the slot icon area.
-    /// </summary>
     public double SlotHeight
     {
         get => GetValue(SlotHeightProperty);
@@ -551,24 +469,15 @@ public class EquipmentSlotControl : TemplatedControl
     }
 }
 
-/// <summary>
-/// Event args for drag operations from equipment slots.
-/// </summary>
+/// <summary>Event args for drag operations from equipment slots.</summary>
 public class EquipmentSlotDragEventArgs : EventArgs
 {
-    /// <summary>
-    /// The slot being dragged from.
-    /// </summary>
+    /// <summary>The slot being dragged from.</summary>
     public EquipmentSlotViewModel Slot { get; }
 
-    /// <summary>
-    /// Data to include in drag operation. Set by event handler.
-    /// </summary>
+    /// <summary>Data to include in the drag operation. Set by the event handler.</summary>
     public object? Data { get; set; }
 
-    /// <summary>
-    /// Data format string.
-    /// </summary>
     public string? DataFormat { get; set; }
 
     public EquipmentSlotDragEventArgs(EquipmentSlotViewModel slot)
@@ -577,14 +486,10 @@ public class EquipmentSlotDragEventArgs : EventArgs
     }
 }
 
-/// <summary>
-/// Event args for drop operations on equipment slots.
-/// </summary>
+/// <summary>Event args for drop operations on equipment slots.</summary>
 public class EquipmentSlotDropEventArgs : EventArgs
 {
-    /// <summary>
-    /// The slot receiving the drop.
-    /// </summary>
+    /// <summary>The slot receiving the drop.</summary>
     public EquipmentSlotViewModel TargetSlot { get; }
 
     /// <summary>

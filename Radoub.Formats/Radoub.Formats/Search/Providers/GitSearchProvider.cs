@@ -11,9 +11,7 @@ namespace Radoub.Formats.Search;
 /// </summary>
 public class GitSearchProvider : SearchProviderBase, IFileSearchProvider
 {
-    /// <summary>
-    /// Known instance list labels mapped to human-readable type names.
-    /// </summary>
+    /// <summary>Known instance list labels mapped to human-readable type names.</summary>
     private static readonly (string ListLabel, string TypeName)[] InstanceLists =
     {
         ("Creature List", "Creature"),
@@ -187,9 +185,7 @@ public class GitSearchProvider : SearchProviderBase, IFileSearchProvider
     }
 }
 
-/// <summary>
-/// Location within a GIT file — identifies the instance type, index, and tag.
-/// </summary>
+/// <summary>Location within a GIT file — identifies the instance type, index, and tag.</summary>
 public class GitMatchLocation
 {
     public required string InstanceType { get; init; }

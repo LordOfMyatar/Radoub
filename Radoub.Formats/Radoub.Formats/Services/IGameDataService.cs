@@ -18,63 +18,33 @@ public interface IGameDataService : IDisposable
 {
     #region 2DA Access
 
-    /// <summary>
-    /// Get a 2DA file by name (without extension).
-    /// Returns cached instance if previously loaded.
-    /// </summary>
+    /// <summary>Get a 2DA file by name (without extension); cached after first load.</summary>
     /// <param name="name">2DA name, e.g., "baseitems", "itempropdef"</param>
-    /// <returns>Parsed 2DA file, or null if not found</returns>
     TwoDAFile? Get2DA(string name);
 
-    /// <summary>
-    /// Get a cell value from a 2DA file.
-    /// Convenience method combining Get2DA + GetValue.
-    /// </summary>
-    /// <param name="twoDAName">2DA name, e.g., "baseitems"</param>
+    /// <summary>Get a cell value from a 2DA file (Get2DA + GetValue).</summary>
     /// <param name="rowIndex">Row index (0-based)</param>
     /// <param name="columnName">Column name (case-insensitive)</param>
-    /// <returns>Cell value, or null if not found/empty</returns>
     string? Get2DAValue(string twoDAName, int rowIndex, string columnName);
 
-    /// <summary>
-    /// Check if a 2DA file exists.
-    /// </summary>
     bool Has2DA(string name);
 
-    /// <summary>
-    /// Clear all cached 2DA files.
-    /// Call when resource paths change.
-    /// </summary>
+    /// <summary>Clear all cached 2DA files. Call when resource paths change.</summary>
     void ClearCache();
 
     #endregion
 
     #region TLK String Resolution
 
-    /// <summary>
-    /// Resolve a TLK string reference to text.
-    /// Automatically handles custom TLK (StrRef >= 16777216).
-    /// </summary>
-    /// <param name="strRef">String reference</param>
-    /// <returns>Resolved string, or null if not found</returns>
+    /// <summary>Resolve a TLK StrRef to text. Handles custom TLK (StrRef >= 16777216).</summary>
     string? GetString(uint strRef);
 
-    /// <summary>
-    /// Resolve a TLK string reference from a string value.
-    /// Handles "****" and invalid values gracefully.
-    /// </summary>
-    /// <param name="strRefStr">String containing a numeric StrRef</param>
-    /// <returns>Resolved string, or null if invalid/not found</returns>
+    /// <summary>Resolve a TLK StrRef given as text. Handles "****" and invalid values gracefully.</summary>
     string? GetString(string? strRefStr);
 
-    /// <summary>
-    /// Check if a custom TLK is loaded.
-    /// </summary>
     bool HasCustomTlk { get; }
 
-    /// <summary>
-    /// Set the custom TLK path for module-specific strings.
-    /// </summary>
+    /// <summary>Set the custom TLK path for module-specific strings.</summary>
     /// <param name="path">Path to custom TLK file, or null to clear</param>
     void SetCustomTlk(string? path);
 
@@ -82,13 +52,7 @@ public interface IGameDataService : IDisposable
 
     #region Resource Access
 
-    /// <summary>
-    /// Find a resource by ResRef and type.
-    /// Searches Override → HAK → BIF.
-    /// </summary>
-    /// <param name="resRef">Resource reference name</param>
-    /// <param name="resourceType">Resource type ID</param>
-    /// <returns>Resource data, or null if not found</returns>
+    /// <summary>Find a resource by ResRef and type. Searches Override → HAK → BIF.</summary>
     byte[]? FindResource(string resRef, ushort resourceType);
 
     /// <summary>
@@ -96,47 +60,26 @@ public interface IGameDataService : IDisposable
     /// Use for resources that must come from the base game regardless of HAK overrides
     /// (e.g., standard race skeletons that CEP HAKs may replace with incompatible versions).
     /// </summary>
-    /// <param name="resRef">Resource reference name</param>
-    /// <param name="resourceType">Resource type ID</param>
-    /// <returns>Resource data, or null if not found</returns>
     byte[]? FindBaseResource(string resRef, ushort resourceType);
 
-    /// <summary>
-    /// Find a resource including source information (which file it came from).
-    /// Resolution order: Override → HAK → BIF.
-    /// </summary>
+    /// <summary>Find a resource including which file it came from. Order: Override → HAK → BIF.</summary>
     Radoub.Formats.Resolver.ResourceResult? FindResourceWithSource(string resRef, ushort resourceType);
 
-    /// <summary>
-    /// List all resources of a specific type.
-    /// </summary>
-    /// <param name="resourceType">Resource type ID</param>
-    /// <returns>Enumerable of resource info</returns>
+    /// <summary>List all resources of a specific type.</summary>
     IEnumerable<GameResourceInfo> ListResources(ushort resourceType);
 
     #endregion
 
     #region Soundset Access
 
-    /// <summary>
-    /// Get a soundset file by its ID from soundset.2da.
-    /// </summary>
-    /// <param name="soundsetId">Soundset ID (row index in soundset.2da)</param>
-    /// <returns>Parsed SSF file, or null if not found</returns>
+    /// <summary>Get a soundset file by its ID.</summary>
+    /// <param name="soundsetId">Row index in soundset.2da</param>
     SsfFile? GetSoundset(int soundsetId);
 
-    /// <summary>
-    /// Get a soundset file by its ResRef.
-    /// </summary>
-    /// <param name="resRef">SSF ResRef (without extension)</param>
-    /// <returns>Parsed SSF file, or null if not found</returns>
+    /// <summary>Get a soundset file by its ResRef (without extension).</summary>
     SsfFile? GetSoundsetByResRef(string resRef);
 
-    /// <summary>
-    /// Get the ResRef for a soundset from soundset.2da.
-    /// </summary>
-    /// <param name="soundsetId">Soundset ID</param>
-    /// <returns>SSF ResRef, or null if not found</returns>
+    /// <summary>Get the SSF ResRef for a soundset from soundset.2da.</summary>
     string? GetSoundsetResRef(int soundsetId);
 
     #endregion
@@ -144,19 +87,14 @@ public interface IGameDataService : IDisposable
     #region Palette Access
 
     /// <summary>
-    /// Get palette categories for a specific resource type.
+    /// Get palette categories for a resource type.
     /// Loads from skeleton palette (e.g., creaturepal.itp for UTC).
     /// </summary>
     /// <param name="resourceType">Resource type ID (e.g., 2027 for UTC)</param>
-    /// <returns>List of palette categories with IDs and names</returns>
     IEnumerable<PaletteCategory> GetPaletteCategories(ushort resourceType);
 
-    /// <summary>
-    /// Get palette category name by ID.
-    /// </summary>
-    /// <param name="resourceType">Resource type ID</param>
+    /// <summary>Get palette category name by ID.</summary>
     /// <param name="categoryId">Category ID (PaletteID from blueprint)</param>
-    /// <returns>Category name, or null if not found</returns>
     string? GetPaletteCategoryName(ushort resourceType, byte categoryId);
 
     #endregion
@@ -235,15 +173,10 @@ public interface IGameDataService : IDisposable
 
     #region Configuration
 
-    /// <summary>
-    /// Whether the service is configured with valid game paths.
-    /// </summary>
+    /// <summary>Whether the service is configured with valid game paths.</summary>
     bool IsConfigured { get; }
 
-    /// <summary>
-    /// Reload configuration from settings.
-    /// Call after settings change.
-    /// </summary>
+    /// <summary>Reload configuration from settings. Call after settings change.</summary>
     void ReloadConfiguration();
 
     /// <summary>
@@ -258,35 +191,21 @@ public interface IGameDataService : IDisposable
     #endregion
 }
 
-/// <summary>
-/// Information about a game resource.
-/// </summary>
+/// <summary>Information about a game resource.</summary>
 public class GameResourceInfo
 {
-    /// <summary>
-    /// Resource reference name (without extension).
-    /// </summary>
+    /// <summary>Resource reference name (without extension).</summary>
     public required string ResRef { get; init; }
 
-    /// <summary>
-    /// Resource type ID.
-    /// </summary>
     public required ushort ResourceType { get; init; }
 
-    /// <summary>
-    /// Source of the resource (Override, HAK, Module, BIF).
-    /// </summary>
     public required GameResourceSource Source { get; init; }
 
-    /// <summary>
-    /// Path to the source file (for override files) or archive.
-    /// </summary>
+    /// <summary>Path to the source file (for override files) or archive.</summary>
     public string? SourcePath { get; init; }
 }
 
-/// <summary>
-/// Source of a game resource in the resolution chain.
-/// </summary>
+/// <summary>Source of a game resource in the resolution chain.</summary>
 public enum GameResourceSource
 {
     /// <summary>Override folder (highest priority)</summary>
@@ -302,28 +221,18 @@ public enum GameResourceSource
     Bif
 }
 
-/// <summary>
-/// Represents a palette category from an ITP file.
-/// </summary>
+/// <summary>Represents a palette category from an ITP file.</summary>
 public class PaletteCategory
 {
-    /// <summary>
-    /// Category ID (matches PaletteID in blueprints).
-    /// </summary>
+    /// <summary>Category ID (matches PaletteID in blueprints).</summary>
     public byte Id { get; init; }
 
-    /// <summary>
-    /// Display name (resolved from TLK or direct name).
-    /// </summary>
+    /// <summary>Display name (resolved from TLK or direct name).</summary>
     public required string Name { get; init; }
 
-    /// <summary>
-    /// Parent branch path for tree display (e.g., "Animals/Domestic").
-    /// </summary>
+    /// <summary>Parent branch path for tree display (e.g., "Animals/Domestic").</summary>
     public string? ParentPath { get; init; }
 
-    /// <summary>
-    /// Full display path (Parent + Name).
-    /// </summary>
+    /// <summary>Full display path (Parent + Name).</summary>
     public string FullPath => string.IsNullOrEmpty(ParentPath) ? Name : $"{ParentPath}/{Name}";
 }

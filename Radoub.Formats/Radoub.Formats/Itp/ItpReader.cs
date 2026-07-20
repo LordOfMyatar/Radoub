@@ -9,9 +9,7 @@ namespace Radoub.Formats.Itp;
 /// </summary>
 public static class ItpReader
 {
-    /// <summary>
-    /// Read an ITP file from a byte array.
-    /// </summary>
+    /// <summary>Read an ITP file from a byte array.</summary>
     public static ItpFile? Read(byte[] data)
     {
         try
@@ -32,17 +30,13 @@ public static class ItpReader
         }
     }
 
-    /// <summary>
-    /// Read an ITP file from an already-parsed GFF file.
-    /// </summary>
+    /// <summary>Read an ITP file from an already-parsed GFF file.</summary>
     public static ItpFile Read(GffFile gff)
     {
         return ParseItp(gff);
     }
 
-    /// <summary>
-    /// Read an ITP file from a file path.
-    /// </summary>
+    /// <summary>Read an ITP file from a file path.</summary>
     public static ItpFile? Read(string filePath)
     {
         var data = File.ReadAllBytes(filePath);
@@ -73,7 +67,6 @@ public static class ItpReader
             itp.NextUseableId = nextId;
         }
 
-        // MAIN list - the root of the tree
         var mainField = root.GetField("MAIN");
         if (mainField?.Value is GffList mainList)
         {
@@ -128,14 +121,12 @@ public static class ItpReader
 
         ParseCommonFields(nodeStruct, node);
 
-        // CR - creature challenge rating
         var crField = nodeStruct.GetField("CR");
         if (crField?.Value is float cr)
         {
             node.ChallengeRating = cr;
         }
 
-        // FACTION - creature faction
         var factionField = nodeStruct.GetField("FACTION");
         if (factionField?.Value is string faction)
         {
@@ -181,7 +172,6 @@ public static class ItpReader
 
         ParseCommonFields(nodeStruct, node);
 
-        // Parse children
         if (listField?.Value is GffList list)
         {
             foreach (var childStruct in list.Elements)
@@ -199,28 +189,27 @@ public static class ItpReader
 
     private static void ParseCommonFields(GffStruct nodeStruct, PaletteNode node)
     {
-        // STRREF - TLK reference
+        // STRREF holds a TLK reference
         var strRefField = nodeStruct.GetField("STRREF");
         if (strRefField?.Value is uint strRef)
         {
             node.StrRef = strRef;
         }
 
-        // NAME - direct name
         var nameField = nodeStruct.GetField("NAME");
         if (nameField?.Value is string name)
         {
             node.Name = name;
         }
 
-        // DELETE_ME - editing convenience field
+        // DELETE_ME is an editing-convenience field, skeleton palettes only
         var deleteField = nodeStruct.GetField("DELETE_ME");
         if (deleteField?.Value is string deleteMe)
         {
             node.DeleteMe = deleteMe;
         }
 
-        // TYPE - display type
+        // TYPE carries the display type
         var typeField = nodeStruct.GetField("TYPE");
         if (typeField?.Value is byte displayType)
         {

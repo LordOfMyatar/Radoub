@@ -23,14 +23,10 @@ public enum SlotSize
     ExtraTall
 }
 
-/// <summary>
-/// ViewModel for a single equipment slot in the EquipmentSlotsPanel.
-/// </summary>
+/// <summary>ViewModel for a single equipment slot in the EquipmentSlotsPanel.</summary>
 public partial class EquipmentSlotViewModel : ObservableObject
 {
-    /// <summary>
-    /// Creates an equipment slot view model.
-    /// </summary>
+    /// <summary>Creates an equipment slot view model.</summary>
     /// <param name="slotId">Slot ID (0-17).</param>
     /// <param name="slotFlag">Bit flag for GFF struct ID.</param>
     /// <param name="name">Display name.</param>
@@ -43,77 +39,49 @@ public partial class EquipmentSlotViewModel : ObservableObject
         IsNatural = isNatural;
     }
 
-    /// <summary>
-    /// Slot ID (0-17 per issue spec).
-    /// </summary>
+    /// <summary>Slot ID (0-17 per issue spec).</summary>
     public int SlotId { get; }
 
-    /// <summary>
-    /// Bit flag value used in GFF Equip_ItemList struct ID.
-    /// </summary>
+    /// <summary>Bit flag value used in GFF Equip_ItemList struct ID.</summary>
     public int SlotFlag { get; }
 
-    /// <summary>
-    /// Display name (e.g., "Head", "Chest", "Claw 1").
-    /// </summary>
+    /// <summary>Display name (e.g., "Head", "Chest", "Claw 1").</summary>
     public string Name { get; }
 
-    /// <summary>
-    /// True if this is a natural equipment slot (creature-only: Claws, Skin).
-    /// </summary>
+    /// <summary>True if this is a natural equipment slot (creature-only: Claws, Skin).</summary>
     public bool IsNatural { get; }
 
-    /// <summary>
-    /// Path to the slot's placeholder icon resource.
-    /// </summary>
+    /// <summary>Path to the slot's placeholder icon resource.</summary>
     public string IconPath => ItemIconHelper.GetSlotIconPath(SlotFlag);
 
-    /// <summary>
-    /// Visual size category for paperdoll layout.
-    /// </summary>
+    /// <summary>Visual size category for paperdoll layout.</summary>
     public SlotSize Size { get; init; } = SlotSize.Medium;
 
-    /// <summary>
-    /// True if this is a standard equipment slot (Head, Chest, etc.).
-    /// </summary>
+    /// <summary>True if this is a standard equipment slot (Head, Chest, etc.).</summary>
     public bool IsStandard => !IsNatural;
 
-    /// <summary>
-    /// The item currently equipped in this slot, if any.
-    /// </summary>
+    /// <summary>The item currently equipped in this slot, if any.</summary>
     [ObservableProperty]
     private ItemViewModel? _equippedItem;
 
-    /// <summary>
-    /// True if no item is equipped in this slot.
-    /// </summary>
+    /// <summary>True if no item is equipped in this slot.</summary>
     public bool IsEmpty => EquippedItem == null;
 
-    /// <summary>
-    /// True if an item is equipped in this slot.
-    /// </summary>
+    /// <summary>True if an item is equipped in this slot.</summary>
     public bool HasItem => EquippedItem != null;
 
-    /// <summary>
-    /// True if slot is selected (for context operations).
-    /// </summary>
+    /// <summary>True if slot is selected (for context operations).</summary>
     [ObservableProperty]
     private bool _isSelected;
 
-    /// <summary>
-    /// Validation warning message, if any.
-    /// </summary>
+    /// <summary>Validation warning message, if any.</summary>
     [ObservableProperty]
     private string? _validationWarning;
 
-    /// <summary>
-    /// True if there's a validation warning for this slot.
-    /// </summary>
+    /// <summary>True if there's a validation warning for this slot.</summary>
     public bool HasWarning => !string.IsNullOrEmpty(ValidationWarning);
 
-    /// <summary>
-    /// Tooltip text combining item info and any warnings.
-    /// </summary>
+    /// <summary>Tooltip text combining item info and any warnings.</summary>
     public string Tooltip
     {
         get
@@ -143,9 +111,7 @@ public partial class EquipmentSlotViewModel : ObservableObject
     }
 }
 
-/// <summary>
-/// Factory for creating equipment slot view models with correct metadata.
-/// </summary>
+/// <summary>Factory for creating equipment slot view models with correct metadata.</summary>
 public static class EquipmentSlotFactory
 {
     // Slot flags matching EquipmentSlots constants
@@ -168,9 +134,7 @@ public static class EquipmentSlotFactory
     private const int FlagClaw3 = 0x10000;
     private const int FlagSkin = 0x20000;
 
-    /// <summary>
-    /// Creates all standard equipment slots (14 slots) with paperdoll sizes.
-    /// </summary>
+    /// <summary>Creates all standard equipment slots (14 slots) with paperdoll sizes.</summary>
     public static IReadOnlyList<EquipmentSlotViewModel> CreateStandardSlots()
     {
         return new List<EquipmentSlotViewModel>
@@ -192,9 +156,7 @@ public static class EquipmentSlotFactory
         };
     }
 
-    /// <summary>
-    /// Creates all natural equipment slots (4 creature-only slots).
-    /// </summary>
+    /// <summary>Creates all natural equipment slots (4 creature-only slots).</summary>
     public static IReadOnlyList<EquipmentSlotViewModel> CreateNaturalSlots()
     {
         return new List<EquipmentSlotViewModel>
@@ -206,9 +168,7 @@ public static class EquipmentSlotFactory
         };
     }
 
-    /// <summary>
-    /// Creates all equipment slots (standard + natural).
-    /// </summary>
+    /// <summary>Creates all equipment slots (standard + natural).</summary>
     public static IReadOnlyList<EquipmentSlotViewModel> CreateAllSlots()
     {
         var all = new List<EquipmentSlotViewModel>();
@@ -217,9 +177,7 @@ public static class EquipmentSlotFactory
         return all;
     }
 
-    /// <summary>
-    /// Gets a slot by its bit flag value.
-    /// </summary>
+    /// <summary>Gets a slot by its bit flag value.</summary>
     public static EquipmentSlotViewModel? GetSlotByFlag(IEnumerable<EquipmentSlotViewModel> slots, int flag)
     {
         return slots.FirstOrDefault(s => s.SlotFlag == flag);

@@ -24,9 +24,7 @@ public class SharedPaletteCacheService : ISharedPaletteCacheService, IDisposable
     private List<SharedPaletteCacheItem>? _aggregatedCache;
     private bool _disposed;
 
-    /// <summary>
-    /// Create a shared palette cache service using the default shared location.
-    /// </summary>
+    /// <summary>Create a shared palette cache service using the default shared location.</summary>
     public SharedPaletteCacheService()
         : this(Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
@@ -34,9 +32,7 @@ public class SharedPaletteCacheService : ISharedPaletteCacheService, IDisposable
     {
     }
 
-    /// <summary>
-    /// Create a shared palette cache service with a custom cache directory (for testing).
-    /// </summary>
+    /// <summary>Create a shared palette cache service with a custom cache directory (for testing).</summary>
     public SharedPaletteCacheService(string cacheDirectory)
     {
         _cacheDirectory = cacheDirectory;

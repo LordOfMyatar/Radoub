@@ -1,8 +1,6 @@
 namespace Radoub.Formats.Search;
 
-/// <summary>
-/// Type of GFF field being searched. Determines matching behavior.
-/// </summary>
+/// <summary>Type of GFF field being searched. Determines matching behavior.</summary>
 public enum SearchFieldType
 {
     /// <summary>CExoLocString — search all language variants</summary>
@@ -21,9 +19,7 @@ public enum SearchFieldType
     Variable
 }
 
-/// <summary>
-/// Logical category for grouping fields in UI.
-/// </summary>
+/// <summary>Logical category for grouping fields in UI.</summary>
 public enum SearchFieldCategory
 {
     /// <summary>Player-facing text (dialog, names, descriptions)</summary>

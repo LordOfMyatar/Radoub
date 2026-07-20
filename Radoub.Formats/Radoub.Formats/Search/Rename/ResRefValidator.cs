@@ -10,9 +10,7 @@ public class ResRefValidator
 {
     private const int MaxLength = 16;
 
-    /// <summary>
-    /// Validates and normalizes a proposed ResRef name.
-    /// </summary>
+    /// <summary>Validates and normalizes a proposed ResRef name.</summary>
     /// <param name="proposedName">Raw user input. May include extension; will be trimmed and lowercased.</param>
     /// <param name="existingNames">Existing ResRefs in the target scope, used for collision detection.
     /// Caller must EXCLUDE the name being renamed — otherwise renaming "louis" → "louis" would falsely

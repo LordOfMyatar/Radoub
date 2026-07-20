@@ -8,18 +8,14 @@ namespace Radoub.Formats.Jrl;
 /// </summary>
 public static class JrlReader
 {
-    /// <summary>
-    /// Read a JRL file from a file path.
-    /// </summary>
+    /// <summary>Read a JRL file from a file path.</summary>
     public static JrlFile Read(string filePath)
     {
         var buffer = File.ReadAllBytes(filePath);
         return Read(buffer);
     }
 
-    /// <summary>
-    /// Read a JRL file from a stream.
-    /// </summary>
+    /// <summary>Read a JRL file from a stream.</summary>
     public static JrlFile Read(Stream stream)
     {
         using var ms = new MemoryStream();
@@ -27,15 +23,11 @@ public static class JrlReader
         return Read(ms.ToArray());
     }
 
-    /// <summary>
-    /// Read a JRL file from a byte buffer.
-    /// </summary>
+    /// <summary>Read a JRL file from a byte buffer.</summary>
     public static JrlFile Read(byte[] buffer)
     {
-        // Parse as GFF first
         var gff = GffReader.Read(buffer);
 
-        // Validate file type
         if (gff.FileType.TrimEnd() != "JRL")
         {
             throw new InvalidDataException(
@@ -48,7 +40,6 @@ public static class JrlReader
             FileVersion = gff.FileVersion
         };
 
-        // Parse Categories list from root struct
         var categoriesField = gff.RootStruct.GetField("Categories");
         if (categoriesField != null && categoriesField.IsList && categoriesField.Value is GffList categoriesList)
         {
@@ -76,14 +67,12 @@ public static class JrlReader
             Picture = categoryStruct.GetFieldValue<string>("Picture", string.Empty)
         };
 
-        // Parse Name (CExoLocString)
         var nameField = categoryStruct.GetField("Name");
         if (nameField != null && nameField.IsCExoLocString && nameField.Value is CExoLocString nameLocString)
         {
             category.Name = nameLocString;
         }
 
-        // Parse EntryList
         var entryListField = categoryStruct.GetField("EntryList");
         if (entryListField != null && entryListField.IsList && entryListField.Value is GffList entryList)
         {
@@ -108,7 +97,6 @@ public static class JrlReader
             End = entryStruct.GetFieldValue<ushort>("End", 0) != 0
         };
 
-        // Parse Text (CExoLocString)
         var textField = entryStruct.GetField("Text");
         if (textField != null && textField.IsCExoLocString && textField.Value is CExoLocString textLocString)
         {

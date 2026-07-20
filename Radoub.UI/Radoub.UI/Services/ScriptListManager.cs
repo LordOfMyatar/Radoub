@@ -4,9 +4,7 @@ using System.Linq;
 
 namespace Radoub.UI.Services;
 
-/// <summary>
-/// Result of filtering and merging script lists for display.
-/// </summary>
+/// <summary>Result of filtering and merging script lists for display.</summary>
 public class ScriptListResult
 {
     public List<ScriptEntry> Scripts { get; set; } = new();
@@ -93,9 +91,7 @@ public static class ScriptListManager
         };
     }
 
-    /// <summary>
-    /// Formats the script count for display in the UI.
-    /// </summary>
+    /// <summary>Formats the script count for display in the UI.</summary>
     public static string FormatCountText(ScriptListResult result)
     {
         var countText = $"{result.ModuleCount} module";

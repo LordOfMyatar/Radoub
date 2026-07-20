@@ -1,8 +1,6 @@
 namespace Radoub.Formats.Resolver;
 
-/// <summary>
-/// Configuration for GameResourceResolver specifying game paths and resource locations.
-/// </summary>
+/// <summary>Configuration for GameResourceResolver specifying game paths and resource locations.</summary>
 public class GameResourceConfig
 {
     /// <summary>
@@ -11,9 +9,7 @@ public class GameResourceConfig
     /// </summary>
     public string? ModuleDirectory { get; set; }
 
-    /// <summary>
-    /// Path to the NWN installation data directory (contains .key files and data/).
-    /// </summary>
+    /// <summary>Path to the NWN installation data directory (contains .key files and data/).</summary>
     public string? GameDataPath { get; set; }
 
     /// <summary>
@@ -22,9 +18,7 @@ public class GameResourceConfig
     /// </summary>
     public string? OverridePath { get; set; }
 
-    /// <summary>
-    /// Paths to HAK files to search, in priority order (first = highest priority).
-    /// </summary>
+    /// <summary>Paths to HAK files to search, in priority order (first = highest priority).</summary>
     public List<string> HakPaths { get; set; } = new();
 
     /// <summary>
@@ -33,9 +27,7 @@ public class GameResourceConfig
     /// </summary>
     public string? TlkPath { get; set; }
 
-    /// <summary>
-    /// Path to the module's custom TLK file (for StrRefs >= 16777216).
-    /// </summary>
+    /// <summary>Path to the module's custom TLK file (for StrRefs >= 16777216).</summary>
     public string? CustomTlkPath { get; set; }
 
     /// <summary>
@@ -57,9 +49,7 @@ public class GameResourceConfig
     /// </summary>
     public bool EnableHakScanning { get; set; } = false;
 
-    /// <summary>
-    /// Create a config for a standard NWN:EE installation.
-    /// </summary>
+    /// <summary>Create a config for a standard NWN:EE installation.</summary>
     public static GameResourceConfig ForNwnEE(string installPath)
     {
         var dataPath = Path.Combine(installPath, "data");
@@ -72,9 +62,7 @@ public class GameResourceConfig
         };
     }
 
-    /// <summary>
-    /// Create a config for classic NWN (Diamond/GoG).
-    /// </summary>
+    /// <summary>Create a config for classic NWN (Diamond/GoG).</summary>
     public static GameResourceConfig ForNwnClassic(string installPath)
     {
         return new GameResourceConfig

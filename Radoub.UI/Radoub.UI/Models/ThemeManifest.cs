@@ -30,16 +30,12 @@ public class ThemeManifest
     [JsonPropertyName("spacing")]
     public ThemeSpacing? Spacing { get; set; }
 
-    /// <summary>
-    /// Path to the theme file (set at runtime, not in JSON)
-    /// </summary>
+    /// <summary>Path to the theme file (set at runtime, not in JSON)</summary>
     [JsonIgnore]
     public string? SourcePath { get; set; }
 }
 
-/// <summary>
-/// Theme plugin metadata
-/// </summary>
+/// <summary>Theme plugin metadata</summary>
 public class ThemePluginInfo
 {
     [JsonPropertyName("id")]
@@ -64,9 +60,7 @@ public class ThemePluginInfo
     public string[] Tags { get; set; } = Array.Empty<string>();
 }
 
-/// <summary>
-/// Theme accessibility metadata
-/// </summary>
+/// <summary>Theme accessibility metadata</summary>
 public class ThemeAccessibility
 {
     [JsonPropertyName("type")]
@@ -196,9 +190,7 @@ public class ThemeColors
     public string? Speaker6 { get; set; }
 }
 
-/// <summary>
-/// Theme font configuration
-/// </summary>
+/// <summary>Theme font configuration</summary>
 public class ThemeFonts
 {
     [JsonPropertyName("primary")]
@@ -214,9 +206,7 @@ public class ThemeFonts
     public string? Weight { get; set; } // "Normal", "Bold", etc.
 }
 
-/// <summary>
-/// Theme spacing/layout configuration
-/// </summary>
+/// <summary>Theme spacing/layout configuration</summary>
 public class ThemeSpacing
 {
     [JsonPropertyName("control_padding")]

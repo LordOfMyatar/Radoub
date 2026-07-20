@@ -10,9 +10,7 @@ using Radoub.Formats.Logging;
 
 namespace Radoub.UI.Services;
 
-/// <summary>
-/// Cached HAK file script data to avoid re-scanning on each browser open.
-/// </summary>
+/// <summary>Cached HAK file script data to avoid re-scanning on each browser open.</summary>
 internal class ScriptHakCacheEntry
 {
     public string HakPath { get; set; } = "";
@@ -35,9 +33,7 @@ public class HakScriptScanner
     private static readonly ConcurrentDictionary<string, ScriptHakCacheEntry> _hakCache = new();
     private const int MaxCacheEntries = 64;
 
-    /// <summary>
-    /// Scans multiple HAK files for scripts, respecting module override priority.
-    /// </summary>
+    /// <summary>Scans multiple HAK files for scripts, respecting module override priority.</summary>
     /// <param name="hakPaths">List of HAK file paths to scan</param>
     /// <param name="moduleScripts">Module scripts (highest priority - these override HAK scripts)</param>
     /// <param name="progressCallback">Optional callback for progress updates (hakIndex, totalHaks, hakName)</param>
@@ -73,9 +69,7 @@ public class HakScriptScanner
         return hakScripts;
     }
 
-    /// <summary>
-    /// Scans a single HAK file for scripts, using cache when available.
-    /// </summary>
+    /// <summary>Scans a single HAK file for scripts, using cache when available.</summary>
     private void ScanHakForScripts(
         string hakPath,
         IReadOnlyList<ScriptEntry> moduleScripts,
@@ -158,9 +152,7 @@ public class HakScriptScanner
         }
     }
 
-    /// <summary>
-    /// Checks if a script name already exists in module scripts or HAK scripts.
-    /// </summary>
+    /// <summary>Checks if a script name already exists in module scripts or HAK scripts.</summary>
     private static bool IsDuplicate(
         string scriptName,
         IReadOnlyList<ScriptEntry> moduleScripts,
@@ -175,9 +167,7 @@ public class HakScriptScanner
         return false;
     }
 
-    /// <summary>
-    /// Creates a copy of a script entry for use outside the cache.
-    /// </summary>
+    /// <summary>Creates a copy of a script entry for use outside the cache.</summary>
     private static ScriptEntry CloneScriptEntry(ScriptEntry source)
     {
         return new ScriptEntry
@@ -191,9 +181,7 @@ public class HakScriptScanner
         };
     }
 
-    /// <summary>
-    /// Extracts script content from a HAK file.
-    /// </summary>
+    /// <summary>Extracts script content from a HAK file.</summary>
     /// <param name="scriptEntry">Script entry with HAK path and ERF entry</param>
     /// <returns>Script content with source header, or null if extraction fails</returns>
     public async Task<string?> ExtractScriptFromHakAsync(ScriptEntry scriptEntry)
@@ -235,9 +223,7 @@ public class HakScriptScanner
         }
     }
 
-    /// <summary>
-    /// Gets HAK file paths from a directory.
-    /// </summary>
+    /// <summary>Gets HAK file paths from a directory.</summary>
     public static IEnumerable<string> GetHakFilesFromPath(string path)
     {
         try
@@ -255,9 +241,7 @@ public class HakScriptScanner
         return Enumerable.Empty<string>();
     }
 
-    /// <summary>
-    /// Collects HAK paths from multiple locations with deduplication.
-    /// </summary>
+    /// <summary>Collects HAK paths from multiple locations with deduplication.</summary>
     /// <param name="currentDir">Current file directory (highest priority)</param>
     /// <param name="overridePath">Override path if set</param>
     /// <param name="userPath">NWN user documents path (for hak folder)</param>

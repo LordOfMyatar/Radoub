@@ -6,24 +6,14 @@ namespace Radoub.Formats.Tokens;
 /// </summary>
 public abstract class TokenSegment
 {
-    /// <summary>
-    /// The raw text of this segment (including token markers for tokens).
-    /// </summary>
+    /// <summary>The raw text of this segment (including token markers for tokens).</summary>
     public string RawText { get; }
 
-    /// <summary>
-    /// The display text (token content or plain text).
-    /// </summary>
+    /// <summary>The display text (token content or plain text).</summary>
     public abstract string DisplayText { get; }
 
-    /// <summary>
-    /// Starting index in the original string.
-    /// </summary>
     public int StartIndex { get; }
 
-    /// <summary>
-    /// Length in the original string.
-    /// </summary>
     public int Length => RawText.Length;
 
     protected TokenSegment(string rawText, int startIndex)
@@ -33,9 +23,7 @@ public abstract class TokenSegment
     }
 }
 
-/// <summary>
-/// Plain text segment with no token formatting.
-/// </summary>
+/// <summary>Plain text segment with no token formatting.</summary>
 public class PlainTextSegment : TokenSegment
 {
     public override string DisplayText => RawText;
@@ -52,9 +40,7 @@ public class PlainTextSegment : TokenSegment
 /// </summary>
 public class StandardToken : TokenSegment
 {
-    /// <summary>
-    /// The token name without angle brackets (e.g., "FirstName", "Boy/Girl").
-    /// </summary>
+    /// <summary>The token name without angle brackets (e.g., "FirstName", "Boy/Girl").</summary>
     public string TokenName { get; }
 
     public override string DisplayText => TokenName;
@@ -72,14 +58,10 @@ public class StandardToken : TokenSegment
 /// </summary>
 public class CustomToken : TokenSegment
 {
-    /// <summary>
-    /// The custom token number (0-9 for standard, higher for module-defined).
-    /// </summary>
+    /// <summary>The custom token number (0-9 for standard, higher for module-defined).</summary>
     public int TokenNumber { get; }
 
-    /// <summary>
-    /// The token name (e.g., "CUSTOM0", "CUSTOM1001").
-    /// </summary>
+    /// <summary>The token name (e.g., "CUSTOM0", "CUSTOM1001").</summary>
     public string TokenName { get; }
 
     public override string DisplayText => TokenName;
@@ -98,26 +80,17 @@ public class CustomToken : TokenSegment
 /// </summary>
 public class HighlightToken : TokenSegment
 {
-    /// <summary>
-    /// Type of highlight (Action, Check, Highlight).
-    /// </summary>
+    /// <summary>Type of highlight (Action, Check, Highlight).</summary>
     public HighlightType Type { get; }
 
-    /// <summary>
-    /// The text content inside the highlight tags.
-    /// </summary>
     public string Content { get; }
 
     public override string DisplayText => Content;
 
-    /// <summary>
-    /// The opening tag (e.g., "&lt;StartAction&gt;").
-    /// </summary>
+    /// <summary>The opening tag (e.g., "&lt;StartAction&gt;").</summary>
     public string OpenTag { get; }
 
-    /// <summary>
-    /// The closing tag ("&lt;/Start&gt;").
-    /// </summary>
+    /// <summary>The closing tag ("&lt;/Start&gt;").</summary>
     public string CloseTag { get; }
 
     public HighlightToken(string rawText, HighlightType type, string content,
@@ -131,9 +104,7 @@ public class HighlightToken : TokenSegment
     }
 }
 
-/// <summary>
-/// Types of highlight tokens in Aurora Engine.
-/// </summary>
+/// <summary>Types of highlight tokens in Aurora Engine.</summary>
 public enum HighlightType
 {
     /// <summary>
@@ -161,36 +132,23 @@ public enum HighlightType
 /// </summary>
 public class ColorToken : TokenSegment
 {
-    /// <summary>
-    /// Red component (0-255).
-    /// </summary>
+    /// <summary>Red component (0-255).</summary>
     public byte Red { get; }
 
-    /// <summary>
-    /// Green component (0-255).
-    /// </summary>
+    /// <summary>Green component (0-255).</summary>
     public byte Green { get; }
 
-    /// <summary>
-    /// Blue component (0-255).
-    /// </summary>
+    /// <summary>Blue component (0-255).</summary>
     public byte Blue { get; }
 
-    /// <summary>
-    /// The text content inside the color tags.
-    /// </summary>
     public string Content { get; }
 
     public override string DisplayText => Content;
 
-    /// <summary>
-    /// The opening tag (e.g., "&lt;cRGB&gt;").
-    /// </summary>
+    /// <summary>The opening tag (e.g., "&lt;cRGB&gt;").</summary>
     public string OpenTag { get; }
 
-    /// <summary>
-    /// The closing tag ("&lt;/c&gt;").
-    /// </summary>
+    /// <summary>The closing tag ("&lt;/c&gt;").</summary>
     public string CloseTag { get; }
 
     public ColorToken(string rawText, byte red, byte green, byte blue,
@@ -205,9 +163,7 @@ public class ColorToken : TokenSegment
         CloseTag = closeTag;
     }
 
-    /// <summary>
-    /// Get the color as a hex string (e.g., "#FF0000").
-    /// </summary>
+    /// <summary>Get the color as a hex string (e.g., "#FF0000").</summary>
     public string ToHexColor() => $"#{Red:X2}{Green:X2}{Blue:X2}";
 }
 
@@ -217,31 +173,20 @@ public class ColorToken : TokenSegment
 /// </summary>
 public class UserColorToken : TokenSegment
 {
-    /// <summary>
-    /// The color name from user configuration (e.g., "Red", "Gold").
-    /// </summary>
+    /// <summary>The color name from user configuration (e.g., "Red", "Gold").</summary>
     public string ColorName { get; }
 
-    /// <summary>
-    /// The text content between the color tokens.
-    /// </summary>
     public string Content { get; }
 
-    /// <summary>
-    /// The hex color value from configuration (e.g., "#FF0000").
-    /// </summary>
+    /// <summary>The hex color value from configuration (e.g., "#FF0000").</summary>
     public string HexColor { get; }
 
     public override string DisplayText => Content;
 
-    /// <summary>
-    /// The opening token (e.g., "&lt;CUSTOM1001&gt;").
-    /// </summary>
+    /// <summary>The opening token (e.g., "&lt;CUSTOM1001&gt;").</summary>
     public string OpenToken { get; }
 
-    /// <summary>
-    /// The closing token (e.g., "&lt;CUSTOM1000&gt;").
-    /// </summary>
+    /// <summary>The closing token (e.g., "&lt;CUSTOM1000&gt;").</summary>
     public string CloseToken { get; }
 
     public UserColorToken(string rawText, string colorName, string content,

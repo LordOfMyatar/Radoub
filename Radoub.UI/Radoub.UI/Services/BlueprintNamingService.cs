@@ -54,9 +54,7 @@ public static partial class BlueprintNamingService
         return TruncateAndTrim(resref, MaxResRefLength);
     }
 
-    /// <summary>
-    /// Returns true if the resRef is valid: [a-z0-9_], 1–16 chars.
-    /// </summary>
+    /// <summary>Returns true if the resRef is valid: [a-z0-9_], 1–16 chars.</summary>
     public static bool IsValidResRef(string resRef)
     {
         if (string.IsNullOrEmpty(resRef) || resRef.Length > MaxResRefLength)
@@ -64,9 +62,7 @@ public static partial class BlueprintNamingService
         return ValidResRefRegex().IsMatch(resRef);
     }
 
-    /// <summary>
-    /// Returns true if the tag is valid: [a-zA-Z0-9_], 1–32 chars.
-    /// </summary>
+    /// <summary>Returns true if the tag is valid: [a-zA-Z0-9_], 1–32 chars.</summary>
     public static bool IsValidTag(string tag)
     {
         if (string.IsNullOrEmpty(tag) || tag.Length > MaxTagLength)

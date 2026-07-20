@@ -48,35 +48,21 @@ public class SpellCheckService : IDisposable
     private volatile bool _isReloading;
     private readonly SemaphoreSlim _initLock = new(1, 1);
 
-    /// <summary>
-    /// Path to the Radoub-wide custom dictionary file.
-    /// Located at ~/Radoub/Dictionaries/custom.dic
-    /// </summary>
+    /// <summary>Radoub-wide custom dictionary file (~/Radoub/Dictionaries/custom.dic).</summary>
     /// <remarks>
     /// Retained for diagnostics/logging only. As of #2263, <see cref="UserDictionaryService"/>
     /// is the single owner of reads and writes to this file; SpellCheckService is a consumer.
     /// </remarks>
     private readonly string _customDictionaryPath;
 
-    /// <summary>
-    /// Whether spell-checking is available and loaded.
-    /// Also checks if spell-check is enabled in settings.
-    /// </summary>
+    /// <summary>Available and loaded, and enabled in settings.</summary>
     public bool IsReady => _isInitialized && _spellChecker != null && DictionarySettingsService.Instance.SpellCheckEnabled && !_isReloading;
 
-    /// <summary>
-    /// Event raised when spell-check is ready for use.
-    /// </summary>
     public event EventHandler? Ready;
 
-    /// <summary>
-    /// Event raised when dictionaries are reloaded (for UI refresh).
-    /// </summary>
+    /// <summary>Raised when dictionaries are reloaded (for UI refresh).</summary>
     public event EventHandler? DictionariesReloaded;
 
-    /// <summary>
-    /// Event raised when spell-check enabled state changes.
-    /// </summary>
     public event EventHandler<bool>? EnabledChanged;
 
     private SpellCheckService()
@@ -126,9 +112,7 @@ public class SpellCheckService : IDisposable
         }
     }
 
-    /// <summary>
-    /// Load all dictionaries based on current settings.
-    /// </summary>
+    /// <summary>Load all dictionaries based on current settings.</summary>
     private async Task LoadDictionariesAsync()
     {
         var settings = DictionarySettingsService.Instance;
@@ -137,15 +121,12 @@ public class SpellCheckService : IDisposable
         // Clear discovery cache to pick up any new dictionaries
         _discovery?.ClearCache();
 
-        // Create fresh dictionary manager and spell checker
         _dictionaryManager = new DictionaryManager();
         _spellChecker?.Dispose();
         _spellChecker = new SpellChecker(_dictionaryManager);
 
-        // Load primary language (Hunspell)
         await LoadPrimaryLanguageAsync(primaryLanguage);
 
-        // Load enabled custom dictionaries
         await LoadEnabledCustomDictionariesAsync();
 
         // Load user's custom dictionary (words they've added)
@@ -156,9 +137,7 @@ public class SpellCheckService : IDisposable
             $"Spell-check loaded: {primaryLanguage} + {_dictionaryManager.DictionaryCount} custom dictionaries ({totalWordCount} words)");
     }
 
-    /// <summary>
-    /// Load the primary Hunspell language dictionary.
-    /// </summary>
+    /// <summary>Load the primary Hunspell language dictionary.</summary>
     private async Task LoadPrimaryLanguageAsync(string languageCode)
     {
         if (_spellChecker == null || _discovery == null) return;
@@ -187,9 +166,7 @@ public class SpellCheckService : IDisposable
         }
     }
 
-    /// <summary>
-    /// Load all enabled custom dictionaries.
-    /// </summary>
+    /// <summary>Load all enabled custom dictionaries.</summary>
     private async Task LoadEnabledCustomDictionariesAsync()
     {
         if (_discovery == null) return;
@@ -267,9 +244,7 @@ public class SpellCheckService : IDisposable
         EnabledChanged?.Invoke(this, isEnabled);
     }
 
-    /// <summary>
-    /// Check if a word is spelled correctly.
-    /// </summary>
+    /// <summary>Check if a word is spelled correctly.</summary>
     public bool IsCorrect(string word)
     {
         if (!IsReady || string.IsNullOrWhiteSpace(word))
@@ -278,9 +253,7 @@ public class SpellCheckService : IDisposable
         return _spellChecker!.IsCorrect(word);
     }
 
-    /// <summary>
-    /// Get all spelling errors in text.
-    /// </summary>
+    /// <summary>Get all spelling errors in text.</summary>
     public IEnumerable<SpellingError> CheckText(string text)
     {
         if (!IsReady || string.IsNullOrWhiteSpace(text))
@@ -289,9 +262,7 @@ public class SpellCheckService : IDisposable
         return _spellChecker!.CheckText(text);
     }
 
-    /// <summary>
-    /// Get spelling suggestions for a misspelled word.
-    /// </summary>
+    /// <summary>Get spelling suggestions for a misspelled word.</summary>
     public IEnumerable<string> GetSuggestions(string word, int maxSuggestions = 5)
     {
         if (!IsReady || string.IsNullOrWhiteSpace(word))
@@ -300,18 +271,13 @@ public class SpellCheckService : IDisposable
         return _spellChecker!.GetSuggestions(word, maxSuggestions);
     }
 
-    /// <summary>
-    /// Ignore a word for the current session only.
-    /// </summary>
+    /// <summary>Ignore a word for the current session only.</summary>
     public void IgnoreForSession(string word)
     {
         _spellChecker?.IgnoreForSession(word);
     }
 
-    /// <summary>
-    /// Add a word to the custom dictionary permanently.
-    /// Automatically saves to disk.
-    /// </summary>
+    /// <summary>Add a word to the custom dictionary permanently. Saves to disk.</summary>
     public void AddToCustomDictionary(string word)
     {
         if (!string.IsNullOrWhiteSpace(word))
@@ -329,19 +295,11 @@ public class SpellCheckService : IDisposable
         }
     }
 
-    /// <summary>
-    /// Get the number of session-ignored words.
-    /// </summary>
     public int SessionIgnoredCount => _spellChecker?.SessionIgnoredCount ?? 0;
 
-    /// <summary>
-    /// Get the number of custom words.
-    /// </summary>
     public int GetCustomWordCount() => _dictionaryManager.WordCount;
 
-    /// <summary>
-    /// Clear all session-ignored words.
-    /// </summary>
+    /// <summary>Clear all session-ignored words.</summary>
     public void ClearSessionIgnored()
     {
         _spellChecker?.ClearSessionIgnored();
@@ -366,9 +324,7 @@ public class SpellCheckService : IDisposable
         };
     }
 
-    /// <summary>
-    /// Get the theme-aware brush for spelling errors.
-    /// </summary>
+    /// <summary>Get the theme-aware brush for spelling errors.</summary>
     public IBrush GetSpellingErrorBrush()
     {
         // Try to get from theme resources

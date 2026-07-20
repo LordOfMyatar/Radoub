@@ -1,8 +1,6 @@
 namespace Radoub.UI.Services.Search;
 
-/// <summary>
-/// Progress reporting for module-wide search operations.
-/// </summary>
+/// <summary>Progress reporting for module-wide search operations.</summary>
 public class ScanProgress
 {
     /// <summary>Current phase of the scan (e.g., "Discovering files", "Searching")</summary>

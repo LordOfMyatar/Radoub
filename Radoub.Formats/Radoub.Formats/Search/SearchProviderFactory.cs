@@ -1,8 +1,6 @@
 namespace Radoub.Formats.Search;
 
-/// <summary>
-/// Maps resource types to their search providers.
-/// </summary>
+/// <summary>Maps resource types to their search providers.</summary>
 public class SearchProviderFactory
 {
     private readonly Dictionary<ushort, IFileSearchProvider> _providers = new();
@@ -30,9 +28,7 @@ public class SearchProviderFactory
             : _fallback;
     }
 
-    /// <summary>
-    /// Returns true if a dedicated (non-fallback) provider exists for this type.
-    /// </summary>
+    /// <summary>Returns true if a dedicated (non-fallback) provider exists for this type.</summary>
     public bool HasDedicatedProvider(ushort resourceType)
     {
         return _providers.ContainsKey(resourceType);

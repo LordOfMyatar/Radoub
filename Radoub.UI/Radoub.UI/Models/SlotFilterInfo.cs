@@ -1,18 +1,12 @@
 namespace Radoub.UI.Models;
 
-/// <summary>
-/// Represents an equipment slot filter option for the item palette filter.
-/// </summary>
+/// <summary>Represents an equipment slot filter option for the item palette filter.</summary>
 public class SlotFilterInfo
 {
-    /// <summary>
-    /// Special instance representing "All Slots" (no slot filter).
-    /// </summary>
+    /// <summary>Special instance representing "All Slots" (no slot filter).</summary>
     public static readonly SlotFilterInfo AllSlots = new(0, "All Slots");
 
-    /// <summary>
-    /// Special instance for showing only non-equipable items.
-    /// </summary>
+    /// <summary>Special instance for showing only non-equipable items.</summary>
     public static readonly SlotFilterInfo NonEquipable = new(-1, "Non-Equipable");
 
     /// <summary>
@@ -21,19 +15,13 @@ public class SlotFilterInfo
     /// </summary>
     public int SlotFlag { get; }
 
-    /// <summary>
-    /// Display name for the filter dropdown.
-    /// </summary>
+    /// <summary>Display name for the filter dropdown.</summary>
     public string Name { get; }
 
-    /// <summary>
-    /// True if this is the "All Slots" option.
-    /// </summary>
+    /// <summary>True if this is the "All Slots" option.</summary>
     public bool IsAllSlots => SlotFlag == 0;
 
-    /// <summary>
-    /// True if this filters to non-equipable items only.
-    /// </summary>
+    /// <summary>True if this filters to non-equipable items only.</summary>
     public bool IsNonEquipable => SlotFlag == -1;
 
     public SlotFilterInfo(int slotFlag, string name)

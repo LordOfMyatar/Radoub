@@ -28,9 +28,7 @@ public class GameResourceResolver : IDisposable
     private bool _disposed;
     private bool _keyIndexLoaded;
 
-    /// <summary>
-    /// Create a new resolver with the specified configuration.
-    /// </summary>
+    /// <summary>Create a new resolver with the specified configuration.</summary>
     public GameResourceResolver(GameResourceConfig config)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
@@ -174,9 +172,7 @@ public class GameResourceResolver : IDisposable
         return _baseTlk?.GetString(strRef);
     }
 
-    /// <summary>
-    /// Get a TLK entry by StrRef (includes sound info).
-    /// </summary>
+    /// <summary>Get a TLK entry by StrRef (includes sound info).</summary>
     public TlkEntry? GetTlkEntry(uint strRef)
     {
         const uint CustomTlkOffset = 16777216;

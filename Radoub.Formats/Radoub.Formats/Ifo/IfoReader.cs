@@ -8,27 +8,21 @@ namespace Radoub.Formats.Ifo;
 /// </summary>
 public static class IfoReader
 {
-    /// <summary>
-    /// Read an IFO file from a file path.
-    /// </summary>
+    /// <summary>Read an IFO file from a file path.</summary>
     public static IfoFile Read(string filePath)
     {
         var buffer = File.ReadAllBytes(filePath);
         return Read(buffer);
     }
 
-    /// <summary>
-    /// Read an IFO file from a byte buffer.
-    /// </summary>
+    /// <summary>Read an IFO file from a byte buffer.</summary>
     public static IfoFile Read(byte[] buffer)
     {
         var gff = GffReader.Read(buffer);
         return FromGff(gff);
     }
 
-    /// <summary>
-    /// Read an IFO file from a stream.
-    /// </summary>
+    /// <summary>Read an IFO file from a stream.</summary>
     public static IfoFile Read(Stream stream)
     {
         using var ms = new MemoryStream();
@@ -36,9 +30,7 @@ public static class IfoReader
         return Read(ms.ToArray());
     }
 
-    /// <summary>
-    /// Convert a GFF file to an IfoFile model.
-    /// </summary>
+    /// <summary>Convert a GFF file to an IfoFile model.</summary>
     public static IfoFile FromGff(GffFile gff)
     {
         var ifo = new IfoFile
@@ -51,21 +43,17 @@ public static class IfoReader
         if (root == null)
             return ifo;
 
-        // Module Metadata
         ifo.ModuleName = ReadLocString(root, "Mod_Name");
         ifo.ModuleDescription = ReadLocString(root, "Mod_Description");
         ifo.Tag = root.GetFieldValue<string>("Mod_Tag", string.Empty);
         ifo.ModuleId = root.GetFieldValue<string>("Mod_ID", string.Empty);
         ifo.CustomTlk = root.GetFieldValue<string>("Mod_CustomTlk", string.Empty);
 
-        // Version/Requirements
         ifo.MinGameVersion = root.GetFieldValue<string>("Mod_MinGameVer", "1.69");
         ifo.ExpansionPack = root.GetFieldValue<ushort>("Expansion_Pack", 0);
 
-        // HAK List
         ifo.HakList = ReadHakList(root);
 
-        // Time Settings
         ifo.DawnHour = root.GetFieldValue<byte>("Mod_DawnHour", 6);
         ifo.DuskHour = root.GetFieldValue<byte>("Mod_DuskHour", 18);
         ifo.MinutesPerHour = root.GetFieldValue<byte>("Mod_MinPerHour", 2);
@@ -74,7 +62,6 @@ public static class IfoReader
         ifo.StartDay = root.GetFieldValue<byte>("Mod_StartDay", 1);
         ifo.StartHour = root.GetFieldValue<byte>("Mod_StartHour", 13);
 
-        // Entry Point
         ifo.EntryArea = root.GetFieldValue<string>("Mod_Entry_Area", string.Empty);
         ifo.EntryX = root.GetFieldValue<float>("Mod_Entry_X", 0.0f);
         ifo.EntryY = root.GetFieldValue<float>("Mod_Entry_Y", 0.0f);
@@ -108,7 +95,6 @@ public static class IfoReader
         ifo.OnPlayerTileAction = root.GetFieldValue<string>("Mod_OnPlrTileAct", string.Empty);
         ifo.OnNuiEvent = root.GetFieldValue<string>("Mod_OnNuiEvent", string.Empty);
 
-        // Other Settings
         ifo.XPScale = root.GetFieldValue<byte>("Mod_XPScale", 100);
         ifo.Creator = root.GetFieldValue<string>("Mod_Creator_ID", string.Empty);
         ifo.ModuleVersion = root.GetFieldValue<uint>("Mod_Version", 0);
@@ -118,10 +104,8 @@ public static class IfoReader
         ifo.ModuleUuid = root.GetFieldValue<string>("Mod_UUID", string.Empty);
         ifo.PartyControl = root.GetFieldValue<byte>("Mod_PartyControl", 0);
 
-        // Area List
         ifo.AreaList = ReadAreaList(root);
 
-        // Local Variables
         ifo.VarTable = VarTableHelper.ReadVarTable(root);
 
         // Additional Lists (preserved for round-trip)
@@ -132,9 +116,7 @@ public static class IfoReader
         return ifo;
     }
 
-    /// <summary>
-    /// Read a generic list of GffStructs for round-trip preservation.
-    /// </summary>
+    /// <summary>Read a generic list of GffStructs for round-trip preservation.</summary>
     private static List<GffStruct> ReadGenericList(GffStruct root, string fieldName)
     {
         var result = new List<GffStruct>();
@@ -146,9 +128,7 @@ public static class IfoReader
         return result;
     }
 
-    /// <summary>
-    /// Read a localized string field.
-    /// </summary>
+    /// <summary>Read a localized string field.</summary>
     private static CExoLocString ReadLocString(GffStruct root, string fieldName)
     {
         var field = root.GetField(fieldName);
@@ -169,9 +149,7 @@ public static class IfoReader
         return new CExoLocString();
     }
 
-    /// <summary>
-    /// Read the HAK list from a GFF struct.
-    /// </summary>
+    /// <summary>Read the HAK list from a GFF struct.</summary>
     private static List<string> ReadHakList(GffStruct root)
     {
         var hakList = new List<string>();
@@ -190,9 +168,7 @@ public static class IfoReader
         return hakList;
     }
 
-    /// <summary>
-    /// Read the area list from a GFF struct.
-    /// </summary>
+    /// <summary>Read the area list from a GFF struct.</summary>
     private static List<string> ReadAreaList(GffStruct root)
     {
         var areaList = new List<string>();

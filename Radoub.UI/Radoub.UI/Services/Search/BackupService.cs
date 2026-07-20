@@ -54,9 +54,7 @@ public class BackupService
         return manifest;
     }
 
-    /// <summary>
-    /// Back up a single archive file (.mod, .erf).
-    /// </summary>
+    /// <summary>Back up a single archive file (.mod, .erf).</summary>
     public async Task<BackupManifest> BackupArchiveAsync(string archivePath, string moduleName)
     {
         return await BackupFilesAsync(new[] { archivePath }, moduleName);

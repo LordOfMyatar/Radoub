@@ -1,8 +1,6 @@
 namespace Radoub.UI.Services.Search;
 
-/// <summary>
-/// Aggregated search results from a module-wide scan.
-/// </summary>
+/// <summary>Aggregated search results from a module-wide scan.</summary>
 public class ModuleSearchResults
 {
     /// <summary>Per-file results (only files with matches or errors)</summary>

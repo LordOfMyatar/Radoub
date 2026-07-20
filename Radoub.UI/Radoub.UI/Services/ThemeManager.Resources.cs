@@ -8,14 +8,10 @@ using Radoub.UI.Models;
 
 namespace Radoub.UI.Services;
 
-/// <summary>
-/// Theme resource application: colors, fonts, and spacing.
-/// </summary>
+/// <summary>Theme resource application: colors, fonts, and spacing.</summary>
 public partial class ThemeManager
 {
-    /// <summary>
-    /// Apply theme resources (colors, fonts, spacing) after variant change.
-    /// </summary>
+    /// <summary>Apply theme resources (colors, fonts, spacing) after variant change.</summary>
     private void ApplyThemeResources(Application app, ThemeManifest theme)
     {
         try
@@ -325,9 +321,7 @@ public partial class ThemeManager
         }
     }
 
-    /// <summary>
-    /// Apply font values to resource dictionary
-    /// </summary>
+    /// <summary>Apply font values to resource dictionary</summary>
     /// <summary>
     /// Resolves the effective global font size (#2152). The Trebuchet slider
     /// (<paramref name="sharedFontSize"/>) is the single authority; a theme's own
@@ -452,9 +446,7 @@ public partial class ThemeManager
         resources["FontSizeTitle"] = baseSize + 10;                 // 24 @ base 14
     }
 
-    /// <summary>
-    /// Apply spacing values to resource dictionary
-    /// </summary>
+    /// <summary>Apply spacing values to resource dictionary</summary>
     private void ApplySpacing(IResourceDictionary resources, ThemeSpacing spacing)
     {
         if (spacing.ControlPadding.HasValue)

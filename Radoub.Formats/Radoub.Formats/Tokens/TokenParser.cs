@@ -23,25 +23,19 @@ public class TokenParser
         @"<c(.{3,})>(.*?)</c>",
         RegexOptions.Compiled | RegexOptions.Singleline);
 
-    /// <summary>
-    /// Create a parser without user color configuration.
-    /// </summary>
+    /// <summary>Create a parser without user color configuration.</summary>
     public TokenParser()
     {
     }
 
-    /// <summary>
-    /// Create a parser with user color configuration for custom token support.
-    /// </summary>
+    /// <summary>Create a parser with user color configuration for custom token support.</summary>
     /// <param name="userColorConfig">User-defined color token mappings</param>
     public TokenParser(UserColorConfig userColorConfig)
     {
         _userColorConfig = userColorConfig;
     }
 
-    /// <summary>
-    /// Parse text into a list of token segments.
-    /// </summary>
+    /// <summary>Parse text into a list of token segments.</summary>
     /// <param name="text">Text to parse</param>
     /// <returns>List of token segments in order</returns>
     public List<TokenSegment> Parse(string text)
@@ -77,9 +71,7 @@ public class TokenParser
         return segments;
     }
 
-    /// <summary>
-    /// Parse text and return only the display text (tokens replaced with their content).
-    /// </summary>
+    /// <summary>Parse text and return only the display text (tokens replaced with their content).</summary>
     /// <param name="text">Text to parse</param>
     /// <returns>Display text with tokens expanded</returns>
     public string GetDisplayText(string text)
@@ -231,13 +223,11 @@ public class TokenParser
 
             var tokenName = match.Groups[1].Value;
 
-            // Check if it's a standard token
             if (TokenDefinitions.IsStandardToken(tokenName))
             {
                 segments.Add(new StandardToken(match.Value, tokenName, match.Index));
                 MarkProcessed(processed, match.Index, match.Length);
             }
-            // Check if it's a CUSTOM token
             else if (TokenDefinitions.IsCustomToken(tokenName, out int tokenNumber))
             {
                 segments.Add(new CustomToken(match.Value, tokenNumber, match.Index));
@@ -295,14 +285,10 @@ public class TokenParser
     }
 }
 
-/// <summary>
-/// Configuration for user-defined color tokens using CUSTOM token numbers.
-/// </summary>
+/// <summary>Configuration for user-defined color tokens using CUSTOM token numbers.</summary>
 public class UserColorConfig
 {
-    /// <summary>
-    /// The close token that ends all colored text (e.g., "&lt;CUSTOM1000&gt;").
-    /// </summary>
+    /// <summary>The close token that ends all colored text (e.g., "&lt;CUSTOM1000&gt;").</summary>
     public string CloseToken { get; set; } = "";
 
     /// <summary>
@@ -319,9 +305,7 @@ public class UserColorConfig
     /// </summary>
     public Dictionary<string, string> ColorHexValues { get; set; } = new();
 
-    /// <summary>
-    /// Get the hex color for a named color.
-    /// </summary>
+    /// <summary>Get the hex color for a named color.</summary>
     public string? GetHexColor(string colorName)
     {
         return ColorHexValues.TryGetValue(colorName, out var hex) ? hex : null;

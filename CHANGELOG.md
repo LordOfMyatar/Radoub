@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Prose-Concision] - 2026-07-20
+**Branch**: `radoub/issue-2671` | **PR**: #2675
+
+### Sprint: Prose concision across authored text and code comments
+
+- Wired the `writing-clearly-and-concisely` skill into the slash commands that author commit messages, PR bodies, and issue text (#2671).
+- Swept `Radoub.Formats` and `Radoub.UI` comments for concision, collapsing verbose XML doc blocks and dropping summaries that only restated the identifier (#2672). Per-tool sweeps follow in #2689–#2695.
+
+---
+
 ## [Startup-Cleanup] - 2026-07-20
 **Branch**: `radoub/issue-2647` | **PR**: #2673
 

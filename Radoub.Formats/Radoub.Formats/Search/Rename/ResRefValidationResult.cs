@@ -1,8 +1,6 @@
 namespace Radoub.Formats.Search.Rename;
 
-/// <summary>
-/// Outcome of validating and normalizing a proposed ResRef name.
-/// </summary>
+/// <summary>Outcome of validating and normalizing a proposed ResRef name.</summary>
 public record ResRefValidationResult
 {
     /// <summary>True if the name is acceptable (possibly with a warning or auto-suffix).</summary>

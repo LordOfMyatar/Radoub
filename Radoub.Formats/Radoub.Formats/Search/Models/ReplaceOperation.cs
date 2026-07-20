@@ -1,8 +1,6 @@
 namespace Radoub.Formats.Search;
 
-/// <summary>
-/// A single replace instruction for a matched field.
-/// </summary>
+/// <summary>A single replace instruction for a matched field.</summary>
 public class ReplaceOperation
 {
     /// <summary>The match to replace</summary>

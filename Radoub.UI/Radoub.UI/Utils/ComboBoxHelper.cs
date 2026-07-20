@@ -39,9 +39,7 @@ public static class ComboBoxHelper
         combo.SelectedIndex = combo.Items.Count - 1;
     }
 
-    /// <summary>
-    /// Get the selected item's Tag value, cast to specified type.
-    /// </summary>
+    /// <summary>Get the selected item's Tag value, cast to specified type.</summary>
     /// <typeparam name="T">Expected type of the Tag</typeparam>
     /// <returns>Tag value or null if no selection or wrong type</returns>
     public static T? GetSelectedTag<T>(ComboBox? combo) where T : struct
@@ -51,9 +49,7 @@ public static class ComboBoxHelper
         return null;
     }
 
-    /// <summary>
-    /// Get the selected item's Tag value as the specified type, with default fallback.
-    /// </summary>
+    /// <summary>Get the selected item's Tag value as the specified type, with default fallback.</summary>
     public static T GetSelectedTagOrDefault<T>(ComboBox? combo, T defaultValue) where T : struct
     {
         return GetSelectedTag<T>(combo) ?? defaultValue;

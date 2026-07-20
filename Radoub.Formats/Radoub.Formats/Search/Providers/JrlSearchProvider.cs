@@ -170,9 +170,7 @@ public class JrlSearchProvider : SearchProviderBase, IFileSearchProvider
     }
 }
 
-/// <summary>
-/// Location within a JRL file hierarchy.
-/// </summary>
+/// <summary>Location within a JRL file hierarchy.</summary>
 public class JrlMatchLocation
 {
     public required int CategoryIndex { get; init; }

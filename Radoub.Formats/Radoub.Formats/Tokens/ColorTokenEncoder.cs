@@ -29,9 +29,7 @@ public static class ColorTokenEncoder
         "\u00E0\u00E1\u00E2\u00E3\u00E4\u00E5\u00E6\u00E7\u00E8\u00E9\u00EA\u00EB\u00EC\u00ED\u00EE\u00EF" + // 224-239
         "\u00F0\u00F1\u00F2\u00F3\u00F4\u00F5\u00F6\u00F7\u00F8\u00F9\u00FA\u00FB\u00FC\u00FD\u00FE\u00FF";  // 240-255
 
-    /// <summary>
-    /// Encode RGB values to a NWN color tag.
-    /// </summary>
+    /// <summary>Encode RGB values to a NWN color tag.</summary>
     /// <param name="red">Red component (0-255)</param>
     /// <param name="green">Green component (0-255)</param>
     /// <param name="blue">Blue component (0-255)</param>
@@ -60,9 +58,7 @@ public static class ColorTokenEncoder
         return $"<c{EscapeColorByte(red)}{EscapeColorByte(green)}{EscapeColorByte(blue)}>";
     }
 
-    /// <summary>
-    /// Escape a color byte value for NWN:EE format.
-    /// </summary>
+    /// <summary>Escape a color byte value for NWN:EE format.</summary>
     private static string EscapeColorByte(byte value)
     {
         if (value < 32)
@@ -73,9 +69,7 @@ public static class ColorTokenEncoder
         return ((char)value).ToString();
     }
 
-    /// <summary>
-    /// Decode a 3-character RGB sequence from a color tag.
-    /// </summary>
+    /// <summary>Decode a 3-character RGB sequence from a color tag.</summary>
     /// <param name="rgbChars">The 3 characters after "&lt;c"</param>
     /// <param name="red">Decoded red component</param>
     /// <param name="green">Decoded green component</param>
@@ -146,14 +140,10 @@ public static class ColorTokenEncoder
         return false;
     }
 
-    /// <summary>
-    /// Get the close tag for color tokens.
-    /// </summary>
+    /// <summary>Get the close tag for color tokens.</summary>
     public static string GetCloseTag() => "</c>";
 
-    /// <summary>
-    /// Create a complete colored text string.
-    /// </summary>
+    /// <summary>Create a complete colored text string.</summary>
     /// <param name="text">Text to colorize</param>
     /// <param name="red">Red component (0-255)</param>
     /// <param name="green">Green component (0-255)</param>
@@ -164,9 +154,7 @@ public static class ColorTokenEncoder
         return $"{EncodeColorTag(red, green, blue)}{text}</c>";
     }
 
-    /// <summary>
-    /// Parse a hex color string to RGB components.
-    /// </summary>
+    /// <summary>Parse a hex color string to RGB components.</summary>
     /// <param name="hex">Hex color (e.g., "#FF0000" or "FF0000")</param>
     /// <param name="red">Parsed red component</param>
     /// <param name="green">Parsed green component</param>

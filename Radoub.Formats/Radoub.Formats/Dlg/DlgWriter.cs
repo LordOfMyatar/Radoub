@@ -10,27 +10,21 @@ namespace Radoub.Formats.Dlg;
 /// </summary>
 public static class DlgWriter
 {
-    /// <summary>
-    /// Write a DLG file to a file path.
-    /// </summary>
+    /// <summary>Write a DLG file to a file path.</summary>
     public static void Write(DlgFile dlg, string filePath)
     {
         var buffer = Write(dlg);
         File.WriteAllBytes(filePath, buffer);
     }
 
-    /// <summary>
-    /// Write a DLG file to a stream.
-    /// </summary>
+    /// <summary>Write a DLG file to a stream.</summary>
     public static void Write(DlgFile dlg, Stream stream)
     {
         var buffer = Write(dlg);
         stream.Write(buffer, 0, buffer.Length);
     }
 
-    /// <summary>
-    /// Write a DLG file to a byte buffer.
-    /// </summary>
+    /// <summary>Write a DLG file to a byte buffer.</summary>
     public static byte[] Write(DlgFile dlg)
     {
         var gff = BuildGffFile(dlg);
@@ -61,19 +55,16 @@ public static class DlgWriter
         AddDwordField(root, "NumWords", dlg.NumWords);
         AddByteField(root, "PreventZoomIn", (byte)(dlg.PreventZoomIn ? 1 : 0));
 
-        // EntryList
         var entryList = new GffList();
         foreach (var entry in dlg.Entries)
             entryList.Elements.Add(BuildEntryStruct(entry));
         AddListField(root, "EntryList", entryList);
 
-        // ReplyList
         var replyList = new GffList();
         foreach (var reply in dlg.Replies)
             replyList.Elements.Add(BuildReplyStruct(reply));
         AddListField(root, "ReplyList", replyList);
 
-        // StartingList
         var startingList = new GffList();
         foreach (var link in dlg.StartingList)
             startingList.Elements.Add(BuildLinkStruct(link));
@@ -111,7 +102,6 @@ public static class DlgWriter
             AddDwordField(entryStruct, "QuestEntry", entry.QuestEntry);
         }
 
-        // RepliesList
         var repliesList = new GffList();
         foreach (var link in entry.RepliesList)
             repliesList.Elements.Add(BuildLinkStruct(link));
@@ -148,7 +138,6 @@ public static class DlgWriter
             AddDwordField(replyStruct, "QuestEntry", reply.QuestEntry);
         }
 
-        // EntriesList
         var entriesList = new GffList();
         foreach (var link in reply.EntriesList)
             entriesList.Elements.Add(BuildLinkStruct(link));

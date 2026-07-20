@@ -101,9 +101,7 @@ public static class FileSessionLockService
         }
     }
 
-    /// <summary>
-    /// Release the lock for the given file.
-    /// </summary>
+    /// <summary>Release the lock for the given file.</summary>
     public static void ReleaseLock(string? filePath)
     {
         if (string.IsNullOrEmpty(filePath)) return;
@@ -123,9 +121,7 @@ public static class FileSessionLockService
         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Released lock: {UnifiedLogger.SanitizePath(filePath)}");
     }
 
-    /// <summary>
-    /// Release all locks owned by this process (call on app exit).
-    /// </summary>
+    /// <summary>Release all locks owned by this process (call on app exit).</summary>
     public static void ReleaseAllLocks()
     {
         foreach (var path in _ownedLocks.Keys)

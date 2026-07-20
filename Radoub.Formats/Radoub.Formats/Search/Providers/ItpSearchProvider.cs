@@ -211,9 +211,7 @@ public class ItpSearchProvider : SearchProviderBase, IFileSearchProvider
     };
 }
 
-/// <summary>
-/// Location within an ITP palette tree.
-/// </summary>
+/// <summary>Location within an ITP palette tree.</summary>
 public class ItpMatchLocation
 {
     public required ItpNodeType NodeType { get; init; }

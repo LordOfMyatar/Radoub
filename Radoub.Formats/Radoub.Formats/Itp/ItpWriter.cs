@@ -11,24 +11,18 @@ namespace Radoub.Formats.Itp;
 /// </summary>
 public static class ItpWriter
 {
-    /// <summary>
-    /// Write an ITP file to a file path.
-    /// </summary>
+    /// <summary>Write an ITP file to a file path.</summary>
     public static void Write(ItpFile itp, string filePath)
         => File.WriteAllBytes(filePath, Write(itp));
 
-    /// <summary>
-    /// Write an ITP file to a stream.
-    /// </summary>
+    /// <summary>Write an ITP file to a stream.</summary>
     public static void Write(ItpFile itp, Stream stream)
     {
         var buffer = Write(itp);
         stream.Write(buffer, 0, buffer.Length);
     }
 
-    /// <summary>
-    /// Write an ITP file to a byte buffer.
-    /// </summary>
+    /// <summary>Write an ITP file to a byte buffer.</summary>
     public static byte[] Write(ItpFile itp)
     {
         var gff = new GffFile
