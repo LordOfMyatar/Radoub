@@ -21,8 +21,11 @@ namespace Quartermaster.Views.Dialogs;
 public partial class LevelUpWizardWindow : Window
 {
     private readonly CreatureDisplayService _displayService;
+    /// <summary>Working copy. Every step edits this, never the caller's creature.</summary>
     private readonly UtcFile _creature;
-    private readonly UtcFile _originalCreature; // For cancellation
+
+    /// <summary>The caller's creature. Written only on a successful apply.</summary>
+    private readonly UtcFile _liveCreature;
 
     // Wizard state
     private int _currentStep = 1;
@@ -181,9 +184,16 @@ public partial class LevelUpWizardWindow : Window
         InitializeComponent();
 
         _displayService = displayService;
-        _creature = creature;
         _isBicFile = isBicFile;
-        _originalCreature = creature.DeepCopy(); // Deep copy for cancel/undo rollback
+
+        // Clone-and-commit (#2571): every step edits the clone, and the live
+        // creature is written only when the apply succeeds. Cancelling, closing,
+        // or an error simply discards the clone, so no rollback path can drift
+        // out of sync with what apply mutates.
+        // CreatureCloning.Clone preserves the runtime type — DeepCopy would
+        // downcast a BicFile and drop its player-only fields (#2698).
+        _liveCreature = creature;
+        _creature = CreatureCloning.Clone(creature);
 
         // Find all controls
         _characterNameLabel = this.FindControl<TextBlock>("CharacterNameLabel")!;
@@ -700,45 +710,34 @@ public partial class LevelUpWizardWindow : Window
         try
         {
             ApplyLevelUp();
+            CommitToLiveCreature();
             Confirmed = true;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (
+            ex is InvalidOperationException or ArgumentException or KeyNotFoundException
+               or FormatException or OverflowException)
         {
-            // Rollback: restore creature from deep copy
-            RestoreFromOriginal();
+            // The clone absorbed the failed apply, so the live creature is
+            // untouched and there is nothing to roll back.
             Confirmed = false;
             Radoub.Formats.Logging.UnifiedLogger.LogApplication(
                 Radoub.Formats.Logging.LogLevel.ERROR,
-                $"Level-up failed, rolled back changes: {ex.Message}");
+                $"Level-up failed; creature left unchanged: {ex.Message}");
         }
-        Close();
-    }
-
-    private void OnCancelClick(object? sender, RoutedEventArgs e)
-    {
-        // Restore creature state in case tentative ability increments were applied (#1737)
-        UnapplyAbilityIncrementsFromCreature();
-        Confirmed = false;
         Close();
     }
 
     /// <summary>
-    /// Restores the creature to its pre-wizard state from the deep copy.
-    /// Used for rollback on error during ApplyLevelUp.
+    /// Publishes the working copy to the caller's creature. Copies field by field
+    /// rather than swapping the reference, so panels holding the live creature
+    /// stay valid.
     /// </summary>
-    private void RestoreFromOriginal()
+    private void CommitToLiveCreature() => _liveCreature.CopyFrom(_creature);
+
+    private void OnCancelClick(object? sender, RoutedEventArgs e)
     {
-        _creature.ClassList = _originalCreature.ClassList;
-        _creature.FeatList = _originalCreature.FeatList;
-        _creature.SkillList = _originalCreature.SkillList;
-        _creature.SpecAbilityList = _originalCreature.SpecAbilityList;
-        _creature.Comment = _originalCreature.Comment;
-        _creature.Str = _originalCreature.Str;
-        _creature.Dex = _originalCreature.Dex;
-        _creature.Con = _originalCreature.Con;
-        _creature.Int = _originalCreature.Int;
-        _creature.Wis = _originalCreature.Wis;
-        _creature.Cha = _originalCreature.Cha;
+        Confirmed = false;
+        Close();
     }
 
     #endregion
