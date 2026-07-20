@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.Formats 0.2.79-alpha] - 2026-07-20
+**Branch**: `quartermaster/issue-2676` | **PR**: #TBD
+
+### Added
+
+- `UtcFile.CopyFrom` copies every field from another creature while preserving instance identity, letting editors commit a working copy back without invalidating existing references (#2676).
+
+---
+
 ## [Prose-Concision] - 2026-07-20
 **Branch**: `radoub/issue-2671` | **PR**: #2675
 
