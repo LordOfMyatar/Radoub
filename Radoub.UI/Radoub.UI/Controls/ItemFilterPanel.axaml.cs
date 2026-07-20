@@ -169,72 +169,52 @@ public partial class ItemFilterPanel : UserControl
         set => SetValue(ShowCreatureItemsProperty, value);
     }
 
-    /// <summary>
-    /// Available item types from baseitems.2da.
-    /// </summary>
+    /// <summary>Available item types from baseitems.2da.</summary>
     public ObservableCollection<ItemTypeInfo> ItemTypes
     {
         get => GetValue(ItemTypesProperty);
         set => SetValue(ItemTypesProperty, value);
     }
 
-    /// <summary>
-    /// Currently selected item type filter. Null means "All Types".
-    /// </summary>
+    /// <summary>Currently selected item type filter. Null means "All Types".</summary>
     public ItemTypeInfo? SelectedItemType
     {
         get => GetValue(SelectedItemTypeProperty);
         set => SetValue(SelectedItemTypeProperty, value);
     }
 
-    /// <summary>
-    /// Game data service for loading item types.
-    /// </summary>
     public IGameDataService? GameDataService
     {
         get => GetValue(GameDataServiceProperty);
         set => SetValue(GameDataServiceProperty, value);
     }
 
-    /// <summary>
-    /// Filter settings provider for persistence.
-    /// </summary>
     public IFilterSettings? FilterSettings
     {
         get => GetValue(FilterSettingsProperty);
         set => SetValue(FilterSettingsProperty, value);
     }
 
-    /// <summary>
-    /// Context key for filter settings (e.g., "Backpack", "Palette").
-    /// </summary>
+    /// <summary>Context key for filter settings (e.g., "Backpack", "Palette").</summary>
     public string ContextKey
     {
         get => GetValue(ContextKeyProperty);
         set => SetValue(ContextKeyProperty, value);
     }
 
-    /// <summary>
-    /// Property search text for filtering by item properties.
-    /// </summary>
     public string PropertySearchText
     {
         get => GetValue(PropertySearchTextProperty);
         set => SetValue(PropertySearchTextProperty, value);
     }
 
-    /// <summary>
-    /// Available slot filters.
-    /// </summary>
     public ObservableCollection<SlotFilterInfo> SlotFilters
     {
         get => GetValue(SlotFiltersProperty);
         set => SetValue(SlotFiltersProperty, value);
     }
 
-    /// <summary>
-    /// Currently selected slot filter. Null or AllSlots means no filter.
-    /// </summary>
+    /// <summary>Currently selected slot filter. Null or AllSlots means no filter.</summary>
     public SlotFilterInfo? SelectedSlotFilter
     {
         get => GetValue(SelectedSlotFilterProperty);
@@ -260,7 +240,6 @@ public partial class ItemFilterPanel : UserControl
         _debounceTimer.Stop();
         _debounceTimer.Dispose();
 
-        // Unsubscribe from collection changes
         if (Items != null)
         {
             Items.CollectionChanged -= OnItemsCollectionChanged;
@@ -277,13 +256,11 @@ public partial class ItemFilterPanel : UserControl
 
         if (change.Property == ItemsProperty)
         {
-            // Unsubscribe from old collection
             if (change.OldValue is ObservableCollection<ItemViewModel> oldItems)
             {
                 oldItems.CollectionChanged -= OnItemsCollectionChanged;
             }
 
-            // Subscribe to new collection
             if (change.NewValue is ObservableCollection<ItemViewModel> newItems)
             {
                 newItems.CollectionChanged += OnItemsCollectionChanged;
@@ -322,7 +299,6 @@ public partial class ItemFilterPanel : UserControl
 
     private void OnItemsCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
     {
-        // Re-apply filter when source items change
         ApplyFilter();
     }
 
@@ -334,7 +310,6 @@ public partial class ItemFilterPanel : UserControl
     {
         ItemTypes.Clear();
 
-        // Always add "All Types" option
         ItemTypes.Add(ItemTypeInfo.AllTypes);
 
         if (GameDataService == null || !GameDataService.IsConfigured)
@@ -344,10 +319,8 @@ public partial class ItemFilterPanel : UserControl
         if (baseItems == null)
             return;
 
-        // Load valid base item types
         for (int i = 0; i < baseItems.Rows.Count; i++)
         {
-            // Skip invalid/unused entries
             var label = baseItems.GetValue(i, "label");
             if (string.IsNullOrEmpty(label) || label == "****")
                 continue;
