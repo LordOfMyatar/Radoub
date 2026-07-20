@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Startup-Cleanup] - 2026-07-20
-**Branch**: `radoub/issue-2647` | **PR**: #TBD
+**Branch**: `radoub/issue-2647` | **PR**: #2673
 
 ### Fix: Move startup cleanup off the first-paint path (#2647)
 
