@@ -1,131 +1,106 @@
 # Research Task
 
-Investigate a GitHub issue or feature request and produce a research summary. Optionally spike with throwaway code on a disposable branch.
-
-## Upfront Questions
-
-**IMPORTANT**: Gather ALL required user input at the start, then execute autonomously.
-
-Before starting research, collect these answers in ONE interaction:
-
-1. **Scope Clarification** (if topic is broad): "What specific aspects should I focus on? [implementation/libraries/architecture/all]"
-2. **Depth**: "Research depth? [quick-scan/thorough/exhaustive]"
-3. **Output Location**: "Save research notes to NonPublic/Research/?" [y/n]"
-
-After collecting answers, proceed through all exploration and analysis without further prompts unless critical ambiguity is discovered.
+Investigate a GitHub issue or topic and produce a research summary. Optionally spike with
+throwaway code in an isolated worktree.
 
 ## Usage
 
 ```
 /research #[issue-number]
 /research [topic description]
-/research --spike #[issue-number]     # Create throwaway branch for prototyping
-/research --spike [topic] --timebox 2h
+/research --spike #[issue-number] [--timebox 2h]
 ```
 
-**Flags**:
-- `--spike` - Create a throwaway branch for hands-on prototyping (branch is deleted after findings captured)
-- `--timebox [duration]` - Set spike timebox (default: 2h, options: 1h/2h/4h)
+| Flag | Effect |
+|------|--------|
+| `--spike` | Hands-on prototyping in a throwaway worktree, deleted after findings are captured |
+| `--timebox` | Spike duration — 1h, 2h (default), or 4h |
 
-## Workflow
+Ask once, up front: which aspects to focus on if the topic is broad, depth
+(quick-scan / thorough / exhaustive), and whether to save notes. Then run without further
+prompts unless a critical ambiguity turns up.
 
-### Step 0: Ensure Cache is Fresh
+Research is **read-only** — no code changes, except under `--spike`.
+
+## Phase 1 — Set up
+
+### 1.1 Refresh the cache
 
 ```bash
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1"
 ```
 
-### Step 0b: Create Spike Branch (if `--spike` flag)
+### 1.2 Spike worktree (only with `--spike`)
 
-If `--spike` is passed, create a throwaway branch before starting:
+**Use a worktree, never `git checkout -b` in place.** Branching in the main workspace stashes
+the user's in-progress work and forces a context switch; they almost always have something
+going. Invoke the `superpowers:using-git-worktrees` skill.
 
-```bash
-git stash  # if needed
-git checkout main
-git checkout -b spike/[short-topic]
-```
+Convention: worktree at `../Radoub-spike-<short-topic>/` on branch `spike/<short-topic>`.
 
-Display spike context:
 ```markdown
 ## Spike Started
 
 **Topic**: [topic]
-**Question(s)**: [what we're trying to answer]
-**Timebox**: [duration, default 2h]
-**Started**: [timestamp]
+**Question**: [what we're trying to answer]
+**Timebox**: [duration]
+**Worktree**: ../Radoub-spike-[topic]
 ```
 
-### Step 1: Understand the Request
+## Phase 2 — Investigate
 
-**Cache-first**: Always read from cache. No direct `gh issue view` calls.
+### 2.1 Understand the request
+
+Cache-first; no direct `gh issue view` for reads.
 
 ```bash
-# Get issue details from cache
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View issue -Number [number]
-
-# Search for related issues
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View search -Query "[keyword]"
 ```
 
-Parse the issue to identify:
-- **Goal**: What problem are we solving?
-- **Scope**: What areas of the codebase are affected?
-- **Constraints**: Any technical or design requirements mentioned?
+Extract the goal, the affected areas, and any stated constraints.
 
-If topic description provided, clarify with user if needed.
+**Verify the premise.** An issue's description may no longer match the code — the work may be
+partly done, or the problem may have moved. Check before researching solutions to a problem
+that no longer exists.
 
-### Step 2: Codebase Exploration
+### 2.2 Explore the codebase
 
-Use native tools (not bash grep) for codebase exploration:
-- **Glob** for finding files by pattern
-- **Grep** for searching content
-- **Task tool with Explore agent** for open-ended exploration
+Use the native tools, not bash pipelines: **Glob** for files, **Grep** for content, and the
+**Explore agent** for open-ended sweeps. Look for existing patterns worth reusing, integration
+points, and conflicts or dependencies.
 
-Identify:
-- Existing patterns that could be reused
-- Integration points
-- Potential conflicts or dependencies
+### 2.3 External research
 
-### Step 3: External Research
+When evaluating a library, check: last commit or release (stale beyond two years is a red
+flag), maintainer responsiveness, .NET and Avalonia compatibility, license (MIT or Apache
+preferred), adoption, and whether a better-maintained alternative exists.
 
-If needed, research:
-- Library options (NuGet packages, Python packages)
-- API documentation
-- Best practices for the approach
+Prefer the reference implementations already cloned locally for Aurora-format and rendering
+questions — see the Resources section of CLAUDE.md. Document sources either way.
 
-**When evaluating external libraries**, check maintainability factors:
-- **Last activity**: When was the last commit/release? (Stale > 2 years is a red flag)
-- **Issue responsiveness**: Are maintainers active? Open issue count vs. closed?
-- **Compatibility**: .NET version support, Avalonia/platform compatibility
-- **License**: MIT/Apache preferred, check for restrictions
-- **Adoption**: Download counts, stars, community usage
-- **Alternatives**: Are there better-maintained alternatives?
+### 2.4 Ask clarifying questions
 
-Document sources and key findings.
+Before writing conclusions, surface ambiguous requirements, trade-offs between approaches, and
+any implementation-style preference. Wait for the answer.
 
-### Step 4: Ask Clarifying Questions
+## Phase 3 — Report
 
-Before proceeding, ask about:
-- Ambiguous requirements
-- Trade-offs between approaches
-- User preferences on implementation style
+### 3.1 Write the notes
 
-Wait for user response before continuing.
-
-### Step 5: Generate Research Notes
-
-Create notes in `NonPublic/[Tool]/Research/` (per CLAUDE.md rules — NonPublic is always at repo root):
+`NonPublic/[Tool]/Research/` — NonPublic always lives at the repo root. Use `Radoub/` for
+cross-tool or format work. Spikes go to `spike-[topic].md`.
 
 ```markdown
-# Research: [Issue/Topic Title]
+# Research: [Title]
 
 **Date**: [YYYY-MM-DD]
-**Issue**: #[number] (if applicable)
+**Issue**: #[number]
 **Status**: Research Complete / Needs Clarification
 
 ## Summary
 
-[2-3 sentence overview of findings]
+[2-3 sentences]
 
 ## Key Findings
 
@@ -136,60 +111,32 @@ Create notes in `NonPublic/[Tool]/Research/` (per CLAUDE.md rules — NonPublic 
 - **Risk**: Low/Medium/High
 
 ### Approach B: [Name]
-[Same structure]
 
 ## Recommendation
 
-[Which approach and why]
+[Which and why]
 
 ## Open Questions
 
-- [Questions for user or future investigation]
-
 ## Resources
-
-- [Links to docs, examples, related issues]
 
 ## Code References
 
-- `[file:line]` - [description of relevant code]
+- `[file:line]` — [what it does]
 ```
 
-### Step 6: Report to User
+Keep the notes even when the approach is rejected — it stops the same ground being
+re-researched later.
 
-Summarize findings concisely and present options.
+### 3.2 Clean up the spike
 
-## Output Location
-
-Research notes go in `NonPublic/[Tool]/Research/`:
-- `NonPublic/Parley/Research/` for Parley-related topics
-- `NonPublic/Quartermaster/Research/` for QM research
-- `NonPublic/Radoub/Research/` for cross-tool or format research
-
-For spikes, use: `NonPublic/[Tool]/Research/spike-[topic].md`
-
-## Spike Cleanup (if `--spike` flag was used)
-
-After capturing findings:
+Capture findings **first**, then remove the worktree and delete the branch. Never merge a
+spike.
 
 ```bash
-# Switch back to previous branch
-git checkout -  # or git checkout main
-
-# Delete the spike branch (local and remote if pushed)
+git worktree remove ../Radoub-spike-[topic]
 git branch -D spike/[short-topic]
-git push origin --delete spike/[short-topic] 2>/dev/null  # ignore if not pushed
 ```
 
-**Important rules for spikes:**
-- **Never merge a spike branch** — spikes are throwaway
-- **Always capture findings** before deleting the branch
-- **Respect the timebox** — if time runs out, document what you have and stop
-- **One question at a time** — log new questions as open questions for future research
-
-## Notes
-
-- Research is read-only — no code changes (unless `--spike` flag, which allows throwaway prototyping)
-- Ask before making assumptions
-- Document sources for future reference
-- Keep notes even if approach is rejected (prevents re-research)
+Respect the timebox: when it runs out, write up what you have and stop. Log new questions as
+open questions rather than chasing them.

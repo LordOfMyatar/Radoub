@@ -1,6 +1,7 @@
 # Pre-Warm Next Sprint
 
-Prepare an implementation plan for an upcoming sprint or issue while the current sprint is still in progress. **Planning only** — no branches, PRs, or code changes.
+Prepare an implementation plan for an upcoming sprint or issue while the current one is still
+running. **Planning only** — no branches, PRs, or code changes. Those happen in `/init-item`.
 
 ## Usage
 
@@ -8,84 +9,66 @@ Prepare an implementation plan for an upcoming sprint or issue while the current
 /pre-warm #[issue-number]
 ```
 
-**Examples:**
-- `/pre-warm #1901` (plan a sprint before it starts)
-- `/pre-warm #2050` (plan an epic before breaking into sprints)
+Plans are written to `NonPublic/Plans/{YYYY-MM-DD}-{issue-number}-plan.md` — gitignored, and
+found later by `/init-item` via `NonPublic/Plans/*-{issue-number}-plan.md`.
 
-## Workflow
+## Phase 1 — Gather
 
-### Step 0: Check for Existing Pre-Warm Plan
-
-Before doing anything else, check whether a plan for this issue already exists:
+### 1.1 Check for an existing plan
 
 ```bash
 ls NonPublic/Plans/*-[number]-plan.md 2>/dev/null
 ```
 
-**If one or more plans exist**, do NOT silently create a new one. Read each, then ask the user how to proceed:
+If one exists, **do not silently write a second**. Read it and ask how to proceed:
 
-- **Update existing** — the prior plan is the spine; refresh it with new findings (re-verify any code line refs and linked issue states, which may be stale).
-- **Supersede** — write a fresh plan and delete the old one(s).
-- **Merge** — combine a richer-but-older plan with newer corrected facts (state which leads).
+| Choice | Meaning |
+|--------|---------|
+| Update | The prior plan is the spine; refresh it with new findings |
+| Supersede | Write fresh, delete the old |
+| Merge | Combine a richer-but-older plan with newer corrected facts — say which leads |
 
-When merging or updating, **re-verify the old plan's hard references** — code moves between sessions (line numbers, file paths) and linked issues may have closed. Confirm before citing.
+When updating or merging, **re-verify the old plan's hard references**. Code moves between
+sessions, so line numbers and file paths drift, and linked issues may have closed. Confirm
+before citing.
 
-**If no plan exists**, proceed to Step 1.
-
-### Step 1: Fetch Issue Details
+### 1.2 Fetch the issue
 
 ```bash
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1"
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View issue -Number [number]
 ```
 
-Extract: title, labels, body, child issues (if sprint/epic).
-
-For sprints, also fetch each child issue:
+Take the title, labels, body, and child issues. Fetch each child for a sprint or epic, and
+check their live state — a sprint body often lists children that have since closed:
 
 ```bash
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View issue -Number [child-number]
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Test-IssueState.ps1" -Numbers "N,N,N"
 ```
 
-### Step 2: Research Codebase
+### 1.3 Research the code
 
-For each work item in the sprint/issue:
+Per work item: find the affected files with Grep and Glob, read enough to understand the
+current patterns and dependencies, note any shared-library impact, and flag ordering
+dependencies between items. Use the Explore agent for open-ended sweeps.
 
-1. **Identify affected files** — use Grep/Glob to find relevant code
-2. **Read key sections** — understand current patterns and dependencies
-3. **Note cross-tool impact** — does this change shared libraries?
-4. **Check for blockers** — are there dependencies between items?
+**Verify each item's premise.** An issue written weeks ago may describe a problem already
+fixed, or partly delivered by other work. A plan built on a stale premise wastes the sprint.
 
-Use the Explore agent for deep research when needed.
+## Phase 2 — Design
 
-### Step 3: Invoke Brainstorming Skill
+Invoke the `superpowers:brainstorming` skill and work through scope (in and out), approach
+options with trade-offs, ordering and dependencies, and per-item design. Follow it through to
+a spec document and review.
 
-Use the `superpowers:brainstorming` skill to collaborate with the user on:
-- Scope decisions (what's in, what's out)
-- Approach options (with trade-offs)
-- Ordering and dependencies
-- Design details for each work item
+## Phase 3 — Write and report
 
-Follow the brainstorming flow through to spec document creation and review.
-
-### Step 4: Write Plan
-
-Save the approved design spec to:
-
-```
-NonPublic/Plans/{YYYY-MM-DD}-{issue-number}-plan.md
-```
-
-**Examples:**
-- `NonPublic/Plans/2026-03-23-1901-plan.md`
-- `NonPublic/Plans/2026-04-01-2050-plan.md`
-
-Ensure the directory exists:
 ```bash
 mkdir -p NonPublic/Plans
 ```
 
-### Step 5: Report Summary
+Save the approved spec to `NonPublic/Plans/{YYYY-MM-DD}-{issue-number}-plan.md`, dated the day
+it was written — for example `NonPublic/Plans/2026-03-23-1901-plan.md`.
 
 ```markdown
 ## Pre-Warm Complete
@@ -94,27 +77,11 @@ mkdir -p NonPublic/Plans
 **Plan**: `NonPublic/Plans/{date}-{number}-plan.md`
 
 ### What's Ready
-- [Number] work items planned
+- [N] work items planned
 - Dependencies mapped
 - Implementation order defined
+- [Any item whose premise no longer holds, and why]
 
 ### To Start Work
-Run `/init-item #[number]` — it will detect the pre-warmed plan automatically.
+Run `/init-item #[number]` — it detects the plan automatically.
 ```
-
-## Output Filename Convention
-
-```
-NonPublic/Plans/{YYYY-MM-DD}-{issue-number}-plan.md
-```
-
-- `{YYYY-MM-DD}` — date the plan was created
-- `{issue-number}` — GitHub issue number
-
-## Notes
-
-- **No code changes** — this is planning only
-- **No branches or PRs** — those happen when `/init-item` runs
-- The plan file lives in NonPublic/ and is not committed to git
-- `/init-item` will detect existing plans via glob: `NonPublic/Plans/*-{issue-number}-plan.md`
-- Use this while another sprint is in progress to get ahead
