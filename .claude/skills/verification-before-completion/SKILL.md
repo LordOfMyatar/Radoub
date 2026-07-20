@@ -48,6 +48,61 @@ Skip any step = lying, not verifying
 | Regression test works | Red-green cycle verified | Test passes once |
 | Agent completed | VCS diff shows changes | Agent reports "success" |
 | Requirements met | Line-by-line checklist | Tests passing |
+| Shared-lib change is safe | Consuming tools' tests run | Only the shared project's tests |
+| UI behaves correctly | Human spot-check, or FlaUI with consent | Unit tests, "the AXAML looks right" |
+
+## Radoub Rules — How to Capture Test Output
+
+**NEVER pipe test output through `tail` or `head`.** It discards failures and produces false
+"all tests pass" claims — the exact dishonesty this skill exists to prevent.
+
+Correct pattern: run with `run_in_background`, then read the output file.
+
+```bash
+dotnet test Parley/Parley.Tests   # with run_in_background=true
+```
+
+Then grep the output file for the summary and any failures:
+
+```bash
+grep -E "^(Failed|Passed|  Failed)" "$OUTPUT_FILE"
+```
+
+The `Failed!` / `Passed!` summary lines plus `  Failed` detail lines give full visibility. If
+failures appear, read the whole file for stack traces — do not report a count you did not read.
+
+**Never poll test/build output with `Monitor` or an until/grep loop.** Use
+`run_in_background`, then read when notified.
+
+**Scope the run.** `dotnet test Radoub.sln` is ~30 minutes; prefer the affected project.
+Changed `Radoub.Formats` or `Radoub.UI`? They are consumed by every tool — test the consumers
+of what you touched.
+
+**Rebuild before asking for a manual test.** Stale shared DLLs have produced a phantom bug
+report. Build first, then hand it over.
+
+## Radoub Rules — FlaUI
+
+FlaUI integration tests take over the desktop (keyboard, mouse, focus).
+
+- **Never launch FlaUI without explicit user confirmation.** Not "recommended and proceeding" —
+  ask, then wait for a yes.
+- **Foreground only, never `run_in_background`.** Backgrounding returns a shell prompt the
+  instant it launches, which is indistinguishable from "done".
+- Announce `FlaUI STARTING — hands off keyboard/mouse` before launching, and confirm
+  pass/fail when it finishes so the machine is known safe to touch.
+- Use the canonical runner, never a hand-built `dotnet test --filter`:
+  ```
+  powershell -ExecutionPolicy Bypass -File "d:\LOM\workspace\Radoub\Radoub.IntegrationTests\run-tests.ps1" -Tool <Tool> [-UIFilter "<filter>"]
+  ```
+- FlaUI **cannot see into an OpenGL surface** — it proves nothing about 3D model-preview
+  rendering. For those, use a human spot-check plus GL-error logs.
+
+## Radoub Rules — Binary Formats
+
+For any change touching a file-format reader or writer, "tests pass" is not sufficient
+evidence on its own. Round-trip the format (read → write → read) and confirm the bytes
+survive. Silent corruption passes unit tests and fails in-game.
 
 ## Red Flags - STOP
 

@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Cross-Tool-UX] - 2026-07-19
+**Branch**: `radoub/issue-2653` | **PR**: #2663
+
+### Sprint: Cross-Tool UX Debt Cleanup (#2653)
+
+- Title bars now use a consistent `ToolName - filename.ext` across all tools, so the Windows taskbar shows the open file (#1572).
+- Every tool's Help menu links to its own Radoub wiki page (#2061).
+- Tooltips follow the active theme and cap their width; long game-data descriptions are summarized instead of dumped in full (#1567).
+- New `Documentation/UI_TEXT_GUIDELINES.md` records when muted text and tooltips are appropriate.
+- `ItemPropertyPanel` extraction (#1506) needed no work — the shared `ItemDetailsPanel` already existed and is consumed by Quartermaster, Fence, and Reliquary.
+- Chore: agent skills de-duplicated to one tree and tuned for this repo.
+
+---
+
 ## [Save-Integrity] - 2026-07-08
 **Branch**: `radoub/sprint/save-integrity` | **PR**: #2656
 

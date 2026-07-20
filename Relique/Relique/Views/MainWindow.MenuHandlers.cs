@@ -188,12 +188,16 @@ public partial class MainWindow
         }
     }
 
+    private void OnDocumentationClick(object? sender, RoutedEventArgs e)
+        => Radoub.UI.Utils.WikiHelper.OpenToolDocumentation("Relique");
+
     private void OnAboutClick(object? sender, RoutedEventArgs e)
     {
         var aboutWindow = Radoub.UI.Views.AboutWindow.Create(new Radoub.UI.Views.AboutWindowConfig
         {
             ToolName = "Relique",
-            Version = Radoub.UI.Utils.VersionHelper.GetVersion()
+            Version = Radoub.UI.Utils.VersionHelper.GetVersion(),
+            Subtitle = "Item Blueprint Editor for Neverwinter Nights"
         });
         aboutWindow.Show(this);
     }

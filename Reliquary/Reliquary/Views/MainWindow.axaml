@@ -28,7 +28,9 @@
                 <MenuItem x:Name="RedoMenuItem" Header="_Redo" Click="OnRedoClick" InputGesture="Ctrl+Y"/>
             </MenuItem>
             <MenuItem Header="_Help">
-                <MenuItem Header="_About" Click="OnAboutClick"/>
+                <MenuItem Header="_Documentation" Click="OnDocumentationClick"/>
+                <Separator/>
+                <MenuItem Header="_About Reliquary" Click="OnAboutClick"/>
             </MenuItem>
         </Menu>
 

@@ -2,7 +2,8 @@
 # Usage: .\run-tests.ps1 [-Tool <name>] [-SkipShared] [-UnitOnly] [-UIOnly] [-SkipPrivacy] [-TechDebt]
 #
 # Examples:
-#   .\run-tests.ps1                           # All tests
+#   .\run-tests.ps1                           # All tests (every unit suite + all 7 UI suites)
+#   .\run-tests.ps1 -UIOnly                   # Every tool's UI suite — the full FlaUI pass
 #   .\run-tests.ps1 -Tool Quartermaster       # Quartermaster + shared library tests
 #   .\run-tests.ps1 -Tool Parley -SkipShared  # Parley tests only (no shared)
 #   .\run-tests.ps1 -Tool Manifest -UnitOnly  # Manifest unit tests only
@@ -10,6 +11,7 @@
 #   .\run-tests.ps1 -Tool Trebuchet           # Trebuchet UI tests + shared library tests
 #   .\run-tests.ps1 -Tool Relique             # Relique + shared library tests
 #   .\run-tests.ps1 -Tool Radoub              # Shared library tests only (Formats, UI, Dictionary)
+#                                             # NOTE: owns no UI tests — do not combine with -UIOnly
 #   .\run-tests.ps1 -UnitOnly                 # All unit tests, no UI tests
 #   .\run-tests.ps1 -TechDebt                 # Include tech debt scan (large files)
 
@@ -416,6 +418,25 @@ if (-not $UIOnly) {
     Write-Host "`n=== Unit Tests ===" -ForegroundColor Magenta
     foreach ($test in $tests.Unit) {
         Invoke-TestProject $test
+    }
+}
+
+# Warn when the requested selection resolves to no UI tests. Without this, a
+# combination like `-Tool Radoub -UIOnly` prints "Total: Passed 0, Failed 0" and
+# reads like a pass — Radoub is the shared-library scope and owns no UI tests.
+if (-not $UnitOnly -and $tests.UI.Count -eq 0) {
+    Write-Host "`n=== UI Integration Tests ===" -ForegroundColor Magenta
+    if ($Tool) {
+        Write-Host "  SKIPPED - '$Tool' has no UI test suite." -ForegroundColor Yellow
+        if ($Tool -eq "Radoub") {
+            Write-Host "  'Radoub' is the shared-library scope (Formats/UI/Dictionary)." -ForegroundColor Yellow
+            Write-Host "  For UI tests, omit -Tool to run every suite, or pass a specific tool." -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "  SKIPPED - no UI tests matched." -ForegroundColor Yellow
+    }
+    if ($UIOnly) {
+        Write-Host "  -UIOnly was requested but nothing ran; this is NOT a pass." -ForegroundColor Red
     }
 }
 

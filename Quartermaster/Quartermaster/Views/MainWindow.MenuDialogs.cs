@@ -85,6 +85,9 @@ public partial class MainWindow
         }
     }
 
+    private void OnDocumentationClick(object? sender, RoutedEventArgs e)
+        => Radoub.UI.Utils.WikiHelper.OpenToolDocumentation("Quartermaster");
+
     private void OnAboutClick(object? sender, RoutedEventArgs e)
     {
         DialogHelper.ShowAboutDialog(this);

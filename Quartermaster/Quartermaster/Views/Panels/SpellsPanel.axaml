@@ -259,7 +259,7 @@
                                     Padding="10,6,25,6"
                                     BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                                     BorderThickness="0,0,0,1"
-                                    ToolTip.Tip="{Binding Description}">
+                                    ToolTip.Tip="{Binding DescriptionTooltip}">
                                 <Grid ColumnDefinitions="32,35,80,*,60,100,80,80">
                                     <!-- Icon -->
                                     <Image Grid.Column="0"

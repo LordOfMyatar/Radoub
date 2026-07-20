@@ -800,6 +800,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
+    private void OnDocumentationClick(object? sender, RoutedEventArgs e)
+        => Radoub.UI.Utils.WikiHelper.OpenToolDocumentation("Fence");
+
     private void OnAboutClick(object? sender, RoutedEventArgs e)
     {
         var aboutWindow = AboutWindow.Create(new AboutWindowConfig

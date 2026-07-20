@@ -110,6 +110,76 @@ public class DocumentStateTests
         Assert.DoesNotContain("*", title);
     }
 
+    // #1572: title bar shows the filename only, not the full path, so the Windows
+    // taskbar can identify the window when truncated.
+
+    [Fact]
+    public void GetTitle_WithFile_ShowsFilenameOnly_NotFullPath()
+    {
+        var state = new DocumentState("Parley");
+        state.CurrentFilePath = Path.Combine("C:", "modules", "LNS_DLG", "__hench.dlg");
+
+        Assert.Equal("Parley - __hench.dlg", state.GetTitle());
+    }
+
+    [Fact]
+    public void GetTitle_WithFile_KeepsExtension()
+    {
+        var state = new DocumentState("Quartermaster");
+        state.CurrentFilePath = Path.Combine("D:", "work", "aaatest.utc");
+
+        Assert.Equal("Quartermaster - aaatest.utc", state.GetTitle());
+    }
+
+    [Fact]
+    public void GetTitle_DirtyWithFile_AppendsAsteriskAfterFilename()
+    {
+        var state = new DocumentState("Parley");
+        state.CurrentFilePath = Path.Combine("C:", "modules", "__hench.dlg");
+        state.MarkDirty();
+
+        Assert.Equal("Parley - __hench.dlg*", state.GetTitle());
+    }
+
+    [Fact]
+    public void GetTitle_ReadOnlyWithFile_ShowsReadOnlyMarkerAfterFilename()
+    {
+        var state = new DocumentState("Fence");
+        state.CurrentFilePath = Path.Combine("C:", "modules", "store01.utm");
+        state.IsReadOnly = true;
+
+        Assert.Equal("Fence - store01.utm [Read-Only]", state.GetTitle());
+    }
+
+    [Fact]
+    public void GetTitle_ExtraInfoWithFile_PlacedAfterFilename()
+    {
+        var state = new DocumentState("Quartermaster");
+        state.CurrentFilePath = Path.Combine("C:", "chars", "hero.bic");
+
+        Assert.Equal("Quartermaster - hero.bic (Player)", state.GetTitle(" (Player)"));
+    }
+
+    [Fact]
+    public void GetTitle_TitleSuffixIgnoredOnceFileLoaded()
+    {
+        // The subtitle identifies the tool when idle; with a file open the filename
+        // is what matters, and keeping both makes the taskbar text unreadable.
+        var state = new DocumentState("Fence", " - Merchant Editor");
+        state.CurrentFilePath = Path.Combine("C:", "modules", "store01.utm");
+
+        Assert.Equal("Fence - store01.utm", state.GetTitle());
+    }
+
+    [Fact]
+    public void GetTitle_FilenameWithNoDirectory_StillWorks()
+    {
+        var state = new DocumentState("Relique");
+        state.CurrentFilePath = "sword.uti";
+
+        Assert.Equal("Relique - sword.uti", state.GetTitle());
+    }
+
     [Fact]
     public void GetTitle_Dirty_IncludesAsterisk()
     {

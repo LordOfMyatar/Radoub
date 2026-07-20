@@ -24,12 +24,36 @@ If you haven't completed Phase 1, you cannot propose fixes.
 ## When to Use
 
 Use for ANY technical issue:
-- Test failures
+- Test failures (unit, integration, or FlaUI)
 - Bugs in production
 - Unexpected behavior
 - Performance problems
 - Build failures
 - Integration issues
+- **Binary-format round-trip failures** — see below
+
+### Binary Formats: Evidence Is Bytes
+
+Aurora file formats (GFF, ERF, KEY, BIF, TLK, 2DA, SSF, MDL) are unforgiving, and corruption
+is usually silent — the tool reports success and the file fails in-game. When debugging a
+format issue, the Phase 1 evidence is the bytes themselves:
+
+- Round-trip the file (read → write → read) and diff. Do not reason about what the writer
+  "should" emit; hex-dump what it *did* emit.
+- Isolate field by field. A whole-file diff tells you something broke; a field-level diff
+  tells you what.
+- Compare against a reference implementation before concluding the format is odd. Consult
+  `neverwinter.nim` and `xoreos` (see CLAUDE.md Resources) — an "obviously wrong" field is
+  usually a documented Aurora quirk.
+- Validate against real module files, not only synthetic fixtures.
+
+"The parser doesn't throw" is not evidence the bytes are right.
+
+### Model Rendering: Read Real Models
+
+For 3D preview / MDL issues, fixes must be model-led — read actual CEP/BioWare models and
+test in a real module. Do not build heuristics from assumptions about how the game "probably"
+renders something; the reference implementations are authoritative and available.
 
 **Use this ESPECIALLY when:**
 - Under time pressure (emergencies make guessing tempting)
@@ -86,26 +110,28 @@ You MUST complete each phase before proceeding to the next.
    THEN investigate that specific component
    ```
 
-   **Example (multi-layer system):**
-   ```bash
-   # Layer 1: Workflow
-   echo "=== Secrets available in workflow: ==="
-   echo "IDENTITY: ${IDENTITY:+SET}${IDENTITY:-UNSET}"
+   **Example (Radoub multi-layer: game data → 2DA/TLK → service → UI):**
 
-   # Layer 2: Build script
-   echo "=== Env vars in build script: ==="
-   env | grep IDENTITY || echo "IDENTITY not in environment"
+   A creature shows a blank race dropdown. The layers are KEY/BIF → 2DA parse →
+   `IGameDataService` → ViewModel → AXAML binding. Instrument each boundary with a tagged
+   log line, run once, and read the log:
 
-   # Layer 3: Signing script
-   echo "=== Keychain state: ==="
-   security list-keychains
-   security find-identity -v
-
-   # Layer 4: Actual signing
-   codesign --sign "$IDENTITY" --verbose=4 "$APP"
+   ```csharp
+   Log.Debug($"[RaceDiag] 2DA rows parsed: {raceTable.RowCount}");
+   Log.Debug($"[RaceDiag] Service entries after load: {_races.Count}");
+   Log.Debug($"[RaceDiag] VM collection count: {Races.Count}");
    ```
 
-   **This reveals:** Which layer fails (secrets → workflow ✓, workflow → build ✗)
+   Then read the newest session log:
+   ```bash
+   powershell.exe -NoProfile -ExecutionPolicy Bypass \
+     -File ".claude/scripts/Search-SessionLogs.ps1" -Tool Quartermaster -Pattern "RaceDiag"
+   ```
+
+   **This reveals which layer fails** — e.g. 2DA parsed 89 rows ✓, service holds 89 ✓, VM
+   holds 0 ✗, so the break is service → VM, not the game-data load you assumed.
+
+   Remove the temporary `[Tag]` logging before committing.
 
 5. **Trace Data Flow**
 
@@ -176,7 +202,10 @@ You MUST complete each phase before proceeding to the next.
    - Automated test if possible
    - One-off test script if no framework
    - MUST have before fixing
-   - Use the `superpowers:test-driven-development` skill for writing proper failing tests
+   - Use the project's `test-driven-development` skill (unprefixed — the Radoub-tuned copy,
+     not `superpowers:*`) for writing proper failing tests
+   - Check its TDD Policy table first: an investigation-first bug fix takes a regression test
+     *after* the root cause is found, not before
 
 2. **Implement Single Fix**
    - Address the root cause identified
@@ -283,9 +312,11 @@ These techniques are part of systematic debugging and available in this director
 - **`defense-in-depth.md`** - Add validation at multiple layers after finding root cause
 - **`condition-based-waiting.md`** - Replace arbitrary timeouts with condition polling
 
-**Related skills:**
-- **superpowers:test-driven-development** - For creating failing test case (Phase 4, Step 1)
-- **superpowers:verification-before-completion** - Verify fix worked before claiming success
+**Related skills** (unprefixed = the Radoub-tuned copies in `.claude/skills/`; prefer these
+over the generic `superpowers:*` plugin versions):
+- **test-driven-development** - For creating failing test case (Phase 4, Step 1)
+- **verification-before-completion** - Verify fix worked before claiming success, and for how
+  to capture test output without discarding failures
 
 ## Real-World Impact
 

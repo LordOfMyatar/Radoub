@@ -132,9 +132,12 @@ namespace DialogEditor.ViewModels
         /// </summary>
         public bool ClipboardWasCut => _clipboardService.WasCutOperation;
 
+        // #1572: standard Radoub title format is "ToolName - filename.ext". The version
+        // was dropped from the title because it crowds out the filename in the taskbar;
+        // it remains available in Help > About.
         public string WindowTitle => CurrentFileName != null
-            ? $"Parley v{VersionHelper.GetVersion()} - {System.IO.Path.GetFileName(CurrentFileName)}{(HasUnsavedChanges ? "*" : "")}{(IsFileReadOnly ? " [Read-Only]" : "")}"
-            : $"Parley v{VersionHelper.GetVersion()}";
+            ? $"Parley - {System.IO.Path.GetFileName(CurrentFileName)}{(HasUnsavedChanges ? "*" : "")}{(IsFileReadOnly ? " [Read-Only]" : "")}"
+            : "Parley";
 
         public bool IsLoading
         {

@@ -220,6 +220,12 @@ public class SpellListViewModel : BindableBase
     public string BlockedReason { get; set; } = "";
     public string Description { get; set; } = "";
 
+    /// <summary>
+    /// #1567: TLK spell descriptions run to several hundred characters. The full text
+    /// stays on <see cref="Description"/> for a details view; tooltips get a hint.
+    /// </summary>
+    public string DescriptionTooltip => Radoub.UI.Utils.TooltipText.Summarize(Description);
+
     public string StatusText
     {
         get => _statusText;

@@ -67,27 +67,36 @@ Project.create('name', context.tempDir); // Accessed before beforeEach!
 
 When you can't trace manually, add instrumentation:
 
-```typescript
+```csharp
 // Before the problematic operation
-async function gitInit(directory: string) {
-  const stack = new Error().stack;
-  console.error('DEBUG git init:', {
-    directory,
-    cwd: process.cwd(),
-    nodeEnv: process.env.NODE_ENV,
-    stack,
-  });
+public void WriteBlueprint(string targetPath)
+{
+    Log.Warn($"[TraceDiag] WriteBlueprint path='{targetPath}' " +
+             $"cwd='{Directory.GetCurrentDirectory()}'\n{Environment.StackTrace}");
 
-  await execFileAsync('git', ['init'], { cwd: directory });
+    File.WriteAllBytes(targetPath, _bytes);
 }
 ```
 
-**Critical:** Use `console.error()` in tests (not logger - may not show)
+**Critical:** log at `WARN` or above so the level filter cannot hide it, and use a distinctive
+`[Tag]` you can grep for. `Environment.StackTrace` gives the caller chain without throwing.
 
-**Run and capture:**
+**Run and capture** — never pipe through `tail`/`head`; run in the background and grep the
+output file:
+
 ```bash
-npm test 2>&1 | grep 'DEBUG git init'
+dotnet test Relique/Relique.Tests   # with run_in_background=true
+grep "TraceDiag" "$OUTPUT_FILE"
 ```
+
+For a running app rather than a test, read the session log instead:
+
+```bash
+powershell.exe -NoProfile -ExecutionPolicy Bypass \
+  -File ".claude/scripts/Search-SessionLogs.ps1" -Tool Relique -Pattern "TraceDiag" -Context 2
+```
+
+Remove the temporary `[Tag]` logging before committing.
 
 **Analyze stack traces:**
 - Look for test file names
@@ -98,13 +107,18 @@ npm test 2>&1 | grep 'DEBUG git init'
 
 If something appears during tests but you don't know which test:
 
-Use the bisection script `find-polluter.sh` in this directory:
+Bisect by test class. Confirm the artifact is absent, then run one class at a time and check
+after each — the first run that makes it appear names the polluter:
 
 ```bash
-./find-polluter.sh '.git' 'src/**/*.test.ts'
+dotnet test Parley/Parley.Tests --filter "FullyQualifiedName~SomeTestClass"
 ```
 
-Runs tests one-by-one, stops at first polluter. See script for usage.
+Enumerate candidates with `dotnet test <project> --list-tests`. Class-level granularity is
+usually right: xUnit shares state within a class far more often than across classes.
+
+If nothing reproduces in isolation, the cause is ordering-dependent — two classes interacting
+— not a single polluter. Look for shared static state or a fixture that outlives its class.
 
 ## Real Example: Empty projectDir
 

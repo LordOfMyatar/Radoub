@@ -1,0 +1,74 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+    Shared Tooltip Styles for Radoub Tools (#1567)
+
+    Include in App.axaml with:
+    <StyleInclude Source="avares://Radoub.UI/Styles/TooltipStyles.axaml"/>
+
+    Two problems this solves:
+
+    1. THEME OBEDIENCE. Tooltips previously used Avalonia's default ToolTip
+       ControlTheme, which does not follow the active Radoub theme. That bypassed
+       every custom theme, including the three colour-blind accessibility themes
+       (deuteranopia, protanopia, tritanopia).
+
+    2. SIZING. An unbounded tooltip bound to a long string — e.g. a full TLK feat or
+       spell description — renders as one enormous unreadable block. MaxWidth plus
+       wrapping keeps tooltips to a readable column.
+
+    IMPLEMENTATION NOTE: this must be a ControlTheme, not a plain
+    `Style Selector="ToolTip"`. In Avalonia 11 the ToolTip's visuals come from its
+    ControlTheme template; plain-style setters for Background/BorderBrush lose to
+    that template and silently do nothing.
+
+    Guideline: tooltips are for SHORT supplementary hints. Anything longer than a
+    sentence or two belongs in a details panel or an info popup, not a tooltip.
+    See Documentation/UI_TEXT_GUIDELINES.md.
+    -->
+
+    <Styles.Resources>
+        <ControlTheme x:Key="{x:Type ToolTip}" TargetType="ToolTip">
+            <!-- Follow the active theme rather than Avalonia's defaults -->
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="CornerRadius" Value="3"/>
+
+            <!-- Respect the user's font-size preference (large-font support) -->
+            <Setter Property="FontSize" Value="{DynamicResource FontSizeSmall}"/>
+
+            <!-- Cap the width so long text wraps into a readable column instead of
+                 stretching across the screen. -->
+            <Setter Property="MaxWidth" Value="400"/>
+
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}"
+                            MaxWidth="{TemplateBinding MaxWidth}">
+                        <ContentPresenter Name="PART_ContentPresenter"
+                                          Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          TextBlock.Foreground="{TemplateBinding Foreground}"
+                                          TextBlock.FontSize="{TemplateBinding FontSize}"
+                                          TextWrapping="Wrap"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+    </Styles.Resources>
+
+    <!-- Plain string tooltips render as a TextBlock inside the presenter; ensure
+         they wrap rather than forming one long line. -->
+    <Style Selector="ToolTip TextBlock">
+        <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+
+</Styles>

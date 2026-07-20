@@ -204,6 +204,9 @@ public partial class MainWindow : Window
         LoadPlaceable(path);
     }
 
+    private void OnDocumentationClick(object? sender, RoutedEventArgs e)
+        => Radoub.UI.Utils.WikiHelper.OpenToolDocumentation("Reliquary");
+
     private void OnAboutClick(object? sender, RoutedEventArgs e)
     {
         try
@@ -212,7 +215,7 @@ public partial class MainWindow : Window
             {
                 ToolName = "Reliquary",
                 Version = Radoub.UI.Utils.VersionHelper.GetVersion(),
-                Subtitle = "Placeable Blueprint Editor"
+                Subtitle = "Placeable Blueprint Editor for Neverwinter Nights"
             });
             aboutWindow.Show(this);
         }

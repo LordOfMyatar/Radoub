@@ -835,9 +835,19 @@ Claude compares, fixes, regenerates. Remove the temporary diagnostic logging bef
 
 ---
 
-## Agent Skills (obra/superpowers)
+## Agent Skills (Radoub-tuned, originally from obra/superpowers)
 
-Installed skills in `.agents/skills/` provide structured methodologies. Claude **must** follow these skills when their trigger conditions are met — no user invocation needed, no skipping without explicit user override.
+Skills in `.claude/skills/` provide structured methodologies. Claude **must** follow these skills when their trigger conditions are met — no user invocation needed, no skipping without explicit user override.
+
+**These are project-owned copies, not a vendored upstream mirror.** They started as
+obra/superpowers skills and are tuned for Radoub. Edit them freely to fit this repo; do not
+"resync" them from upstream. The `superpowers:*` plugin skills may also be present in a
+session — when both exist, the unprefixed `.claude/skills/` copy is the Radoub-authoritative
+one.
+
+**Where a skill conflicts with this file, CLAUDE.md wins** — in particular the TDD Policy
+table above, whose **No** rows (UI layout/AXAML, config, docs, investigation-first bug fixes)
+are narrower than the generic skill's "always".
 
 ### Installed Skills
 
@@ -879,13 +889,12 @@ The skills chain naturally:
 
 ### Managing Skills
 
-```bash
-# Skills installed via:
-npx -y skills add https://github.com/obra/superpowers --skill <name> --yes
+Skill files live in `.claude/skills/<name>/SKILL.md` — one tree, no symlinks, committed to
+the repo. To change a skill's guidance, edit that file directly.
 
-# Skill files live in .agents/skills/ (content) with symlinks in .claude/skills/
-# Source: https://github.com/obra/superpowers (MIT License)
-```
+Originally seeded from https://github.com/obra/superpowers (MIT License). Re-running the
+upstream installer would overwrite Radoub-specific tuning — don't, unless you intend to
+re-apply the local changes afterward.
 
 ---
 

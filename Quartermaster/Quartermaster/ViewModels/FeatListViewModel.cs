@@ -26,6 +26,12 @@ public class FeatListViewModel : INotifyPropertyChanged
     public ushort FeatId { get; set; }
     public string FeatName { get; set; } = "";
     public string Description { get; set; } = "";
+
+    /// <summary>
+    /// #1567: TLK feat descriptions run to several hundred characters. The full text
+    /// stays on <see cref="Description"/> for a details view; tooltips get a hint.
+    /// </summary>
+    public string DescriptionTooltip => Radoub.UI.Utils.TooltipText.Summarize(Description);
     public FeatCategory Category { get; set; }
     public string CategoryName { get; set; } = "";
 

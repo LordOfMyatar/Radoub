@@ -15,18 +15,25 @@ Write the test first. Watch it fail. Write minimal code to pass.
 
 ## When to Use
 
-**Always:**
-- New features
-- Bug fixes
-- Refactoring
-- Behavior changes
+**The authority for this is the TDD Policy table in `CLAUDE.md`.** It is narrower than the
+generic "always" and it wins. Reproduced here:
 
-**Exceptions (ask your human partner):**
-- Throwaway prototypes
-- Generated code
-- Configuration files
+| Scenario | TDD Required? |
+|----------|--------------|
+| New feature / service / parser | **Yes** |
+| New shared library or cross-tool code (`Radoub.Formats`, `Radoub.UI`) | **Yes** |
+| Bug fix (reproducible) | **Yes** — failing test reproducing the bug first |
+| Bug fix (investigation needed) | No — debug first, add regression test after |
+| UI layout / styling / AXAML only | No — manual verification |
+| Config / documentation only | No |
 
-Thinking "skip TDD just this once"? Stop. That's rationalization.
+The **No** rows are real exemptions, not rationalizations — do not talk yourself back into
+TDD for an AXAML-only change. Everything else in this skill applies to the **Yes** rows.
+
+Thinking "skip TDD just this once" on a **Yes** row? Stop. That's rationalization.
+
+Note the split: "investigation needed" means you genuinely cannot reproduce it yet. Once you
+*can* reproduce it, it is a reproducible bug fix — write the failing test.
 
 ## The Iron Law
 
@@ -73,36 +80,34 @@ digraph tdd_cycle {
 Write one minimal test showing what should happen.
 
 <Good>
-```typescript
-test('retries failed operations 3 times', async () => {
-  let attempts = 0;
-  const operation = () => {
-    attempts++;
-    if (attempts < 3) throw new Error('fail');
-    return 'success';
-  };
+```csharp
+[Fact]
+public void ReadLocalizedString_TruncatesOverlongEntry_InsteadOfThrowing()
+{
+    var gff = GffTestData.WithLocalizedString(length: 70_000);
 
-  const result = await retryOperation(operation);
+    var result = GffReader.ReadLocalizedString(gff);
 
-  expect(result).toBe('success');
-  expect(attempts).toBe(3);
-});
+    Assert.Equal(65_535, result.Length);
+}
 ```
 Clear name, tests real behavior, one thing
 </Good>
 
 <Bad>
-```typescript
-test('retry works', async () => {
-  const mock = jest.fn()
-    .mockRejectedValueOnce(new Error())
-    .mockRejectedValueOnce(new Error())
-    .mockResolvedValueOnce('success');
-  await retryOperation(mock);
-  expect(mock).toHaveBeenCalledTimes(3);
-});
+```csharp
+[Fact]
+public void ReaderWorks()
+{
+    var mock = new Mock<IGffReader>();
+    mock.Setup(r => r.ReadLocalizedString(It.IsAny<GffStruct>())).Returns("ok");
+
+    var result = mock.Object.ReadLocalizedString(null);
+
+    Assert.Equal("ok", result);
+}
 ```
-Vague name, tests mock not code
+Vague name, tests the mock not the code
 </Bad>
 
 **Requirements:**
@@ -115,13 +120,16 @@ Vague name, tests mock not code
 **MANDATORY. Never skip.**
 
 ```bash
-npm test path/to/test.test.ts
+dotnet test Radoub.Formats/Radoub.Formats.Tests --filter "FullyQualifiedName~ReadLocalizedString"
 ```
+
+Run the targeted test project, not `Radoub.sln` — the full suite takes ~30 minutes. See
+`verification-before-completion` for how to capture output without discarding failures.
 
 Confirm:
 - Test fails (not errors)
 - Failure message is expected
-- Fails because feature missing (not typos)
+- Fails because feature missing (not typos or a missing `using`)
 
 **Test passes?** You're testing existing behavior. Fix test.
 
@@ -132,32 +140,26 @@ Confirm:
 Write simplest code to pass the test.
 
 <Good>
-```typescript
-async function retryOperation<T>(fn: () => Promise<T>): Promise<T> {
-  for (let i = 0; i < 3; i++) {
-    try {
-      return await fn();
-    } catch (e) {
-      if (i === 2) throw e;
-    }
-  }
-  throw new Error('unreachable');
+```csharp
+public static string ReadLocalizedString(GffStruct gff)
+{
+    var raw = gff.GetString(Field.LocalizedString);
+    return raw.Length > MaxLength ? raw[..MaxLength] : raw;
 }
 ```
 Just enough to pass
 </Good>
 
 <Bad>
-```typescript
-async function retryOperation<T>(
-  fn: () => Promise<T>,
-  options?: {
-    maxRetries?: number;
-    backoff?: 'linear' | 'exponential';
-    onRetry?: (attempt: number) => void;
-  }
-): Promise<T> {
-  // YAGNI
+```csharp
+public static string ReadLocalizedString(
+    GffStruct gff,
+    int? maxLength = null,
+    TruncationMode mode = TruncationMode.Tail,
+    Action<string>? onTruncated = null,
+    bool preserveWordBoundaries = false)
+{
+    // YAGNI — none of this is required by the test
 }
 ```
 Over-engineered
@@ -170,13 +172,16 @@ Don't add features, refactor other code, or "improve" beyond the test.
 **MANDATORY.**
 
 ```bash
-npm test path/to/test.test.ts
+dotnet test Radoub.Formats/Radoub.Formats.Tests
 ```
 
 Confirm:
 - Test passes
-- Other tests still pass
-- Output pristine (no errors, warnings)
+- Other tests in the affected project still pass
+- Output pristine (no new build warnings)
+
+Changed a shared library? `Radoub.Formats` and `Radoub.UI` are consumed by every tool — also
+test the tools that use the code you touched.
 
 **Test fails?** Fix code, not test.
 
@@ -289,40 +294,56 @@ Tests-first force edge case discovery before implementing. Tests-after verify yo
 
 ## Example: Bug Fix
 
-**Bug:** Empty email accepted
+**Bug:** A blueprint saves with a 20-character resref. The tool accepts it, but Aurora
+silently cannot load the file in-game.
 
 **RED**
-```typescript
-test('rejects empty email', async () => {
-  const result = await submitForm({ email: '' });
-  expect(result.error).toBe('Email required');
-});
+```csharp
+[Fact]
+public void Validate_ResrefOver16Chars_ReturnsError()
+{
+    var result = ResrefValidator.Validate("my_very_long_blueprint");
+
+    Assert.False(result.IsValid);
+    Assert.Contains("16 characters", result.Error);
+}
 ```
 
 **Verify RED**
 ```bash
-$ npm test
-FAIL: expected 'Email required', got undefined
+$ dotnet test Relique/Relique.Tests --filter "FullyQualifiedName~ResrefOver16Chars"
+Failed!  - Failed: 1, Passed: 0
+  Assert.False() Failure: Expected False, actual True
 ```
 
+Failing for the right reason: the validator currently accepts it.
+
 **GREEN**
-```typescript
-function submitForm(data: FormData) {
-  if (!data.email?.trim()) {
-    return { error: 'Email required' };
-  }
-  // ...
+```csharp
+public static ValidationResult Validate(string resref)
+{
+    if (string.IsNullOrWhiteSpace(resref))
+        return ValidationResult.Fail("Resref is required");
+
+    if (resref.Length > 16)
+        return ValidationResult.Fail($"Resref must be 16 characters or fewer (got {resref.Length})");
+
+    return ValidationResult.Ok();
 }
 ```
 
 **Verify GREEN**
 ```bash
-$ npm test
-PASS
+$ dotnet test Relique/Relique.Tests
+Passed!  - Failed: 0, Passed: 47
 ```
 
 **REFACTOR**
-Extract validation for multiple fields if needed.
+This constraint is Aurora-wide, not Relique-specific — if a second tool needs it, promote the
+validator to `Radoub.Formats` and add tests there.
+
+Note what the test asserts: the *behavior Aurora requires*, not the implementation. It would
+still pass if the length check moved elsewhere.
 
 ## Verification Checklist
 
