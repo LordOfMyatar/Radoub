@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Prose-Concision] - 2026-07-20
-**Branch**: `radoub/issue-2671` | **PR**: #TBD
+**Branch**: `radoub/issue-2671` | **PR**: #2675
 
 ### Sprint: Prose concision across authored text and code comments
 
