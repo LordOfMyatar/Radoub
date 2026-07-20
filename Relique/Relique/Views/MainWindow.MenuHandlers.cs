@@ -196,7 +196,8 @@ public partial class MainWindow
         var aboutWindow = Radoub.UI.Views.AboutWindow.Create(new Radoub.UI.Views.AboutWindowConfig
         {
             ToolName = "Relique",
-            Version = Radoub.UI.Utils.VersionHelper.GetVersion()
+            Version = Radoub.UI.Utils.VersionHelper.GetVersion(),
+            Subtitle = "Item Blueprint Editor for Neverwinter Nights"
         });
         aboutWindow.Show(this);
     }

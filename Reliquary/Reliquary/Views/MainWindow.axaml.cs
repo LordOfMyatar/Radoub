@@ -215,7 +215,7 @@ public partial class MainWindow : Window
             {
                 ToolName = "Reliquary",
                 Version = Radoub.UI.Utils.VersionHelper.GetVersion(),
-                Subtitle = "Placeable Blueprint Editor"
+                Subtitle = "Placeable Blueprint Editor for Neverwinter Nights"
             });
             aboutWindow.Show(this);
         }
