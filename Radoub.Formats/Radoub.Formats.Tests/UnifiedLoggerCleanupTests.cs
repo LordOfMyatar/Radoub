@@ -42,7 +42,8 @@ public class UnifiedLoggerCleanupTests : IDisposable
         var middle = CreateSession(now.AddHours(-1));
         var oldest = CreateSession(now.AddHours(-2));
 
-        UnifiedLogger.CleanupOldSessions(2, _tempRoot);
+        UnifiedLogger.CleanupOldSessions(
+            2, _tempRoot, protectedSessionDirectory: UnifiedLogger.NoProtectedSession);
 
         Assert.True(Directory.Exists(newest));
         Assert.True(Directory.Exists(middle));
@@ -67,9 +68,11 @@ public class UnifiedLoggerCleanupTests : IDisposable
     }
 
     [Fact]
-    public void CleanupOldSessions_ProtectedSessionDoesNotConsumeRetentionSlot()
+    public void CleanupOldSessions_ProtectedSessionConsumesARetentionSlot()
     {
-        // Protecting the live session must not silently evict an extra recent session.
+        // retainSessionCount is a TOTAL including the live session, matching the meaning
+        // LogRetentionSessions had before the live-session guard existed. With retain: 2 and a
+        // protected session, exactly one other session survives — not two (#2647 review).
         var now = DateTime.Now;
         var liveSession = CreateSession(now.AddHours(-5));
         var newest = CreateSession(now);
@@ -79,7 +82,40 @@ public class UnifiedLoggerCleanupTests : IDisposable
 
         Assert.True(Directory.Exists(liveSession));
         Assert.True(Directory.Exists(newest));
-        Assert.True(Directory.Exists(second));
+        Assert.False(Directory.Exists(second));
+
+        // Total on disk equals the requested retention.
+        Assert.Equal(2, Directory.GetDirectories(_tempRoot, "Session_*").Length);
+    }
+
+    [Fact]
+    public void CleanupOldSessions_ExplicitBaseDirectoryStillProtectsLiveSession()
+    {
+        // Passing a base directory explicitly must NOT silently disarm the guard — protection
+        // is opt-out via the sentinel only (#2647 review).
+        var now = DateTime.Now;
+        var liveSession = CreateSession(now.AddHours(-5));
+        CreateSession(now);
+        CreateSession(now.AddHours(-1));
+
+        UnifiedLogger.CleanupOldSessions(1, _tempRoot, protectedSessionDirectory: liveSession);
+
+        Assert.True(Directory.Exists(liveSession));
+    }
+
+    [Fact]
+    public void CleanupOldSessions_NoProtectedSessionSentinel_SweepsPurelyByAge()
+    {
+        // With no live session in the swept root, retention applies to every directory.
+        var now = DateTime.Now;
+        var newest = CreateSession(now);
+        var older = CreateSession(now.AddHours(-1));
+
+        UnifiedLogger.CleanupOldSessions(
+            1, _tempRoot, protectedSessionDirectory: UnifiedLogger.NoProtectedSession);
+
+        Assert.True(Directory.Exists(newest));
+        Assert.False(Directory.Exists(older));
     }
 
     [Fact]
@@ -100,7 +136,8 @@ public class UnifiedLoggerCleanupTests : IDisposable
         Directory.CreateDirectory(stray);
         var valid = CreateSession(now);
 
-        UnifiedLogger.CleanupOldSessions(1, _tempRoot);
+        UnifiedLogger.CleanupOldSessions(
+            1, _tempRoot, protectedSessionDirectory: UnifiedLogger.NoProtectedSession);
 
         Assert.True(Directory.Exists(valid));
         Assert.True(Directory.Exists(stray));   // untouched, not crashed on

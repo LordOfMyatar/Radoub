@@ -324,16 +324,25 @@ public static class UnifiedLogger
     }
 
     /// <summary>
+    /// Sentinel for <see cref="CleanupOldSessions"/>: sweep without protecting any session.
+    /// Only valid when the root being swept holds no live session.
+    /// </summary>
+    public static readonly string NoProtectedSession = new("\0__no_protected_session__");
+
+    /// <summary>
     /// Cleans up old log sessions based on session count retention.
     /// Keeps the N most recent sessions and deletes older ones.
     /// </summary>
-    /// <param name="retainSessionCount">Number of recent sessions to keep.</param>
+    /// <param name="retainSessionCount">
+    /// Total number of sessions to keep on disk, including the live one. The live session is
+    /// never deleted, so it occupies one of these slots.
+    /// </param>
     /// <param name="baseDirectory">Log root to sweep. Defaults to the configured session root.</param>
     /// <param name="protectedSessionDirectory">
-    /// A session directory that must never be deleted regardless of age, and which does not
-    /// consume a retention slot. Defaults to the live session (#2647): cleanup now runs
-    /// concurrently with active logging rather than before it, so the directory currently
-    /// open for appending has to be excluded explicitly.
+    /// A session directory that must never be deleted regardless of age. Defaults to the live
+    /// session (#2647): cleanup now runs concurrently with active logging rather than before
+    /// it, so the directory currently open for appending has to be excluded explicitly. Pass
+    /// <see cref="NoProtectedSession"/> to sweep a root with no live session (tests).
     /// </param>
     public static void CleanupOldSessions(
         int retainSessionCount,
@@ -343,14 +352,20 @@ public static class UnifiedLogger
         try
         {
             var logRoot = baseDirectory ?? _baseLogDirectory;
-            var protectedDir = protectedSessionDirectory
-                ?? (baseDirectory == null ? _sessionDirectory : null);
+
+            // Protection is deliberately NOT keyed off baseDirectory: passing the real log
+            // root explicitly must not silently disarm the live-session guard. Opting out
+            // requires the explicit NoProtectedSession sentinel.
+            var protectedDir = ReferenceEquals(protectedSessionDirectory, NoProtectedSession)
+                ? null
+                : protectedSessionDirectory ?? _sessionDirectory;
 
             if (!Directory.Exists(logRoot))
                 return;
 
             var sessionDirs = Directory.GetDirectories(logRoot, "Session_*");
             var sessions = new List<(string Path, DateTime Timestamp)>();
+            bool protectedSessionPresent = false;
 
             foreach (var sessionDir in sessionDirs)
             {
@@ -363,6 +378,7 @@ public static class UnifiedLogger
                             Path.GetFullPath(protectedDir).TrimEnd(Path.DirectorySeparatorChar),
                             StringComparison.OrdinalIgnoreCase))
                     {
+                        protectedSessionPresent = true;
                         continue;
                     }
 
@@ -388,9 +404,16 @@ public static class UnifiedLogger
             // Sort by timestamp descending (newest first)
             sessions.Sort((a, b) => b.Timestamp.CompareTo(a.Timestamp));
 
+            // retainSessionCount is a total, so the protected session claims one slot. Without
+            // this the live session would be retained on top of N others (#2647 review), which
+            // silently redefines the user's LogRetentionSessions setting as N+1.
+            var retainOthers = protectedSessionPresent
+                ? Math.Max(0, retainSessionCount - 1)
+                : retainSessionCount;
+
             // Delete sessions beyond retention count
             int deletedCount = 0;
-            for (int i = retainSessionCount; i < sessions.Count; i++)
+            for (int i = retainOthers; i < sessions.Count; i++)
             {
                 try
                 {

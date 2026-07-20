@@ -23,6 +23,13 @@ namespace DialogEditor.Views
         /// </summary>
         private async void OnWindowOpened(object? sender, EventArgs e)
         {
+            // Startup housekeeping, off the first-paint path (#2647). Kicked off first so a
+            // throw from the startup loads below cannot skip retention cleanup — it depends on
+            // nothing here and returns immediately.
+            Radoub.UI.Services.StartupCleanupCoordinator.RunDeferredCleanup(
+                _services.Settings.LogRetentionSessions,
+                Radoub.Formats.Settings.RadoubSettings.Instance.BackupRetentionDays);
+
             // #1961: Auto-detect resource paths deferred from SettingsService constructor
             _services.Settings.DeferredAutoDetectPaths();
 
@@ -67,11 +74,6 @@ namespace DialogEditor.Views
             _ = WarmupGameDataServiceAsync();
 
             UnifiedLogger.LogStartupMilestone("Parley ready (services + startup load complete)");
-
-            // Startup housekeeping, off the first-paint path (#2647)
-            Radoub.UI.Services.StartupCleanupCoordinator.RunDeferredCleanup(
-                _services.Settings.LogRetentionSessions,
-                Radoub.Formats.Settings.RadoubSettings.Instance.BackupRetentionDays);
         }
 
         /// <summary>

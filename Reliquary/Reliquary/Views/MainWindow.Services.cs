@@ -39,6 +39,12 @@ public partial class MainWindow
         if (_servicesInitialized) return;
         _servicesInitialized = true;
 
+        // Startup housekeeping, off the first-paint path (#2647). Kicked off first so a throw
+        // from the service init below cannot skip retention cleanup.
+        Radoub.UI.Services.StartupCleanupCoordinator.RunDeferredCleanup(
+            SettingsService.Instance.LogRetentionSessions,
+            RadoubSettings.Instance.BackupRetentionDays);
+
         await Task.Run(() =>
         {
             _gameData = new GameDataService();
@@ -90,11 +96,6 @@ public partial class MainWindow
             LoadPlaceable(startupFile);
 
         UnifiedLogger.LogStartupMilestone("Reliquary ready (services + startup load complete)");
-
-        // Startup housekeeping, off the first-paint path (#2647)
-        Radoub.UI.Services.StartupCleanupCoordinator.RunDeferredCleanup(
-            SettingsService.Instance.LogRetentionSessions,
-            RadoubSettings.Instance.BackupRetentionDays);
     }
 
     private static string? GetModuleWorkingDirectory()

@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Log-session and backup cleanup now run on a background thread after the window opens, via the new shared `StartupCleanupCoordinator`, instead of blocking startup in `Program.Main` and `App.Initialize`.
 - Removed a duplicate session sweep: every tool ran the same recursive delete twice per launch, once in `UnifiedLogger.Configure` and again in `App.Initialize`.
-- `CleanupOldSessions` now refuses to delete the live session directory, which matters once the sweep runs concurrently with active logging.
+- `CleanupOldSessions` now refuses to delete the live session directory, which matters once the sweep runs concurrently with active logging. The live session counts toward the retention total, so `LogRetentionSessions` still means "sessions kept on disk".
 - Measured impact on a machine with normal retention is small (~5 ms) — the sweep is cheap precisely because retention keeps history short. The correctness fixes are the substantive part.
 
 ---
