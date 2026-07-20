@@ -9,9 +9,7 @@ namespace Radoub.UI.Controls;
 /// </summary>
 public static class MeshVisibility
 {
-    /// <summary>
-    /// Whether a mesh should be rendered. True iff Render is set and the mesh has geometry.
-    /// </summary>
+    /// <summary>True iff Render is set and the mesh has geometry.</summary>
     public static bool ShouldRender(bool render, int vertexCount, int faceCount)
         => render && vertexCount > 0 && faceCount > 0;
 }

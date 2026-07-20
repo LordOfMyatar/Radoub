@@ -10,9 +10,7 @@ namespace Radoub.UI.Views;
 /// </summary>
 public static class NewBlueprintValidation
 {
-    /// <summary>
-    /// Returns the first validation error for the given field values, or null if all are valid.
-    /// </summary>
+    /// <summary>First validation error for the given field values, or null if all valid.</summary>
     public static string? Validate(string? name, string? tag, string? resRef)
     {
         var trimmedName = (name ?? string.Empty).Trim();
