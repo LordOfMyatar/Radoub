@@ -326,79 +326,53 @@ UI uniformity, file-browser adoption, versioning, common mistakes). Not auto-loa
 
 ## Sprint Workflow
 
-**Per Sprint Item**: For each item, follow this order:
-1. **TDD check** — does this item need tests first? (See TDD Policy table above)
-2. **Implement** — write code (after tests if TDD required)
-3. **Verify** — run tests, confirm build
-4. **Commit and push** — one commit per item
+Per item: TDD check (see the TDD Policy table) → implement → verify → commit and
+push. One commit per discrete item, each referencing the sprint issue. Every commit
+should leave a working state, so a bad item is easy to revert or bisect.
 
-**Commit Between Sprint Items**:
-- Commit after completing each discrete item within a sprint
-- This provides clear history and makes rollback easier
-- Use descriptive commit messages that reference the sprint issue
-
-**Example Sprint Workflow**:
 ```
-# After completing UTC reader
 git add . && git commit -m "[Radoub] feat: Add UTC reader for creature blueprints (#549)"
-
-# After completing UTC writer
-git add . && git commit -m "[Radoub] feat: Add UTC writer for creature blueprints (#549)"
-
-# After completing tests
-git add . && git commit -m "[Radoub] test: Add UTC round-trip tests (#549)"
 ```
 
-**Benefits**:
-- Each commit represents a working state
-- Easier to review individual changes
-- Simpler to bisect if issues arise
-- Clear progress tracking in git history
+### Sprint completion — manual spot-check list
 
-**Sprint Completion — Manual Spot-Check List**:
+Before `/pre-merge`, list what a human must verify. Skip the list only when the
+sprint is purely internal — refactoring, tests, or docs — or fully covered by
+automated tests.
 
-When all sprint items are done (before `/pre-merge`), generate a **manual spot-check list** if the sprint included any changes that need human visual/behavioral verification.
+Write spot-checks for:
 
-**Include spot-checks when the sprint has:**
-- UI visual changes (new icons, color changes, layout, theme updates)
-- User-facing behavior (new shortcuts, menu items, dialog behavior)
-- Event/notification wiring (events that should trigger visible UI updates)
-- File format changes (round-trip with real files)
-- **Platform-dependent behavior — flag with a `(Linux)` tag** when a change touches code
-  whose behavior or backend differs between Windows and Linux/macOS. Development happens on
-  Windows, so anything with a Linux-specific dependency needs a human to verify it on a Linux
-  box. Common triggers:
-  - **Filesystem**: path handling, case sensitivity, separators, symlinks, permissions, temp-dir
-    resolution (`Path.GetTempPath()`, `SpecialFolder`), file locking/delete-while-open semantics
-  - **Audio / TTS**: different backends per platform (e.g. Windows `System.Speech` vs Linux
-    Piper/`espeak-ng`, macOS `say`), sound playback (`aplay`/`afplay`), stop/cancel semantics
-    that differ (see #2523 — `Stop()` fires completion sync on Windows, silent on Piper)
-  - **Process launch**: external editors, spawned CLIs, argument quoting, PATH lookup
-  - **Native/interop**: SkiaSharp/OpenGL rendering, platform packages, `[SupportedOSPlatform]` code
+- UI visuals: icons, colors, layout, themes
+- User-facing behavior: shortcuts, menu items, dialogs
+- Event wiring that should produce a visible update
+- File format changes — round-trip a real file
+- Platform-dependent behavior, tagged `(Linux)` (see below)
 
-**Skip spot-checks when:**
-- Changes are purely internal (refactoring, test-only, documentation)
-- Everything is fully covered by automated tests with no visual component
+Format:
 
-**Format:**
 ```markdown
 ### Manual Spot-Checks
 
 Verify in the running app before `/pre-merge`:
 
-- [ ] [Specific thing to check] — [where/how to verify]
-- [ ] [Another thing] — [steps to reproduce]
+- [ ] [Specific thing] — [where/how to verify]
 - [ ] (Linux) [Platform-specific thing] — verify on a Linux box, not just Windows
 ```
 
-**Rules:**
-- Be specific — "check the UI" is not useful
-- Include how to trigger the behavior
-- Only list things automated tests can't verify
-- **Tag Linux-specific items with `(Linux)`** and say what Linux dependency makes it differ
-  (filesystem, TTS/audio backend, process launch, native interop). If unsure whether behavior
-  is platform-identical, err toward flagging it — a Windows-only check can silently pass while
-  the Linux path is broken.
+Be specific and say how to trigger the behavior; "check the UI" helps nobody. List
+only what automated tests cannot cover.
+
+**Linux tagging.** Development happens on Windows, so a Windows-only check can pass
+while the Linux path is broken. Tag any item whose backend differs and name the
+dependency. When unsure, tag it. Common triggers:
+
+- **Filesystem**: case sensitivity, separators, symlinks, permissions, temp-dir
+  resolution (`Path.GetTempPath()`, `SpecialFolder`), delete-while-open semantics
+- **Audio/TTS**: Windows `System.Speech` vs Linux Piper/`espeak-ng` vs macOS `say`;
+  playback (`aplay`/`afplay`); stop semantics (#2523 — `Stop()` fires completion
+  synchronously on Windows, silently on Piper)
+- **Process launch**: external editors, spawned CLIs, argument quoting, PATH lookup
+- **Native/interop**: SkiaSharp/OpenGL, platform packages, `[SupportedOSPlatform]`
 - Keep it short (3-8 items typical)
 
 **Example** (for a sprint with a new FlowView icon + theme fixes + a TTS stop fix):
@@ -533,60 +507,49 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 
 ## Shell Usage on Windows
 
-### Run .ps1 Scripts Through the Bash Tool, Not the PowerShell Tool (HARD RULE)
+### Launch every .ps1 from the Bash tool (HARD RULE)
 
-**Every `.ps1` invocation goes through the Bash tool.** The PowerShell tool's
-permission rules do not match on Windows, so it prompts on every call no matter how
-the allow rule is written — an upstream bug (anthropics/claude-code#57013, #60289,
-#42318), not a syntax problem. Do not try to fix it by adding allow rules; they
-become dead entries.
+PowerShell-tool permission rules never match on Windows, so that tool prompts on
+every call however the allow rule is written. This is an upstream bug
+(anthropics/claude-code#57013, #60289, #42318). Adding allow rules does not fix it;
+they become dead entries.
 
-Controlled test (2026-07-20, same script and args, only the tool/path varied):
+Canonical form — never `pwsh`, which launches the Microsoft Store:
 
-| Tool | Path form | Result |
-|------|-----------|--------|
-| Bash | relative `".claude/scripts/X.ps1"` | no prompt |
-| Bash | absolute `"d:\LOM\...\X.ps1"` | no prompt |
-| PowerShell | absolute, with `& ` call operator | prompts |
-| PowerShell | relative, no call operator | prompts |
-
-The deciding variable is the **tool**. Path form and the `&` call operator do not
-matter — Bash works with either path style.
-
-**Carve-out**: the PowerShell tool is still correct for genuine PowerShell work
-that is not a script invocation — `Get-Process`/`Stop-Process`, or PS7 loading
-net9.0 Radoub DLLs. Those prompt too; that is unavoidable.
-
-### Prefer Script Files Over Inline Commands
-
-**DO**: Use `powershell.exe -File` **via the Bash tool** (NEVER use `pwsh` — it launches Microsoft Store)
 ```bash
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View status
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1" -Force
 ```
 
-**AVOID**: Inline PowerShell with `-Command` (escaping nightmare)
+Controlled test, 2026-07-20, varying only the tool and path:
+
+| Tool | Path | Result |
+|------|------|--------|
+| Bash | relative | no prompt |
+| Bash | absolute | no prompt |
+| PowerShell | absolute, with `&` | prompts |
+| PowerShell | relative, no `&` | prompts |
+
+The tool decides. Path form and the `&` call operator do not matter.
+
+Reserve the PowerShell tool for work that is not a script call — `Get-Process`,
+`Stop-Process`, PS7 loading net9.0 DLLs. Those prompt unavoidably.
+
+Avoid inline `-Command`; escaping breaks it:
+
 ```bash
-# BAD - requires \$ escaping, breaks easily
+# BAD - requires \$ escaping
 powershell.exe -Command "\$data = Get-Content file.json | ConvertFrom-Json; \$data.property"
 ```
 
-### When to Use Each Shell
+### Which tool for which task
 
-| Task | Tool | Example |
-|------|------|---------|
-| Git operations | Bash | `git status`, `git commit` |
-| GitHub CLI | Bash | `gh issue view 123`, `gh pr create` |
-| File operations | Bash | `cp`, `mkdir -p`, `rm -f` |
-| Running any `.ps1` | **Bash** | `powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View list` |
-| Complex data processing | **Bash** running a `.ps1` | `Get-CacheData.ps1` |
-| JSON parsing | **Bash** running a `.ps1` | Custom `.ps1` files |
-| Process control | PowerShell tool | `Get-Process`, `Stop-Process` (prompts — unavoidable) |
-| PS7 loading net9.0 DLLs | PowerShell tool | absolute PS7 path (prompts — unavoidable) |
+Columns name the Claude Code tool, not the shell language.
 
-The "Use" column is the **Claude Code tool**, not the shell language. A `.ps1` still
-runs under PowerShell — it is just launched from the Bash tool so the allowlist
-matches. See the hard rule above.
+| Task | Tool |
+|------|------|
+| Git, GitHub CLI, file operations | Bash |
+| Any `.ps1` — data processing, JSON parsing | Bash |
+| Process control, PS7 loading net9.0 DLLs | PowerShell |
 
 ### Bash on Windows (Git Bash)
 
