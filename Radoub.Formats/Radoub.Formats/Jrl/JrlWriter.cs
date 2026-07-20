@@ -8,30 +8,23 @@ namespace Radoub.Formats.Jrl;
 /// </summary>
 public static class JrlWriter
 {
-    /// <summary>
-    /// Write a JRL file to a file path.
-    /// </summary>
+    /// <summary>Write a JRL file to a file path.</summary>
     public static void Write(JrlFile jrl, string filePath)
     {
         var buffer = Write(jrl);
         File.WriteAllBytes(filePath, buffer);
     }
 
-    /// <summary>
-    /// Write a JRL file to a stream.
-    /// </summary>
+    /// <summary>Write a JRL file to a stream.</summary>
     public static void Write(JrlFile jrl, Stream stream)
     {
         var buffer = Write(jrl);
         stream.Write(buffer, 0, buffer.Length);
     }
 
-    /// <summary>
-    /// Write a JRL file to a byte buffer.
-    /// </summary>
+    /// <summary>Write a JRL file to a byte buffer.</summary>
     public static byte[] Write(JrlFile jrl)
     {
-        // Build GFF structure from JRL
         var gff = new GffFile
         {
             FileType = jrl.FileType.PadRight(4).Substring(0, 4),
@@ -41,7 +34,6 @@ public static class JrlWriter
         // Root struct (type 0xFFFFFFFF for root)
         gff.RootStruct = new GffStruct { Type = 0xFFFFFFFF };
 
-        // Build Categories list
         var categoriesList = new GffList();
         foreach (var category in jrl.Categories)
         {
@@ -50,7 +42,6 @@ public static class JrlWriter
         }
         categoriesList.Count = (uint)categoriesList.Elements.Count;
 
-        // Add Categories field to root
         gff.RootStruct.Fields.Add(new GffField
         {
             Type = GffField.List,
@@ -58,7 +49,6 @@ public static class JrlWriter
             Value = categoriesList
         });
 
-        // Use GffWriter to produce binary
         return GffWriter.Write(gff);
     }
 
@@ -66,7 +56,6 @@ public static class JrlWriter
     {
         var categoryStruct = new GffStruct { Type = 0 };
 
-        // Tag (CExoString)
         categoryStruct.Fields.Add(new GffField
         {
             Type = GffField.CExoString,
@@ -74,7 +63,6 @@ public static class JrlWriter
             Value = category.Tag
         });
 
-        // Name (CExoLocString)
         categoryStruct.Fields.Add(new GffField
         {
             Type = GffField.CExoLocString,
@@ -82,7 +70,6 @@ public static class JrlWriter
             Value = category.Name
         });
 
-        // Priority (DWORD)
         categoryStruct.Fields.Add(new GffField
         {
             Type = GffField.DWORD,
@@ -90,7 +77,6 @@ public static class JrlWriter
             Value = category.Priority
         });
 
-        // XP (DWORD)
         categoryStruct.Fields.Add(new GffField
         {
             Type = GffField.DWORD,
@@ -98,7 +84,7 @@ public static class JrlWriter
             Value = category.XP
         });
 
-        // Comment (CExoString) - only if not empty
+        // Omitted from the struct entirely when empty
         if (!string.IsNullOrEmpty(category.Comment))
         {
             categoryStruct.Fields.Add(new GffField
@@ -109,7 +95,7 @@ public static class JrlWriter
             });
         }
 
-        // Picture (CResRef) - only if not empty
+        // Omitted from the struct entirely when empty
         if (!string.IsNullOrEmpty(category.Picture))
         {
             categoryStruct.Fields.Add(new GffField
@@ -120,7 +106,6 @@ public static class JrlWriter
             });
         }
 
-        // EntryList
         var entryList = new GffList();
         foreach (var entry in category.Entries)
         {
@@ -143,7 +128,6 @@ public static class JrlWriter
     {
         var entryStruct = new GffStruct { Type = 0 };
 
-        // ID (DWORD)
         entryStruct.Fields.Add(new GffField
         {
             Type = GffField.DWORD,
@@ -151,7 +135,6 @@ public static class JrlWriter
             Value = entry.ID
         });
 
-        // Text (CExoLocString)
         entryStruct.Fields.Add(new GffField
         {
             Type = GffField.CExoLocString,

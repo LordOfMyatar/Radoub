@@ -57,9 +57,7 @@ public static class SsfWriter
         return stream.ToArray();
     }
 
-    /// <summary>
-    /// Write an SSF file to a stream.
-    /// </summary>
+    /// <summary>Write an SSF file to a stream.</summary>
     public static void Write(SsfFile ssf, Stream stream)
     {
         ArgumentNullException.ThrowIfNull(stream);
@@ -67,9 +65,7 @@ public static class SsfWriter
         stream.Write(bytes, 0, bytes.Length);
     }
 
-    /// <summary>
-    /// Write an SSF file to a file path.
-    /// </summary>
+    /// <summary>Write an SSF file to a file path.</summary>
     public static void Write(SsfFile ssf, string filePath)
     {
         var bytes = Write(ssf);

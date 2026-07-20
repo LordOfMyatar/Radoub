@@ -9,143 +9,87 @@ namespace Radoub.Formats.Uti;
 /// </summary>
 public class UtiFile
 {
-    /// <summary>
-    /// File type signature - should be "UTI "
-    /// </summary>
+    /// <summary>File type signature - should be "UTI "</summary>
     public string FileType { get; set; } = "UTI ";
 
-    /// <summary>
-    /// File version - typically "V3.2"
-    /// </summary>
+    /// <summary>File version - typically "V3.2"</summary>
     public string FileVersion { get; set; } = "V3.2";
 
-    /// <summary>
-    /// Blueprint resource reference (should match filename)
-    /// </summary>
+    /// <summary>Blueprint resource reference (should match filename)</summary>
     public string TemplateResRef { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Item tag (max 32 characters)
-    /// </summary>
+    /// <summary>Item tag (max 32 characters)</summary>
     public string Tag { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Localized item name (appears in game when identified)
-    /// </summary>
+    /// <summary>Localized item name (appears in game when identified)</summary>
     public CExoLocString LocalizedName { get; set; } = new();
 
-    /// <summary>
-    /// Unidentified description
-    /// </summary>
+    /// <summary>Unidentified description</summary>
     public CExoLocString Description { get; set; } = new();
 
-    /// <summary>
-    /// Identified description
-    /// </summary>
+    /// <summary>Identified description</summary>
     public CExoLocString DescIdentified { get; set; } = new();
 
-    /// <summary>
-    /// Index into baseitems.2da - determines item type
-    /// </summary>
+    /// <summary>Index into baseitems.2da - determines item type</summary>
     public int BaseItem { get; set; }
 
-    /// <summary>
-    /// Stack size (1 for unstackable items)
-    /// </summary>
+    /// <summary>Stack size (1 for unstackable items)</summary>
     public ushort StackSize { get; set; } = 1;
 
-    /// <summary>
-    /// Number of charges remaining
-    /// </summary>
     public byte Charges { get; set; }
 
-    /// <summary>
-    /// Base cost of item
-    /// </summary>
+    /// <summary>Base cost of item</summary>
     public uint Cost { get; set; }
 
-    /// <summary>
-    /// Additional cost added to calculated cost
-    /// </summary>
+    /// <summary>Additional cost added to calculated cost</summary>
     public uint AddCost { get; set; }
 
-    /// <summary>
-    /// True if item cannot be removed from inventory (undroppable, unsellable)
-    /// </summary>
+    /// <summary>True if item cannot be removed from inventory (undroppable, unsellable)</summary>
     public bool Cursed { get; set; }
 
-    /// <summary>
-    /// True if item is a plot item (cannot be sold)
-    /// </summary>
+    /// <summary>True if item is a plot item (cannot be sold)</summary>
     public bool Plot { get; set; }
 
-    /// <summary>
-    /// True if item was stolen
-    /// </summary>
     public bool Stolen { get; set; }
 
-    /// <summary>
-    /// True if item has been identified (no lore check needed)
-    /// </summary>
+    /// <summary>True if item has been identified (no lore check needed)</summary>
     public bool Identified { get; set; }
 
-    /// <summary>
-    /// True if item can be dropped (default true). Note: BioWare misspells as "Dropable".
-    /// </summary>
+    /// <summary>True if item can be dropped (default true). Note: BioWare misspells as "Dropable".</summary>
     public bool Dropable { get; set; } = true;
 
-    /// <summary>
-    /// List of item properties (enchantments, abilities)
-    /// </summary>
+    /// <summary>List of item properties (enchantments, abilities)</summary>
     public List<ItemProperty> Properties { get; set; } = new();
 
     // Model fields - present depending on ModelType in baseitems.2da
 
-    /// <summary>
-    /// Part number for Simple (ModelType 0) and Layered (ModelType 1) items
-    /// </summary>
+    /// <summary>Part number for Simple (ModelType 0) and Layered (ModelType 1) items</summary>
     public byte ModelPart1 { get; set; }
 
-    /// <summary>
-    /// Part number 2 for Composite (ModelType 2) items
-    /// </summary>
+    /// <summary>Part number 2 for Composite (ModelType 2) items</summary>
     public byte ModelPart2 { get; set; }
 
-    /// <summary>
-    /// Part number 3 for Composite (ModelType 2) items
-    /// </summary>
+    /// <summary>Part number 3 for Composite (ModelType 2) items</summary>
     public byte ModelPart3 { get; set; }
 
     // Color fields - present for Layered (ModelType 1) and Armor (ModelType 3)
 
-    /// <summary>
-    /// Cloth color 1 (PLT layer index)
-    /// </summary>
+    /// <summary>Cloth color 1 (PLT layer index)</summary>
     public byte Cloth1Color { get; set; }
 
-    /// <summary>
-    /// Cloth color 2 (PLT layer index)
-    /// </summary>
+    /// <summary>Cloth color 2 (PLT layer index)</summary>
     public byte Cloth2Color { get; set; }
 
-    /// <summary>
-    /// Leather color 1 (PLT layer index)
-    /// </summary>
+    /// <summary>Leather color 1 (PLT layer index)</summary>
     public byte Leather1Color { get; set; }
 
-    /// <summary>
-    /// Leather color 2 (PLT layer index)
-    /// </summary>
+    /// <summary>Leather color 2 (PLT layer index)</summary>
     public byte Leather2Color { get; set; }
 
-    /// <summary>
-    /// Metal color 1 (PLT layer index)
-    /// </summary>
+    /// <summary>Metal color 1 (PLT layer index)</summary>
     public byte Metal1Color { get; set; }
 
-    /// <summary>
-    /// Metal color 2 (PLT layer index)
-    /// </summary>
+    /// <summary>Metal color 2 (PLT layer index)</summary>
     public byte Metal2Color { get; set; }
 
     // Armor part fields - present for Armor (ModelType 3) only
@@ -160,22 +104,15 @@ public class UtiFile
 
     // Local variables (used by scripting)
 
-    /// <summary>
-    /// Local variables attached to the item blueprint.
-    /// Used for scripting and module-specific data.
-    /// </summary>
+    /// <summary>Local variables attached to the item blueprint; used for scripting and module-specific data.</summary>
     public List<Variable> VarTable { get; set; } = new();
 
     // Blueprint-only fields
 
-    /// <summary>
-    /// Module designer comment (blueprint only)
-    /// </summary>
+    /// <summary>Module designer comment (blueprint only)</summary>
     public string Comment { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Palette ID for toolset organization (blueprint only)
-    /// </summary>
+    /// <summary>Palette ID for toolset organization (blueprint only)</summary>
     public byte PaletteID { get; set; }
 }
 
@@ -185,48 +122,30 @@ public class UtiFile
 /// </summary>
 public class ItemProperty
 {
-    /// <summary>
-    /// Index into itempropdef.2da - identifies the property type
-    /// </summary>
+    /// <summary>Index into itempropdef.2da - identifies the property type</summary>
     public ushort PropertyName { get; set; }
 
-    /// <summary>
-    /// Index into subtype table (determined by PropertyName)
-    /// </summary>
+    /// <summary>Index into subtype table (determined by PropertyName)</summary>
     public ushort Subtype { get; set; }
 
-    /// <summary>
-    /// Index into iprp_costtable.2da
-    /// </summary>
+    /// <summary>Index into iprp_costtable.2da</summary>
     public byte CostTable { get; set; }
 
-    /// <summary>
-    /// Index into cost table (determined by CostTable)
-    /// </summary>
+    /// <summary>Index into cost table (determined by CostTable)</summary>
     public ushort CostValue { get; set; }
 
-    /// <summary>
-    /// Index into iprp_paramtable.2da (-1 if no params)
-    /// </summary>
+    /// <summary>Index into iprp_paramtable.2da (-1 if no params)</summary>
     public byte Param1 { get; set; } = 0xFF;
 
-    /// <summary>
-    /// Index into param table (determined by Param1)
-    /// </summary>
+    /// <summary>Index into param table (determined by Param1)</summary>
     public byte Param1Value { get; set; }
 
-    /// <summary>
-    /// Obsolete - always 100
-    /// </summary>
+    /// <summary>Obsolete - always 100</summary>
     public byte ChanceAppear { get; set; } = 100;
 
-    /// <summary>
-    /// Obsolete param2
-    /// </summary>
+    /// <summary>Obsolete param2</summary>
     public byte Param2 { get; set; } = 0xFF;
 
-    /// <summary>
-    /// Obsolete param2 value
-    /// </summary>
+    /// <summary>Obsolete param2 value</summary>
     public byte Param2Value { get; set; }
 }

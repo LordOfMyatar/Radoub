@@ -9,14 +9,10 @@ namespace Radoub.Formats.Dlg;
 /// </summary>
 public class DlgFile
 {
-    /// <summary>
-    /// File type signature - should be "DLG "
-    /// </summary>
+    /// <summary>File type signature - should be "DLG "</summary>
     public string FileType { get; set; } = "DLG ";
 
-    /// <summary>
-    /// File version - typically "V3.2"
-    /// </summary>
+    /// <summary>File version - typically "V3.2"</summary>
     public string FileVersion { get; set; } = "V3.2";
 
     /// <summary>
@@ -31,34 +27,22 @@ public class DlgFile
     /// </summary>
     public uint DelayReply { get; set; }
 
-    /// <summary>
-    /// Word count for the dialog (used by toolset statistics).
-    /// </summary>
+    /// <summary>Word count for the dialog (used by toolset statistics).</summary>
     public uint NumWords { get; set; }
 
-    /// <summary>
-    /// Script to run when conversation ends normally.
-    /// </summary>
+    /// <summary>Script to run when conversation ends normally.</summary>
     public string EndConversation { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Script to run when conversation is aborted.
-    /// </summary>
+    /// <summary>Script to run when conversation is aborted.</summary>
     public string EndConverAbort { get; set; } = string.Empty;
 
-    /// <summary>
-    /// If true, prevents camera zoom during conversation.
-    /// </summary>
+    /// <summary>If true, prevents camera zoom during conversation.</summary>
     public bool PreventZoomIn { get; set; }
 
-    /// <summary>
-    /// List of NPC dialog entries (spoken by NPCs).
-    /// </summary>
+    /// <summary>NPC dialog entries (spoken by NPCs).</summary>
     public List<DlgEntry> Entries { get; set; } = new();
 
-    /// <summary>
-    /// List of PC dialog replies (spoken by the player).
-    /// </summary>
+    /// <summary>PC dialog replies (spoken by the player).</summary>
     public List<DlgReply> Replies { get; set; } = new();
 
     /// <summary>
@@ -73,54 +57,34 @@ public class DlgFile
 /// </summary>
 public class DlgEntry
 {
-    /// <summary>
-    /// Speaker tag override. If empty, uses conversation owner.
-    /// </summary>
+    /// <summary>Speaker tag override. If empty, uses conversation owner.</summary>
     public string Speaker { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Animation to play during this line.
-    /// </summary>
+    /// <summary>Animation to play during this line.</summary>
     public uint Animation { get; set; }
 
-    /// <summary>
-    /// If true, animation loops until the line completes.
-    /// </summary>
+    /// <summary>If true, animation loops until the line completes.</summary>
     public bool AnimLoop { get; set; }
 
-    /// <summary>
-    /// Localized dialog text.
-    /// </summary>
+    /// <summary>Localized dialog text.</summary>
     public CExoLocString Text { get; set; } = new();
 
-    /// <summary>
-    /// Script to run when this entry is displayed.
-    /// </summary>
+    /// <summary>Script to run when this entry is displayed.</summary>
     public string Script { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Script action parameters (name/value pairs).
-    /// </summary>
+    /// <summary>Script action parameters (name/value pairs).</summary>
     public List<DlgParam> ActionParams { get; set; } = new();
 
-    /// <summary>
-    /// Delay override for this specific entry (0xFFFFFFFF = use default).
-    /// </summary>
+    /// <summary>Delay override for this specific entry (0xFFFFFFFF = use default).</summary>
     public uint Delay { get; set; } = 0xFFFFFFFF;
 
-    /// <summary>
-    /// Toolset comment (not shown in game).
-    /// </summary>
+    /// <summary>Toolset comment (not shown in game).</summary>
     public string Comment { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Sound file to play with this line.
-    /// </summary>
+    /// <summary>Sound file to play with this line.</summary>
     public string Sound { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Quest tag to update.
-    /// </summary>
+    /// <summary>Quest tag to update.</summary>
     public string Quest { get; set; } = string.Empty;
 
     /// <summary>
@@ -129,9 +93,7 @@ public class DlgEntry
     /// </summary>
     public uint QuestEntry { get; set; } = 0xFFFFFFFF;
 
-    /// <summary>
-    /// Links to player replies following this entry.
-    /// </summary>
+    /// <summary>Links to player replies following this entry.</summary>
     public List<DlgLink> RepliesList { get; set; } = new();
 }
 
@@ -140,49 +102,31 @@ public class DlgEntry
 /// </summary>
 public class DlgReply
 {
-    /// <summary>
-    /// Animation to play during this line.
-    /// </summary>
+    /// <summary>Animation to play during this line.</summary>
     public uint Animation { get; set; }
 
-    /// <summary>
-    /// If true, animation loops until the line completes.
-    /// </summary>
+    /// <summary>If true, animation loops until the line completes.</summary>
     public bool AnimLoop { get; set; }
 
-    /// <summary>
-    /// Localized dialog text.
-    /// </summary>
+    /// <summary>Localized dialog text.</summary>
     public CExoLocString Text { get; set; } = new();
 
-    /// <summary>
-    /// Script to run when this reply is selected.
-    /// </summary>
+    /// <summary>Script to run when this reply is selected.</summary>
     public string Script { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Script action parameters (name/value pairs).
-    /// </summary>
+    /// <summary>Script action parameters (name/value pairs).</summary>
     public List<DlgParam> ActionParams { get; set; } = new();
 
-    /// <summary>
-    /// Delay override for this specific reply (0xFFFFFFFF = use default).
-    /// </summary>
+    /// <summary>Delay override for this specific reply (0xFFFFFFFF = use default).</summary>
     public uint Delay { get; set; } = 0xFFFFFFFF;
 
-    /// <summary>
-    /// Toolset comment (not shown in game).
-    /// </summary>
+    /// <summary>Toolset comment (not shown in game).</summary>
     public string Comment { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Sound file to play with this line.
-    /// </summary>
+    /// <summary>Sound file to play with this line.</summary>
     public string Sound { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Quest tag to update.
-    /// </summary>
+    /// <summary>Quest tag to update.</summary>
     public string Quest { get; set; } = string.Empty;
 
     /// <summary>
@@ -191,9 +135,7 @@ public class DlgReply
     /// </summary>
     public uint QuestEntry { get; set; } = 0xFFFFFFFF;
 
-    /// <summary>
-    /// Links to NPC entries following this reply.
-    /// </summary>
+    /// <summary>Links to NPC entries following this reply.</summary>
     public List<DlgLink> EntriesList { get; set; } = new();
 }
 
@@ -203,9 +145,7 @@ public class DlgReply
 /// </summary>
 public class DlgLink
 {
-    /// <summary>
-    /// Index into the target list (Entries or Replies).
-    /// </summary>
+    /// <summary>Index into the target list (Entries or Replies).</summary>
     public uint Index { get; set; }
 
     /// <summary>
@@ -214,9 +154,7 @@ public class DlgLink
     /// </summary>
     public string Active { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Condition script parameters (name/value pairs).
-    /// </summary>
+    /// <summary>Condition script parameters (name/value pairs).</summary>
     public List<DlgParam> ConditionParams { get; set; } = new();
 
     /// <summary>
@@ -225,9 +163,7 @@ public class DlgLink
     /// </summary>
     public bool IsChild { get; set; }
 
-    /// <summary>
-    /// Comment for this link (only present when IsChild=true).
-    /// </summary>
+    /// <summary>Comment for this link (only present when IsChild=true).</summary>
     public string LinkComment { get; set; } = string.Empty;
 }
 
@@ -237,13 +173,7 @@ public class DlgLink
 /// </summary>
 public class DlgParam
 {
-    /// <summary>
-    /// Parameter key/name.
-    /// </summary>
     public string Key { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Parameter value.
-    /// </summary>
     public string Value { get; set; } = string.Empty;
 }

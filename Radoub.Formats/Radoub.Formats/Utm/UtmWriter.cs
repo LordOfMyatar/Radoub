@@ -10,27 +10,21 @@ namespace Radoub.Formats.Utm;
 /// </summary>
 public static class UtmWriter
 {
-    /// <summary>
-    /// Write a UTM file to a file path.
-    /// </summary>
+    /// <summary>Write a UTM file to a file path.</summary>
     public static void Write(UtmFile utm, string filePath)
     {
         var buffer = Write(utm);
         File.WriteAllBytes(filePath, buffer);
     }
 
-    /// <summary>
-    /// Write a UTM file to a stream.
-    /// </summary>
+    /// <summary>Write a UTM file to a stream.</summary>
     public static void Write(UtmFile utm, Stream stream)
     {
         var buffer = Write(utm);
         stream.Write(buffer, 0, buffer.Length);
     }
 
-    /// <summary>
-    /// Write a UTM file to a byte buffer.
-    /// </summary>
+    /// <summary>Write a UTM file to a byte buffer.</summary>
     public static byte[] Write(UtmFile utm)
     {
         var gff = BuildGffFile(utm);
@@ -80,16 +74,13 @@ public static class UtmWriter
         if (!string.IsNullOrEmpty(utm.OnStoreClosed))
             AddCResRefField(root, "OnStoreClosed", utm.OnStoreClosed);
 
-        // Store inventory panels
         AddStoreList(root, utm.StoreList);
 
-        // Buy restrictions
         if (utm.WillOnlyBuy.Count > 0)
             AddBaseItemList(root, "WillOnlyBuy", utm.WillOnlyBuy);
         if (utm.WillNotBuy.Count > 0)
             AddBaseItemList(root, "WillNotBuy", utm.WillNotBuy);
 
-        // Local variables
         VarTableHelper.WriteVarTable(root, utm.VarTable);
 
         return root;

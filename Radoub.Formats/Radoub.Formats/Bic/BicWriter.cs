@@ -11,27 +11,18 @@ namespace Radoub.Formats.Bic;
 /// </summary>
 public static class BicWriter
 {
-    /// <summary>
-    /// Write a BIC file to a file path.
-    /// </summary>
     public static void Write(BicFile bic, string filePath)
     {
         var buffer = Write(bic);
         File.WriteAllBytes(filePath, buffer);
     }
 
-    /// <summary>
-    /// Write a BIC file to a stream.
-    /// </summary>
     public static void Write(BicFile bic, Stream stream)
     {
         var buffer = Write(bic);
         stream.Write(buffer, 0, buffer.Length);
     }
 
-    /// <summary>
-    /// Write a BIC file to a byte buffer.
-    /// </summary>
     public static byte[] Write(BicFile bic)
     {
         var gff = BuildGffFile(bic);
@@ -234,20 +225,18 @@ public static class BicWriter
             AddIntField(classStruct, "Class", cls.Class);
             AddShortField(classStruct, "ClassLevel", cls.ClassLevel);
 
-            // Write domains (Cleric)
+            // Domains (Cleric)
             if (cls.Domain1 != 0 || cls.Domain2 != 0)
             {
                 AddByteField(classStruct, "Domain1", cls.Domain1);
                 AddByteField(classStruct, "Domain2", cls.Domain2);
             }
 
-            // Write known spells (KnownList0-9)
             for (int level = 0; level < 10; level++)
             {
                 AddKnownSpellList(classStruct, cls.KnownSpells[level], level);
             }
 
-            // Write memorized spells (MemorizedList0-9)
             for (int level = 0; level < 10; level++)
             {
                 AddMemorizedSpellList(classStruct, cls.MemorizedSpells[level], level);
@@ -374,10 +363,8 @@ public static class BicWriter
             var qbStruct = new GffStruct { Type = 0 };
             AddByteField(qbStruct, "QBObjectType", slot.ObjectType);
 
-            // Only add additional fields if slot is not empty
             if (slot.ObjectType != QuickBarObjectType.Empty)
             {
-                // Common fields
                 AddIntField(qbStruct, "QBINTParam1", slot.INTParam1);
 
                 switch (slot.ObjectType)
@@ -436,7 +423,6 @@ public static class BicWriter
         var list = new GffList();
         foreach (var entry in lvlStats)
         {
-            // StructID 0 (standard struct type)
             var lvlStruct = new GffStruct { Type = 0 };
 
             AddByteField(lvlStruct, "LvlStatClass", entry.LvlStatClass);
@@ -444,7 +430,7 @@ public static class BicWriter
             AddByteField(lvlStruct, "EpicLevel", entry.EpicLevel);
             AddShortField(lvlStruct, "SkillPoints", entry.SkillPoints);
 
-            // Add SkillList (28 entries, one per skill)
+            // SkillList: 28 entries, one per skill
             var skillList = new GffList();
             foreach (var rank in entry.SkillList)
             {
@@ -454,7 +440,7 @@ public static class BicWriter
             }
             AddListField(lvlStruct, "SkillList", skillList);
 
-            // Add FeatList (feats gained at this level)
+            // FeatList: feats gained at this level
             var featList = new GffList();
             foreach (var feat in entry.FeatList)
             {

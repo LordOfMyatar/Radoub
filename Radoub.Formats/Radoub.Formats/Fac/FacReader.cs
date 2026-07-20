@@ -8,27 +8,21 @@ namespace Radoub.Formats.Fac;
 /// </summary>
 public static class FacReader
 {
-    /// <summary>
-    /// Read a FAC file from a file path.
-    /// </summary>
+    /// <summary>Read a FAC file from a file path.</summary>
     public static FacFile Read(string filePath)
     {
         var gff = GffReader.Read(filePath);
         return ParseFac(gff);
     }
 
-    /// <summary>
-    /// Read a FAC file from a stream.
-    /// </summary>
+    /// <summary>Read a FAC file from a stream.</summary>
     public static FacFile Read(Stream stream)
     {
         var gff = GffReader.Read(stream);
         return ParseFac(gff);
     }
 
-    /// <summary>
-    /// Read a FAC file from a byte buffer.
-    /// </summary>
+    /// <summary>Read a FAC file from a byte buffer.</summary>
     public static FacFile Read(byte[] buffer)
     {
         var gff = GffReader.Read(buffer);
@@ -45,7 +39,6 @@ public static class FacReader
 
         var root = gff.RootStruct;
 
-        // Parse FactionList
         var factionListField = root.GetField("FactionList");
         if (factionListField?.Value is GffList factionList)
         {
@@ -61,7 +54,6 @@ public static class FacReader
             }
         }
 
-        // Parse RepList (reputation relationships)
         var repListField = root.GetField("RepList");
         if (repListField?.Value is GffList repList)
         {

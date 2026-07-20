@@ -9,18 +9,14 @@ namespace Radoub.Formats.Ifo;
 /// </summary>
 public static class IfoWriter
 {
-    /// <summary>
-    /// Write an IFO file to a file path.
-    /// </summary>
+    /// <summary>Write an IFO file to a file path.</summary>
     public static void Write(IfoFile ifo, string filePath)
     {
         var gff = ToGff(ifo);
         GffWriter.Write(gff, filePath);
     }
 
-    /// <summary>
-    /// Write an IFO file to a byte array.
-    /// </summary>
+    /// <summary>Write an IFO file to a byte array.</summary>
     public static byte[] Write(IfoFile ifo)
     {
         var gff = ToGff(ifo);
@@ -29,18 +25,14 @@ public static class IfoWriter
         return ms.ToArray();
     }
 
-    /// <summary>
-    /// Write an IFO file to a stream.
-    /// </summary>
+    /// <summary>Write an IFO file to a stream.</summary>
     public static void Write(IfoFile ifo, Stream stream)
     {
         var gff = ToGff(ifo);
         GffWriter.Write(gff, stream);
     }
 
-    /// <summary>
-    /// Convert an IfoFile model to GFF format.
-    /// </summary>
+    /// <summary>Convert an IfoFile model to GFF format.</summary>
     public static GffFile ToGff(IfoFile ifo)
     {
         var gff = new GffFile
@@ -52,18 +44,15 @@ public static class IfoWriter
 
         var root = gff.RootStruct;
 
-        // Module Metadata
         AddLocStringField(root, "Mod_Name", ifo.ModuleName);
         AddLocStringField(root, "Mod_Description", ifo.ModuleDescription);
         AddCExoStringField(root, "Mod_Tag", ifo.Tag);
         AddCExoStringField(root, "Mod_ID", ifo.ModuleId);
         AddCExoStringField(root, "Mod_CustomTlk", ifo.CustomTlk);
 
-        // Version/Requirements
         AddCExoStringField(root, "Mod_MinGameVer", ifo.MinGameVersion);
         AddWordField(root, "Expansion_Pack", ifo.ExpansionPack);
 
-        // Time Settings
         AddByteField(root, "Mod_DawnHour", ifo.DawnHour);
         AddByteField(root, "Mod_DuskHour", ifo.DuskHour);
         AddByteField(root, "Mod_MinPerHour", ifo.MinutesPerHour);
@@ -72,7 +61,6 @@ public static class IfoWriter
         AddByteField(root, "Mod_StartDay", ifo.StartDay);
         AddByteField(root, "Mod_StartHour", ifo.StartHour);
 
-        // Entry Point
         AddCResRefField(root, "Mod_Entry_Area", ifo.EntryArea);
         AddFloatField(root, "Mod_Entry_X", ifo.EntryX);
         AddFloatField(root, "Mod_Entry_Y", ifo.EntryY);
@@ -104,7 +92,6 @@ public static class IfoWriter
         AddCResRefField(root, "Mod_OnPlrTileAct", ifo.OnPlayerTileAction);
         AddCResRefField(root, "Mod_OnNuiEvent", ifo.OnNuiEvent);
 
-        // Other Settings
         AddByteField(root, "Mod_XPScale", ifo.XPScale);
         AddCExoStringField(root, "Mod_Creator_ID", ifo.Creator);
         AddDwordField(root, "Mod_Version", ifo.ModuleVersion);
@@ -125,15 +112,13 @@ public static class IfoWriter
         WriteGenericList(root, "Mod_CutSceneList", ifo.CutSceneList);
         WriteGenericList(root, "Mod_GVar_List", ifo.GlobalVarList);
 
-        // Local Variables
         VarTableHelper.WriteVarTable(root, ifo.VarTable);
 
         return gff;
     }
 
     /// <summary>
-    /// Write a generic list of GffStructs for round-trip preservation.
-    /// Always writes the list (even if empty) to ensure round-trip compatibility.
+    /// Write a generic list of GffStructs, always (even if empty) for round-trip compatibility.
     /// </summary>
     private static void WriteGenericList(GffStruct root, string fieldName, List<GffStruct> elements)
     {
@@ -143,8 +128,7 @@ public static class IfoWriter
     }
 
     /// <summary>
-    /// Write the HAK list to a GFF struct.
-    /// Always writes the list (even if empty) to ensure round-trip compatibility.
+    /// Write the HAK list, always (even if empty) for round-trip compatibility.
     /// </summary>
     private static void WriteHakList(GffStruct root, List<string> hakList)
     {
@@ -160,8 +144,7 @@ public static class IfoWriter
     }
 
     /// <summary>
-    /// Write the area list to a GFF struct.
-    /// Always writes the list (even if empty) to ensure round-trip compatibility.
+    /// Write the area list, always (even if empty) for round-trip compatibility.
     /// </summary>
     private static void WriteAreaList(GffStruct root, List<string> areaList)
     {

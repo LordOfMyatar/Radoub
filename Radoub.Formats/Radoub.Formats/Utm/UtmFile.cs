@@ -9,31 +9,21 @@ namespace Radoub.Formats.Utm;
 /// </summary>
 public class UtmFile
 {
-    /// <summary>
-    /// File type signature - should be "UTM "
-    /// </summary>
+    /// <summary>File type signature - should be "UTM "</summary>
     public string FileType { get; set; } = "UTM ";
 
-    /// <summary>
-    /// File version - typically "V3.2"
-    /// </summary>
+    /// <summary>File version - typically "V3.2"</summary>
     public string FileVersion { get; set; } = "V3.2";
 
     // Identity fields
 
-    /// <summary>
-    /// Blueprint resource reference (should match filename)
-    /// </summary>
+    /// <summary>Blueprint resource reference (should match filename)</summary>
     public string ResRef { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Store tag (max 32 characters)
-    /// </summary>
+    /// <summary>Store tag (max 32 characters)</summary>
     public string Tag { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Localized store name
-    /// </summary>
+    /// <summary>Localized store name</summary>
     public CExoLocString LocName { get; set; } = new();
 
     // Pricing fields
@@ -52,26 +42,18 @@ public class UtmFile
     /// </summary>
     public int MarkUp { get; set; } = 150;
 
-    /// <summary>
-    /// Store's gold reserves. -1 = infinite gold.
-    /// </summary>
+    /// <summary>Store's gold reserves. -1 = infinite gold.</summary>
     public int StoreGold { get; set; } = -1;
 
-    /// <summary>
-    /// Maximum price the store will pay for an item. -1 = no limit.
-    /// </summary>
+    /// <summary>Maximum price the store will pay for an item. -1 = no limit.</summary>
     public int MaxBuyPrice { get; set; } = -1;
 
-    /// <summary>
-    /// Cost to identify an item. -1 = identification service not available.
-    /// </summary>
+    /// <summary>Cost to identify an item. -1 = identification service not available.</summary>
     public int IdentifyPrice { get; set; } = 100;
 
     // Black market fields
 
-    /// <summary>
-    /// If true, store will buy stolen items.
-    /// </summary>
+    /// <summary>If true, store will buy stolen items.</summary>
     public bool BlackMarket { get; set; }
 
     /// <summary>
@@ -82,26 +64,18 @@ public class UtmFile
 
     // Blueprint-only fields
 
-    /// <summary>
-    /// Module designer comment (blueprint only)
-    /// </summary>
+    /// <summary>Module designer comment (blueprint only)</summary>
     public string Comment { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Palette ID for toolset organization (0-255)
-    /// </summary>
+    /// <summary>Palette ID for toolset organization (0-255)</summary>
     public byte PaletteID { get; set; }
 
     // Script fields
 
-    /// <summary>
-    /// Script to run when store is opened
-    /// </summary>
+    /// <summary>Script to run when store is opened</summary>
     public string OnOpenStore { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Script to run when store is closed
-    /// </summary>
+    /// <summary>Script to run when store is closed</summary>
     public string OnStoreClosed { get; set; } = string.Empty;
 
     // Store inventory (5 panels)
@@ -128,16 +102,11 @@ public class UtmFile
 
     // Local variables
 
-    /// <summary>
-    /// Local variables stored on this store.
-    /// Set via SetLocalInt/SetLocalFloat/SetLocalString script functions.
-    /// </summary>
+    /// <summary>Local variables stored on this store. Set via SetLocalInt/SetLocalFloat/SetLocalString script functions.</summary>
     public List<Variable> VarTable { get; set; } = new();
 }
 
-/// <summary>
-/// Represents a store inventory panel (one of 5 categories).
-/// </summary>
+/// <summary>Represents a store inventory panel (one of 5 categories).</summary>
 public class StorePanel
 {
     /// <summary>
@@ -146,35 +115,22 @@ public class StorePanel
     /// </summary>
     public int PanelId { get; set; }
 
-    /// <summary>
-    /// Items in this panel.
-    /// </summary>
     public List<StoreItem> Items { get; set; } = new();
 }
 
-/// <summary>
-/// Represents an item for sale in a store.
-/// </summary>
+/// <summary>Represents an item for sale in a store.</summary>
 public class StoreItem
 {
-    /// <summary>
-    /// ResRef of the item blueprint (.uti)
-    /// </summary>
+    /// <summary>ResRef of the item blueprint (.uti)</summary>
     public string InventoryRes { get; set; } = string.Empty;
 
-    /// <summary>
-    /// If true, item has infinite stock (never runs out).
-    /// </summary>
+    /// <summary>If true, item has infinite stock (never runs out).</summary>
     public bool Infinite { get; set; }
 
-    /// <summary>
-    /// X position in inventory grid (used by toolset, usually 0xFFFF).
-    /// </summary>
+    /// <summary>X position in inventory grid (used by toolset, usually 0xFFFF).</summary>
     public ushort Repos_PosX { get; set; } = 0xFFFF;
 
-    /// <summary>
-    /// Y position in inventory grid (used by toolset, usually 0xFFFF).
-    /// </summary>
+    /// <summary>Y position in inventory grid (used by toolset, usually 0xFFFF).</summary>
     public ushort Repos_PosY { get; set; } = 0xFFFF;
 }
 
@@ -190,9 +146,7 @@ public static class StorePanels
     public const int RingsAmulets = 3;
     public const int Weapons = 4;
 
-    /// <summary>
-    /// Get human-readable name for a store panel.
-    /// </summary>
+    /// <summary>Get human-readable name for a store panel.</summary>
     public static string GetPanelName(int panelId)
     {
         return panelId switch

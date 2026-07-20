@@ -10,27 +10,21 @@ namespace Radoub.Formats.Are;
 /// </summary>
 public static class AreWriter
 {
-    /// <summary>
-    /// Write an ARE file to a file path.
-    /// </summary>
+    /// <summary>Write an ARE file to a file path.</summary>
     public static void Write(AreFile are, string filePath)
     {
         var buffer = Write(are);
         File.WriteAllBytes(filePath, buffer);
     }
 
-    /// <summary>
-    /// Write an ARE file to a stream.
-    /// </summary>
+    /// <summary>Write an ARE file to a stream.</summary>
     public static void Write(AreFile are, Stream stream)
     {
         var buffer = Write(are);
         stream.Write(buffer, 0, buffer.Length);
     }
 
-    /// <summary>
-    /// Write an ARE file to a byte buffer.
-    /// </summary>
+    /// <summary>Write an ARE file to a byte buffer.</summary>
     public static byte[] Write(AreFile are)
     {
         var gff = BuildGffFile(are);
@@ -53,19 +47,16 @@ public static class AreWriter
     {
         var root = new GffStruct { Type = 0xFFFFFFFF };
 
-        // Identity
         AddCResRefField(root, "ResRef", are.ResRef);
         AddCExoStringField(root, "Tag", are.Tag);
         AddLocStringField(root, "Name", are.Name);
         if (!string.IsNullOrEmpty(are.Comments))
             AddCExoStringField(root, "Comments", are.Comments);
 
-        // Dimensions
         AddIntField(root, "Width", are.Width);
         AddIntField(root, "Height", are.Height);
         AddCResRefField(root, "Tileset", are.TileSet);
 
-        // Environment / Lighting
         AddByteField(root, "DayNightCycle", are.DayNightCycle);
         AddByteField(root, "IsNight", are.IsNight);
         AddByteField(root, "LightingScheme", are.LightingScheme);
@@ -81,13 +72,11 @@ public static class AreWriter
         AddDwordField(root, "MoonFogColor", are.MoonFogColor);
         AddByteField(root, "ShadowOpacity", are.ShadowOpacity);
 
-        // Weather
         AddIntField(root, "ChanceLightning", are.ChanceLightning);
         AddIntField(root, "ChanceRain", are.ChanceRain);
         AddIntField(root, "ChanceSnow", are.ChanceSnow);
         AddIntField(root, "WindPower", are.WindPower);
 
-        // Flags and settings
         AddDwordField(root, "Flags", are.Flags);
         AddWordField(root, "LoadScreenID", are.LoadScreenID);
         AddByteField(root, "NoRest", are.NoRest);
@@ -99,7 +88,6 @@ public static class AreWriter
         AddIntField(root, "Creator_ID", are.Creator_ID);
         AddIntField(root, "ID", are.ID);
 
-        // Scripts
         if (!string.IsNullOrEmpty(are.OnEnter))
             AddCResRefField(root, "OnEnter", are.OnEnter);
         if (!string.IsNullOrEmpty(are.OnExit))
@@ -109,7 +97,6 @@ public static class AreWriter
         if (!string.IsNullOrEmpty(are.OnUserDefined))
             AddCResRefField(root, "OnUserDefined", are.OnUserDefined);
 
-        // Tile list
         AddTileList(root, are.Tiles);
 
         return root;

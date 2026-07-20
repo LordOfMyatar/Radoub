@@ -6,9 +6,7 @@ namespace Radoub.Formats.Ssf;
 /// </summary>
 public class SsfFile
 {
-    /// <summary>
-    /// File version (typically "V1.0").
-    /// </summary>
+    /// <summary>File version (typically "V1.0").</summary>
     public string Version { get; set; } = "V1.0";
 
     /// <summary>
@@ -17,14 +15,9 @@ public class SsfFile
     /// </summary>
     public List<SsfEntry> Entries { get; set; } = new();
 
-    /// <summary>
-    /// Get entry by index, or null if out of range.
-    /// </summary>
+    /// <summary>Get entry by index, or null if out of range.</summary>
     public SsfEntry? GetEntry(int index) => index >= 0 && index < Entries.Count ? Entries[index] : null;
 
-    /// <summary>
-    /// Get entry by sound type enum.
-    /// </summary>
     public SsfEntry? GetEntry(SsfSoundType soundType) => GetEntry((int)soundType);
 }
 

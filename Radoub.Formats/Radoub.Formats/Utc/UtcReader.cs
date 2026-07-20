@@ -9,18 +9,12 @@ namespace Radoub.Formats.Utc;
 /// </summary>
 public static class UtcReader
 {
-    /// <summary>
-    /// Read a UTC file from a file path.
-    /// </summary>
     public static UtcFile Read(string filePath)
     {
         var buffer = File.ReadAllBytes(filePath);
         return Read(buffer);
     }
 
-    /// <summary>
-    /// Read a UTC file from a stream.
-    /// </summary>
     public static UtcFile Read(Stream stream)
     {
         using var ms = new MemoryStream();
@@ -28,15 +22,10 @@ public static class UtcReader
         return Read(ms.ToArray());
     }
 
-    /// <summary>
-    /// Read a UTC file from a byte buffer.
-    /// </summary>
     public static UtcFile Read(byte[] buffer)
     {
-        // Parse as GFF first
         var gff = GffReader.Read(buffer);
 
-        // Validate file type
         if (gff.FileType.TrimEnd() != "UTC")
         {
             throw new InvalidDataException(
@@ -239,13 +228,13 @@ public static class UtcReader
                 Domain2 = classStruct.GetFieldValue<byte>("Domain2", 0)
             };
 
-            // Parse known spells (KnownList0-9) - used by Bards, Sorcerers, PC Wizards
+            // KnownList0-9 - used by Bards, Sorcerers, PC Wizards
             for (int level = 0; level < 10; level++)
             {
                 ParseKnownSpellList(classStruct, creatureClass, level);
             }
 
-            // Parse memorized spells (MemorizedList0-9) - used by Wizards, Clerics, etc.
+            // MemorizedList0-9 - used by Wizards, Clerics, etc.
             for (int level = 0; level < 10; level++)
             {
                 ParseMemorizedSpellList(classStruct, creatureClass, level);

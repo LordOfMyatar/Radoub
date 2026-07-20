@@ -10,27 +10,21 @@ namespace Radoub.Formats.Uti;
 /// </summary>
 public static class UtiWriter
 {
-    /// <summary>
-    /// Write a UTI file to a file path.
-    /// </summary>
+    /// <summary>Write a UTI file to a file path.</summary>
     public static void Write(UtiFile uti, string filePath)
     {
         var buffer = Write(uti);
         File.WriteAllBytes(filePath, buffer);
     }
 
-    /// <summary>
-    /// Write a UTI file to a stream.
-    /// </summary>
+    /// <summary>Write a UTI file to a stream.</summary>
     public static void Write(UtiFile uti, Stream stream)
     {
         var buffer = Write(uti);
         stream.Write(buffer, 0, buffer.Length);
     }
 
-    /// <summary>
-    /// Write a UTI file to a byte buffer.
-    /// </summary>
+    /// <summary>Write a UTI file to a byte buffer.</summary>
     public static byte[] Write(UtiFile uti)
     {
         var gff = BuildGffFile(uti);
@@ -67,7 +61,6 @@ public static class UtiWriter
         AddByteField(root, "Identified", (byte)(uti.Identified ? 1 : 0));
         AddByteField(root, "Dropable", (byte)(uti.Dropable ? 1 : 0));
 
-        // Localized strings
         AddLocStringField(root, "LocalizedName", uti.LocalizedName);
         AddLocStringField(root, "Description", uti.Description);
         AddLocStringField(root, "DescIdentified", uti.DescIdentified);
@@ -99,16 +92,13 @@ public static class UtiWriter
         if (uti.Metal2Color != 0)
             AddByteField(root, "Metal2Color", uti.Metal2Color);
 
-        // Armor parts
         foreach (var kvp in uti.ArmorParts)
         {
             AddByteField(root, $"ArmorPart_{kvp.Key}", kvp.Value);
         }
 
-        // Properties list
         AddPropertiesList(root, uti.Properties);
 
-        // Local variables
         VarTableHelper.WriteVarTable(root, uti.VarTable);
 
         return root;

@@ -9,18 +9,14 @@ namespace Radoub.Formats.Are;
 /// </summary>
 public static class AreReader
 {
-    /// <summary>
-    /// Read an ARE file from a file path.
-    /// </summary>
+    /// <summary>Read an ARE file from a file path.</summary>
     public static AreFile Read(string filePath)
     {
         var buffer = File.ReadAllBytes(filePath);
         return Read(buffer);
     }
 
-    /// <summary>
-    /// Read an ARE file from a stream.
-    /// </summary>
+    /// <summary>Read an ARE file from a stream.</summary>
     public static AreFile Read(Stream stream)
     {
         using var ms = new MemoryStream();
@@ -28,9 +24,7 @@ public static class AreReader
         return Read(ms.ToArray());
     }
 
-    /// <summary>
-    /// Read an ARE file from a byte buffer.
-    /// </summary>
+    /// <summary>Read an ARE file from a byte buffer.</summary>
     public static AreFile Read(byte[] buffer)
     {
         var gff = GffReader.Read(buffer);
@@ -53,17 +47,14 @@ public static class AreReader
             FileType = gff.FileType,
             FileVersion = gff.FileVersion,
 
-            // Identity
             ResRef = root.GetFieldValue<string>("ResRef", string.Empty),
             Tag = root.GetFieldValue<string>("Tag", string.Empty),
             Comments = root.GetFieldValue<string>("Comments", string.Empty),
 
-            // Dimensions
             Width = root.GetFieldValue<int>("Width", 0),
             Height = root.GetFieldValue<int>("Height", 0),
             TileSet = root.GetFieldValue<string>("Tileset", string.Empty),
 
-            // Environment / Lighting
             DayNightCycle = root.GetFieldValue<byte>("DayNightCycle", 1),
             IsNight = root.GetFieldValue<byte>("IsNight", 0),
             LightingScheme = root.GetFieldValue<byte>("LightingScheme", 0),
@@ -79,13 +70,11 @@ public static class AreReader
             MoonFogColor = root.GetFieldValue<uint>("MoonFogColor", 0),
             ShadowOpacity = root.GetFieldValue<byte>("ShadowOpacity", 0),
 
-            // Weather
             ChanceLightning = root.GetFieldValue<int>("ChanceLightning", 0),
             ChanceRain = root.GetFieldValue<int>("ChanceRain", 0),
             ChanceSnow = root.GetFieldValue<int>("ChanceSnow", 0),
             WindPower = root.GetFieldValue<int>("WindPower", 0),
 
-            // Flags and settings
             Flags = root.GetFieldValue<uint>("Flags", 0),
             LoadScreenID = root.GetFieldValue<ushort>("LoadScreenID", 0),
             NoRest = root.GetFieldValue<byte>("NoRest", 0),
@@ -97,17 +86,14 @@ public static class AreReader
             Creator_ID = root.GetFieldValue<int>("Creator_ID", -1),
             ID = root.GetFieldValue<int>("ID", -1),
 
-            // Scripts
             OnEnter = root.GetFieldValue<string>("OnEnter", string.Empty),
             OnExit = root.GetFieldValue<string>("OnExit", string.Empty),
             OnHeartbeat = root.GetFieldValue<string>("OnHeartbeat", string.Empty),
             OnUserDefined = root.GetFieldValue<string>("OnUserDefined", string.Empty)
         };
 
-        // Localized name
         are.Name = ParseLocString(root, "Name") ?? new CExoLocString();
 
-        // Tile list
         ParseTileList(root, are);
 
         return are;

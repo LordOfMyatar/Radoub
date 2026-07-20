@@ -9,18 +9,14 @@ namespace Radoub.Formats.Utp;
 /// </summary>
 public static class UtpReader
 {
-    /// <summary>
-    /// Read a UTP file from a file path.
-    /// </summary>
+    /// <summary>Read a UTP file from a file path.</summary>
     public static UtpFile Read(string filePath)
     {
         var buffer = File.ReadAllBytes(filePath);
         return Read(buffer);
     }
 
-    /// <summary>
-    /// Read a UTP file from a stream.
-    /// </summary>
+    /// <summary>Read a UTP file from a stream.</summary>
     public static UtpFile Read(Stream stream)
     {
         using var ms = new MemoryStream();
@@ -28,9 +24,7 @@ public static class UtpReader
         return Read(ms.ToArray());
     }
 
-    /// <summary>
-    /// Read a UTP file from a byte buffer.
-    /// </summary>
+    /// <summary>Read a UTP file from a byte buffer.</summary>
     public static UtpFile Read(byte[] buffer)
     {
         var gff = GffReader.Read(buffer);
@@ -120,14 +114,11 @@ public static class UtpReader
             PaletteID = root.GetFieldValue<byte>("PaletteID", 0)
         };
 
-        // Localized strings
         utp.LocName = ParseLocString(root, "LocName") ?? new CExoLocString();
         utp.Description = ParseLocString(root, "Description") ?? new CExoLocString();
 
-        // Item list
         ParseItemList(root, utp);
 
-        // Local variables
         utp.VarTable = VarTableHelper.ReadVarTable(root);
 
         return utp;

@@ -7,14 +7,10 @@ namespace Radoub.Formats.Itp;
 /// </summary>
 public class ItpFile
 {
-    /// <summary>
-    /// File type signature - should be "ITP "
-    /// </summary>
+    /// <summary>File type signature - should be "ITP "</summary>
     public string FileType { get; set; } = "ITP ";
 
-    /// <summary>
-    /// File version - typically "V3.2"
-    /// </summary>
+    /// <summary>File version - typically "V3.2"</summary>
     public string FileVersion { get; set; } = "V3.2";
 
     /// <summary>
@@ -23,19 +19,13 @@ public class ItpFile
     /// </summary>
     public ushort? ResType { get; set; }
 
-    /// <summary>
-    /// Next usable category ID. Only present in skeleton palettes.
-    /// </summary>
+    /// <summary>Next usable category ID. Only present in skeleton palettes.</summary>
     public byte? NextUseableId { get; set; }
 
-    /// <summary>
-    /// Root nodes (MAIN list) of the palette tree.
-    /// </summary>
+    /// <summary>Root nodes (MAIN list) of the palette tree.</summary>
     public List<PaletteNode> MainNodes { get; set; } = new();
 
-    /// <summary>
-    /// Get all category nodes from the palette tree (flattened).
-    /// </summary>
+    /// <summary>Get all category nodes from the palette tree (flattened).</summary>
     public IEnumerable<PaletteCategoryNode> GetCategories()
     {
         return FlattenCategories(MainNodes);
@@ -69,14 +59,10 @@ public class ItpFile
 /// </summary>
 public abstract class PaletteNode
 {
-    /// <summary>
-    /// TLK string reference for node name.
-    /// </summary>
+    /// <summary>TLK string reference for node name.</summary>
     public uint? StrRef { get; set; }
 
-    /// <summary>
-    /// Direct name (used when StrRef is not present).
-    /// </summary>
+    /// <summary>Direct name (used when StrRef is not present).</summary>
     public string? Name { get; set; }
 
     /// <summary>
@@ -85,9 +71,7 @@ public abstract class PaletteNode
     /// </summary>
     public string? DeleteMe { get; set; }
 
-    /// <summary>
-    /// Display type (0=DISPLAY_IF_NOT_EMPTY, 1=NEVER, 2=CUSTOM).
-    /// </summary>
+    /// <summary>Display type (0=DISPLAY_IF_NOT_EMPTY, 1=NEVER, 2=CUSTOM).</summary>
     public byte? DisplayType { get; set; }
 }
 
@@ -96,9 +80,7 @@ public abstract class PaletteNode
 /// </summary>
 public class PaletteBranchNode : PaletteNode
 {
-    /// <summary>
-    /// Child nodes (can be branches or categories).
-    /// </summary>
+    /// <summary>Child nodes (can be branches or categories).</summary>
     public List<PaletteNode> Children { get; set; } = new();
 }
 
@@ -107,24 +89,15 @@ public class PaletteBranchNode : PaletteNode
 /// </summary>
 public class PaletteCategoryNode : PaletteNode
 {
-    /// <summary>
-    /// The unique ID for this category (matches PaletteID in blueprints).
-    /// </summary>
+    /// <summary>The unique ID for this category (matches PaletteID in blueprints).</summary>
     public byte Id { get; set; }
 
-    /// <summary>
-    /// Blueprint nodes under this category (in standard/custom palettes).
-    /// </summary>
+    /// <summary>Blueprint nodes under this category (in standard/custom palettes).</summary>
     public List<PaletteBlueprintNode> Blueprints { get; set; } = new();
 
-    /// <summary>
-    /// Nested category/branch nodes under this category (#2280).
-    /// </summary>
+    /// <summary>Nested category/branch nodes under this category (#2280).</summary>
     public List<PaletteNode> Children { get; set; } = new();
 
-    /// <summary>
-    /// Convenience: child nodes that are categories.
-    /// </summary>
     public IEnumerable<PaletteCategoryNode> ChildCategories =>
         Children.OfType<PaletteCategoryNode>();
 }
@@ -135,19 +108,13 @@ public class PaletteCategoryNode : PaletteNode
 /// </summary>
 public class PaletteBlueprintNode : PaletteNode
 {
-    /// <summary>
-    /// ResRef of the blueprint file.
-    /// </summary>
+    /// <summary>ResRef of the blueprint file.</summary>
     public string ResRef { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Challenge rating (creature palettes only).
-    /// </summary>
+    /// <summary>Challenge rating (creature palettes only).</summary>
     public float? ChallengeRating { get; set; }
 
-    /// <summary>
-    /// Faction name (creature palettes only).
-    /// </summary>
+    /// <summary>Faction name (creature palettes only).</summary>
     public string? Faction { get; set; }
 }
 
@@ -156,18 +123,12 @@ public class PaletteBlueprintNode : PaletteNode
 /// </summary>
 public static class PaletteDisplayType
 {
-    /// <summary>
-    /// Node appears only if it has children.
-    /// </summary>
+    /// <summary>Node appears only if it has children.</summary>
     public const byte DisplayIfNotEmpty = 0;
 
-    /// <summary>
-    /// Node never appears in toolset.
-    /// </summary>
+    /// <summary>Node never appears in toolset.</summary>
     public const byte DisplayNever = 1;
 
-    /// <summary>
-    /// Node only appears in custom palette or when assigning categories.
-    /// </summary>
+    /// <summary>Node only appears in custom palette or when assigning categories.</summary>
     public const byte DisplayCustom = 2;
 }

@@ -10,27 +10,21 @@ namespace Radoub.Formats.Utp;
 /// </summary>
 public static class UtpWriter
 {
-    /// <summary>
-    /// Write a UTP file to a file path.
-    /// </summary>
+    /// <summary>Write a UTP file to a file path.</summary>
     public static void Write(UtpFile utp, string filePath)
     {
         var buffer = Write(utp);
         File.WriteAllBytes(filePath, buffer);
     }
 
-    /// <summary>
-    /// Write a UTP file to a stream.
-    /// </summary>
+    /// <summary>Write a UTP file to a stream.</summary>
     public static void Write(UtpFile utp, Stream stream)
     {
         var buffer = Write(utp);
         stream.Write(buffer, 0, buffer.Length);
     }
 
-    /// <summary>
-    /// Write a UTP file to a byte buffer.
-    /// </summary>
+    /// <summary>Write a UTP file to a byte buffer.</summary>
     public static byte[] Write(UtpFile utp)
     {
         var gff = BuildGffFile(utp);
@@ -138,11 +132,9 @@ public static class UtpWriter
             AddCExoStringField(root, "Comment", utp.Comment);
         AddByteField(root, "PaletteID", utp.PaletteID);
 
-        // Item list
         if (utp.ItemList.Count > 0)
             AddItemList(root, utp.ItemList);
 
-        // Local variables
         VarTableHelper.WriteVarTable(root, utp.VarTable);
 
         return root;

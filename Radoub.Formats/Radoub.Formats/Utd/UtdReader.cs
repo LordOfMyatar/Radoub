@@ -9,18 +9,14 @@ namespace Radoub.Formats.Utd;
 /// </summary>
 public static class UtdReader
 {
-    /// <summary>
-    /// Read a UTD file from a file path.
-    /// </summary>
+    /// <summary>Read a UTD file from a file path.</summary>
     public static UtdFile Read(string filePath)
     {
         var buffer = File.ReadAllBytes(filePath);
         return Read(buffer);
     }
 
-    /// <summary>
-    /// Read a UTD file from a stream.
-    /// </summary>
+    /// <summary>Read a UTD file from a stream.</summary>
     public static UtdFile Read(Stream stream)
     {
         using var ms = new MemoryStream();
@@ -28,9 +24,7 @@ public static class UtdReader
         return Read(ms.ToArray());
     }
 
-    /// <summary>
-    /// Read a UTD file from a byte buffer.
-    /// </summary>
+    /// <summary>Read a UTD file from a byte buffer.</summary>
     public static UtdFile Read(byte[] buffer)
     {
         var gff = GffReader.Read(buffer);
@@ -119,11 +113,9 @@ public static class UtdReader
             PaletteID = root.GetFieldValue<byte>("PaletteID", 0)
         };
 
-        // Localized strings
         utd.LocName = ParseLocString(root, "LocName") ?? new CExoLocString();
         utd.Description = ParseLocString(root, "Description") ?? new CExoLocString();
 
-        // Local variables
         utd.VarTable = VarTableHelper.ReadVarTable(root);
 
         return utd;

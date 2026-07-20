@@ -12,9 +12,6 @@ namespace Radoub.Formats.Bic;
 /// </summary>
 public class BicFile : UtcFile
 {
-    /// <summary>
-    /// Creates a new BicFile with default values.
-    /// </summary>
     public BicFile()
     {
         FileType = "BIC ";
@@ -26,18 +23,15 @@ public class BicFile : UtcFile
     /// and initializing BIC-specific fields with defaults.
     /// Use this to convert a creature blueprint to a player character.
     /// </summary>
-    /// <param name="utc">Source UtcFile to convert</param>
     /// <param name="gameData">Optional game-data service. When supplied, NWN rules
     /// (XP per level, per-class hit die, skill count, epic threshold) are sourced
     /// from 2DA instead of stock-game constants — required for correct LvlStat data
     /// with non-stock classes/content. When null, the stock defaults are used and a
     /// warning is logged once.</param>
-    /// <returns>New BicFile with copied properties</returns>
     public static BicFile FromUtcFile(UtcFile utc, IGameDataService? gameData = null)
     {
         if (utc is BicFile existingBic)
         {
-            // Already a BicFile, just ensure FileType is correct
             existingBic.FileType = "BIC ";
             return existingBic;
         }
@@ -95,16 +89,9 @@ public class BicFile : UtcFile
         // Creates one entry per character level with minimal data
         bic.LvlStatList = GenerateLvlStatList(bic, gameData);
 
-        // ============================================================
-        // PORTRAIT HANDLING (UTC → BIC)
-        // ============================================================
-        // BIC files use the Portrait string field (e.g., "po_hu_m_01_")
-        // PortraitId is typically 0 for player characters
-        // The Portrait string is what actually displays in-game
-        //
-        // If UTC has PortraitId but no Portrait string, we should preserve PortraitId
-        // (CopyBaseProperties already copied both fields)
-        // Only set a fallback if NEITHER is set
+        // BIC displays the Portrait string (e.g. "po_hu_m_01_"); PortraitId is
+        // typically 0 for PCs. CopyBaseProperties copied both — only fall back
+        // when NEITHER is set.
         if (bic.PortraitId == 0 && string.IsNullOrEmpty(bic.Portrait))
         {
             bic.Portrait = "po_hu_m_99_";
@@ -207,11 +194,9 @@ public class BicFile : UtcFile
         // Standard factions: 0=PC, 1=Hostile, 2=Commoner, 3=Merchant, 4=Defender
         utc.FactionID = 2;
 
-        // Set blueprint name (TemplateResRef) - MUST match the saved filename
-        // If target filename provided, use it; otherwise generate from first/last name
+        // TemplateResRef MUST match the saved filename
         if (!string.IsNullOrEmpty(targetResRef))
         {
-            // Sanitize and lowercase the provided ResRef
             utc.TemplateResRef = SanitizeForResRef(targetResRef).ToLowerInvariant();
             if (utc.TemplateResRef.Length > 16)
                 utc.TemplateResRef = utc.TemplateResRef.Substring(0, 16);
@@ -221,30 +206,17 @@ public class BicFile : UtcFile
             utc.TemplateResRef = GenerateBlueprintName(this);
         }
 
-        // Generate Tag from first/last name (uppercase, truncated if needed)
         // Tags have a 32 character limit in practice
         utc.Tag = GenerateTag(this);
 
-        // Set default NWN creature scripts
-        // BIC files don't have scripts (they inherit from module), so we set defaults for UTC
+        // BIC files don't have scripts (they inherit from module), so set UTC defaults
         SetDefaultScripts(utc);
 
-        // ============================================================
-        // PORTRAIT HANDLING (BIC → UTC)
-        // ============================================================
-        // BIC files typically have:
-        //   - PortraitId = 0
-        //   - Portrait = "po_hu_m_01_" (the actual portrait string)
-        //
-        // UTC files can use either:
-        //   - PortraitId > 0 (references portraits.2da row)
-        //   - Portrait string (used when PortraitId = 0)
-        //
-        // CopyBaseProperties already copied both PortraitId and Portrait.
-        // The Portrait string from BIC IS the character's actual portrait.
-        // We preserve it as-is. Only set fallback if NEITHER field is set.
-        //
-        // Aurora Toolset shows "must specify valid portrait" if both are empty.
+        // UTC accepts either PortraitId > 0 (row in portraits.2da) or the Portrait
+        // string (used when PortraitId = 0). BIC normally carries only the string,
+        // which IS the character's real portrait, so preserve it as-is and fall back
+        // only when NEITHER is set — Aurora Toolset errors "must specify valid
+        // portrait" if both are empty.
         if (utc.PortraitId == 0 && string.IsNullOrEmpty(utc.Portrait))
         {
             utc.Portrait = "po_hu_m_99_";
@@ -263,7 +235,6 @@ public class BicFile : UtcFile
         if (string.IsNullOrEmpty(baseName))
             return "creature";
 
-        // Convert to lowercase, replace spaces with underscore, remove invalid characters
         var sanitized = SanitizeForResRef(baseName);
 
         // Truncate to 16 characters (Aurora Engine limit)
@@ -283,7 +254,6 @@ public class BicFile : UtcFile
         if (string.IsNullOrEmpty(baseName))
             return "CREATURE";
 
-        // Convert to uppercase, replace spaces with underscore, remove invalid characters
         var sanitized = SanitizeForResRef(baseName);
 
         // Truncate to 32 characters (practical Tag limit)
@@ -293,10 +263,7 @@ public class BicFile : UtcFile
         return sanitized.ToUpperInvariant();
     }
 
-    /// <summary>
-    /// Gets combined first + last name for name generation.
-    /// Uses English localized string (language ID 0).
-    /// </summary>
+    /// <summary>Combined first + last name, from the English localized string (language ID 0).</summary>
     private static string GetNameForGeneration(BicFile bic)
     {
         var firstName = GetLocalizedString(bic.FirstName);
@@ -311,9 +278,7 @@ public class BicFile : UtcFile
         return string.Empty;
     }
 
-    /// <summary>
-    /// Gets the English string from a CExoLocString, or empty if not present.
-    /// </summary>
+    /// <summary>Gets the English string from a CExoLocString, or empty if not present.</summary>
     private static string GetLocalizedString(CExoLocString locString)
     {
         // Try English (language ID 0)
@@ -359,8 +324,7 @@ public class BicFile : UtcFile
     /// </summary>
     private static void SetDefaultScripts(UtcFile utc)
     {
-        // OC default creature scripts
-        // Only set if the field is empty (preserve any existing scripts)
+        // Only set if empty (preserve any existing scripts)
         if (string.IsNullOrEmpty(utc.ScriptAttacked))
             utc.ScriptAttacked = "nw_c2_default5";
         if (string.IsNullOrEmpty(utc.ScriptDamaged))
@@ -389,9 +353,7 @@ public class BicFile : UtcFile
             utc.ScriptUserDefine = "nw_c2_defaultd";
     }
 
-    /// <summary>
-    /// Deep clone a CExoLocString to avoid shared references.
-    /// </summary>
+    /// <summary>Deep clone a CExoLocString to avoid shared references.</summary>
     private static CExoLocString CloneLocString(CExoLocString source)
     {
         var clone = new CExoLocString
@@ -611,23 +573,15 @@ public class BicFile : UtcFile
 
     // Player-specific fields (Table 2.6.1)
 
-    /// <summary>
-    /// Character's age (entered during character creation).
-    /// </summary>
+    /// <summary>Character's age (entered during character creation).</summary>
     public int Age { get; set; }
 
-    /// <summary>
-    /// Total experience points earned.
-    /// </summary>
     public uint Experience { get; set; }
 
-    /// <summary>
-    /// Amount of gold carried by the character.
-    /// </summary>
     public uint Gold { get; set; }
 
     /// <summary>
-    /// QuickBar slot assignments (36 slots).
+    /// 36 slots.
     /// Elements 0-11: Normal QuickBar
     /// Elements 12-23: Shift-QuickBar
     /// Elements 24-35: Control-QuickBar
@@ -635,7 +589,6 @@ public class BicFile : UtcFile
     public List<QuickBarSlot> QBList { get; set; } = new();
 
     /// <summary>
-    /// Faction reputation amounts.
     /// Each entry is the player's rating (0-100) with a faction,
     /// in the same order as the module's repute.fac FactionList.
     /// </summary>
@@ -655,34 +608,22 @@ public class BicFile : UtcFile
 /// </summary>
 public class LevelStatEntry
 {
-    /// <summary>
-    /// Class taken at this level (index into classes.2da).
-    /// </summary>
+    /// <summary>Class taken at this level (index into classes.2da).</summary>
     public byte LvlStatClass { get; set; }
 
-    /// <summary>
-    /// Hit die roll result for this level (0 = not rolled/average).
-    /// </summary>
+    /// <summary>Hit die roll result for this level (0 = not rolled/average).</summary>
     public byte LvlStatHitDie { get; set; }
 
-    /// <summary>
-    /// Whether this is an epic level (level 21+).
-    /// </summary>
+    /// <summary>Whether this is an epic level (level 21+).</summary>
     public byte EpicLevel { get; set; }
 
-    /// <summary>
-    /// Remaining skill points (usually 0 for completed characters).
-    /// </summary>
+    /// <summary>Remaining skill points (usually 0 for completed characters).</summary>
     public short SkillPoints { get; set; }
 
-    /// <summary>
-    /// Skills trained at this level. 28 entries (one per skill), value = ranks added.
-    /// </summary>
+    /// <summary>Skills trained at this level. 28 entries (one per skill), value = ranks added.</summary>
     public List<byte> SkillList { get; set; } = new();
 
-    /// <summary>
-    /// Feats gained at this level.
-    /// </summary>
+    /// <summary>Feats gained at this level.</summary>
     public List<ushort> FeatList { get; set; } = new();
 }
 
@@ -702,81 +643,50 @@ public class QuickBarSlot
 
     // Item-specific fields (ObjectType = 1)
 
-    /// <summary>
-    /// Object ID of the item in inventory (items only).
-    /// </summary>
+    /// <summary>Object ID of the item in inventory (items only).</summary>
     public uint ItemInvSlot { get; set; }
 
-    /// <summary>
-    /// X position of item in inventory (items only).
-    /// </summary>
+    /// <summary>X position of item in inventory (items only).</summary>
     public byte ItemReposX { get; set; }
 
-    /// <summary>
-    /// Y position of item in inventory (items only).
-    /// </summary>
+    /// <summary>Y position of item in inventory (items only).</summary>
     public byte ItemReposY { get; set; }
 
-    /// <summary>
-    /// X position in container (0xFF if not in container).
-    /// </summary>
+    /// <summary>X position in container (0xFF if not in container).</summary>
     public byte ContReposX { get; set; } = 0xFF;
 
-    /// <summary>
-    /// Y position in container (0xFF if not in container).
-    /// </summary>
+    /// <summary>Y position in container (0xFF if not in container).</summary>
     public byte ContReposY { get; set; } = 0xFF;
 
-    /// <summary>
-    /// Cast property index (0xFF if no cast property).
-    /// </summary>
+    /// <summary>Cast property index (0xFF if no cast property).</summary>
     public byte CastPropIndex { get; set; } = 0xFF;
 
-    /// <summary>
-    /// Cast sub-property index (0xFF if no subproperty).
-    /// </summary>
+    /// <summary>Cast sub-property index (0xFF if no subproperty).</summary>
     public byte CastSubPropIdx { get; set; } = 0xFF;
 
     // Spell/Skill/Feat/Mode fields (ObjectType = 2, 3, 4, 10)
 
-    /// <summary>
-    /// Index into spells.2da, skills.2da, feat.2da, or mode type.
-    /// </summary>
+    /// <summary>Index into spells.2da, skills.2da, feat.2da, or mode type.</summary>
     public int INTParam1 { get; set; }
 
-    /// <summary>
-    /// Index into creature's ClassList (spells only).
-    /// </summary>
+    /// <summary>Index into creature's ClassList (spells only).</summary>
     public byte MultiClass { get; set; }
 
-    /// <summary>
-    /// MetaMagic flags on a spell (spells only).
-    /// </summary>
+    /// <summary>MetaMagic flags on a spell (spells only).</summary>
     public byte MetaType { get; set; }
 
-    /// <summary>
-    /// Domain level for cleric domain spells (0 for most spells).
-    /// </summary>
+    /// <summary>Domain level for cleric domain spells (0 for most spells).</summary>
     public byte DomainLevel { get; set; }
 
-    /// <summary>
-    /// Secondary parameter (varies by object type).
-    /// </summary>
+    /// <summary>Secondary parameter (varies by object type).</summary>
     public int SecondaryItem { get; set; }
 
-    /// <summary>
-    /// Command sub-type for associate commands.
-    /// </summary>
+    /// <summary>Command sub-type for associate commands.</summary>
     public int CommandSubType { get; set; }
 
-    /// <summary>
-    /// Command label for associate commands.
-    /// </summary>
+    /// <summary>Command label for associate commands.</summary>
     public string CommandLabel { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Returns true if slot is empty.
-    /// </summary>
     public bool IsEmpty => ObjectType == 0;
 }
 
@@ -804,9 +714,6 @@ public static class QuickBarObjectType
     public const byte CancelPolymorph = 43;
     public const byte SpellLikeAbility = 44;
 
-    /// <summary>
-    /// Get human-readable name for a quickbar object type.
-    /// </summary>
     public static string GetTypeName(byte type) => type switch
     {
         Empty => "Empty",
