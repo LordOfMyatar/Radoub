@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Cross-Tool-UX] - 2026-07-19
-**Branch**: `radoub/issue-2653` | **PR**: #TBD
+**Branch**: `radoub/issue-2653` | **PR**: #2663
 
 ### Sprint: Cross-Tool UX Debt Cleanup (#2653)
 
