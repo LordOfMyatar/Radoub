@@ -13,11 +13,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Cross-Tool UX Debt Cleanup (#2653)
 
-- Shared `ItemPropertyPanel` control extracted to `Radoub.UI` (#1506).
-- Title bar and taskbar text standardized across tools (#1572).
-- Reduced faded/muted text and improved tooltip readability (#1567).
-- Menu structure standardized across all tools (#2061).
-- Chore: reviewed and tuned the project's agent skills.
+- Title bars now use a consistent `ToolName - filename.ext` across all tools, so the Windows taskbar shows the open file (#1572).
+- Every tool's Help menu links to its own Radoub wiki page (#2061).
+- Tooltips follow the active theme and cap their width; long game-data descriptions are summarized instead of dumped in full (#1567).
+- New `Documentation/UI_TEXT_GUIDELINES.md` records when muted text and tooltips are appropriate.
+- `ItemPropertyPanel` extraction (#1506) needed no work — the shared `ItemDetailsPanel` already existed and is consumed by Quartermaster, Fence, and Reliquary.
+- Chore: agent skills de-duplicated to one tree and tuned for this repo.
 
 ---
 
