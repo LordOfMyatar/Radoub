@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Prose-Concision] - 2026-07-20
+**Branch**: `radoub/issue-2671` | **PR**: #TBD
+
+### Sprint: Prose concision across authored text and code comments
+
+- Wired the `writing-clearly-and-concisely` skill into the slash commands that author commit messages, PR bodies, and issue text (#2671).
+- Swept code comments repo-wide for concision, shared libraries first, one commit per tool (#2672).
+
+---
+
 ## [Startup-Cleanup] - 2026-07-20
 **Branch**: `radoub/issue-2647` | **PR**: #2673
 
