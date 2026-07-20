@@ -1,17 +1,6 @@
 # Initialize Work Item
 
-Start a new branch for any GitHub issue - automatically detects item type and applies appropriate workflow.
-
-## Upfront Questions
-
-**IMPORTANT**: Gather ALL required user input at the start, then execute autonomously.
-
-Before initializing, collect these answers in ONE interaction (after fetching issue details):
-
-1. **Tool Confirmation** (if ambiguous): "Which tool is this for? [parley/radoub/manifest/quartermaster/fence]"
-2. **Epic Handling** (if epic detected): "This is an epic. Options: [run-research/continue-anyway/cancel]"
-
-After collecting answers, proceed through all steps (branch, CHANGELOG, commit, PR, project board) without further prompts.
+Start a branch for a GitHub issue. Detects the item type and applies the matching workflow.
 
 ## Usage
 
@@ -19,82 +8,61 @@ After collecting answers, proceed through all steps (branch, CHANGELOG, commit, 
 /init-item #[issue-number]
 ```
 
-**Examples:**
-- `/init-item #37` (epic with multiple phases)
-- `/init-item #134` (bug fix)
-- `/init-item #200` (sprint with bundled work)
-- `/init-item #45` (feature request)
+The issue number is required. Works for epics, sprints, features, and fixes alike.
 
-## Workflow
+**Gather all input up front, then run autonomously.** After fetching the issue, ask in one
+interaction: which tool, if the labels are ambiguous; and for an epic, whether to research
+first, continue anyway, or cancel. Then proceed through branch, CHANGELOG, commit, PR, and
+board without further prompts.
 
-### Step 1: Validate Current State
+## Phase 1 — Prepare
+
+### 1.1 Validate and sync
 
 ```bash
 git status
 git fetch origin
-```
-
-- Ensure working directory is clean
-- If dirty, ask user to commit or stash changes first
-
-### Step 2: Sync with Main
-
-```bash
 git checkout main
 git pull origin main
 ```
 
-### Step 3: Fetch Issue Details and Check for Duplicates
+A dirty working directory stops the command — ask the user to commit or stash first.
 
-**Cache-first**: Refresh cache if stale, then read all data from cache. No direct `gh issue view` calls.
+### 1.2 Fetch the issue
+
+Cache-first. Never call `gh issue view` for reads.
 
 ```bash
-# Ensure cache is fresh (auto-refreshes if >1 hour old)
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1"
-
-# Get issue details from cache
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View issue -Number [number]
 ```
 
-**Extract from issue**:
-- **Title**: For branch name and PR title
-- **Labels**: To determine item type
-- **Body**: For additional context
-- **Milestone**: For version targeting
+Take the title (branch and PR name), labels (item type), body (context), and milestone.
 
-**Search for similar/duplicate issues**:
+### 1.3 Check for duplicates
 
-Extract key terms from the issue title (remove prefixes like `[Tool]`, `feat:`, `fix:`) and search the cache:
+Strip prefixes like `[Tool]`, `feat:`, `fix:` from the title and search the cache for the
+remaining key terms:
 
 ```bash
-# Search cache for issues with similar keywords
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View search -Query "keyword"
-
-# Filter by tool if needed
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View search -Query "keyword" -Tool parley
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View search -Query "keyword" [-Tool parley]
 ```
 
-**Patterns to detect**:
-- Same tool + same feature area (e.g., two "[Fence] Scripts" issues)
-- Same error/bug description
-- Overlapping file paths mentioned in body
-- Issues that were closed but reopened as new issues
+Look for the same tool plus the same feature area, a repeated error description, overlapping
+file paths, or an issue closed and refiled.
 
-**If similar issues found**, verify their live state before presenting. The cache only contains OPEN issues, but search matches on body text — so an open sprint issue may reference already-closed child issues.
-
-**Verify state of the current issue AND any referenced issue numbers** (e.g. numbers the target issue's body calls out as work items, dependencies, or parents):
+The cache holds only OPEN issues but searches body text, so a match may reference issues that
+have since closed. Verify the target issue and every number its body calls out:
 
 ```bash
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Test-IssueState.ps1" -Numbers "1902,1903,1905"
 ```
 
-Returns a JSON array with live `state` (OPEN/CLOSED) and `closedAt` for each number. Use this to:
+Returns live `state` and `closedAt` per number. Use it to fail fast when the target issue is
+already closed, to flag a sprint still listing closed children as open, and to tell the user
+when a "duplicate" is actually finished work.
 
-- Flag stale references in the target issue (e.g. a sprint still lists closed children as open)
-- Fail fast if the target issue itself is already CLOSED
-- Tell the user when a match is actually a closed/completed issue
-
-Then report to user:
+Report matches and ask whether to continue:
 
 ```markdown
 ### ⚠️ Potentially Related Issues Found
@@ -107,128 +75,82 @@ Then report to user:
 Continue anyway? [y/n]
 ```
 
-**If no similar issues**, proceed silently to Step 3b.
+No matches: proceed silently.
 
-### Step 3b: Check for Pre-Warmed Plan
-
-Search for an existing implementation plan matching the issue number:
+### 1.4 Check for a pre-warmed plan
 
 ```bash
-# Check for pre-warmed plan (created by /pre-warm)
 ls NonPublic/Plans/*-[number]-plan.md 2>/dev/null
 ```
 
-**If found**, announce to user:
+If one exists, tell the user it was prepared in an earlier session and should be reviewed
+before implementation. Otherwise continue silently.
 
-> **Pre-warmed plan found**: `[path]`
-> This plan was prepared in a previous session. Review it before starting implementation.
+## Phase 2 — Classify
 
-**If not found**, proceed silently to Step 4.
+### 2.1 Item type
 
-### Step 4: Determine Item Type and Branch Name
+First matching label wins:
 
-**Branch Naming**: Always use `[tool]/issue-[number]` format.
-- Simple, predictable, easy to track
-- Example: `parley/issue-708`, `radoub/issue-45`
-
-Detect type from labels (in priority order) for PR title and CHANGELOG:
-
-| Label Contains | Type |
+| Label contains | Type |
 |----------------|------|
 | `epic` | Epic |
 | `sprint` | Sprint |
 | `bug`, `fix` | Fix |
 | `refactor` | Refactor |
 | `enhancement`, `feature` | Feature |
-| (none of above) | Feature |
+| none of the above | Feature |
 
-Determine tool from:
-- Labels containing `parley`, `radoub`, or tool names
-- Title prefix like `[Parley]`
-- Default to `parley` if ambiguous (ask user to confirm)
+Labels may be capitalized or namespaced (`Epic`, `type:epic`) — match case-insensitively.
 
-### Step 5: Type-Specific Guidance
+### 2.2 Tool
 
-#### If Epic Detected
+From a tool label, a `[Tool]` title prefix, or the user when ambiguous.
 
-**STOP and inform user:**
+### 2.3 Type-specific handling
 
-> This is an **Epic** (#[number]: [title]).
->
-> Epics require planning before implementation:
->
-> 1. **Research first**: Run `/research #[number]` to investigate approaches
-> 2. **Sprint planning**: Break epic into sprint-sized chunks
-> 3. **Create sprint issues**: Each sprint should have its own issue
->
-> Would you like me to:
-> - [ ] Run `/research #[number]` now
-> - [ ] Continue with epic branch anyway (for simple epics)
-> - [ ] Cancel and plan first
+**Epic** — stop and offer three choices: run `/research #[number]` now, continue with an epic
+branch anyway (fine for simple epics), or cancel and plan first. Epics normally want research,
+sprint-sized chunks, and an issue per sprint before code.
 
-If user chooses to continue, proceed with epic branch naming.
+**Sprint** — one branch and one PR for the bundled work; the CHANGELOG groups every item under
+a single version.
 
-#### If Sprint Detected
+**Fix / Feature** — standard flow, PR titled `[Tool] Fix: [Title] (#N)` or
+`[Tool] Feat: [Title] (#N)`.
 
-Sprints assume **one PR/branch** for the bundled work:
-- Branch: `[tool]/sprint/[milestone-or-name]`
-- PR title: `[Tool] Sprint: [Title]`
-- CHANGELOG: Group all sprint items under single version
+## Phase 3 — Create
 
-#### If Fix Detected
+### 3.1 Branch
 
-Standard fix workflow:
-- Branch: `[tool]/fix/[short-name]`
-- PR title: `[Tool] Fix: [Title] (#[number])`
-
-#### If Feature Detected
-
-Standard feature workflow:
-- Branch: `[tool]/feat/[short-name]`
-- PR title: `[Tool] Feat: [Title] (#[number])`
-
-### Step 6: Create Branch
-
-Use the simple `[tool]/issue-[number]` format:
+Always `[tool]/issue-[number]` — simple and predictable:
 
 ```bash
-git checkout -b [tool]/issue-[number]
+git checkout -b parley/issue-708
 ```
 
-Example: `git checkout -b parley/issue-708`
+### 3.2 CHANGELOG
 
-### Step 7: Update CHANGELOG
+Edit the tool's CHANGELOG (shared-library work goes in the root one). Highlights only, no
+checklists. **Never `[Unreleased]`** — add a versioned section as the first entry after the
+header, dated today, since most PRs merge same-day.
 
-Edit the tool's CHANGELOG file (e.g., `Parley/CHANGELOG.md`). Highlights only — no detailed checklists.
-
-**Never use `[Unreleased]`** — all entries go directly into a versioned section. Add the new version section as the first entry after the header/separator:
-
-**For Sprint:**
 ```markdown
 ## [X.Y.Z-alpha] - YYYY-MM-DD
 **Branch**: `[branch-name]` | **PR**: #TBD
 
-### Sprint: [Sprint Title]
+### Sprint: [Title]
 
-- Item 1 from sprint
-- Item 2 from sprint
-
----
-```
-
-**For Epic/Feature/Fix:**
-```markdown
-## [X.Y.Z-alpha] - YYYY-MM-DD
-**Branch**: `[branch-name]` | **PR**: #TBD
-
-### [Type] [N]: [Title from GitHub]
+- Item 1
+- Item 2
 
 ---
 ```
 
-**Use today's date** (not TBD) - most PRs merge same day.
+For an epic, feature, or fix use `### [Type]: [Title from GitHub]` in place of the sprint
+heading and its bullet list.
 
-### Step 8: Initial Commit
+### 3.3 Commit and push
 
 ```bash
 git add [CHANGELOG file]
@@ -236,7 +158,9 @@ git commit -m "[tool] chore: Initialize [type] branch for #[number]"
 git push -u origin [branch-name]
 ```
 
-### Step 9: Create Draft PR
+### 3.4 Draft PR
+
+Always draft initially.
 
 ```bash
 gh pr create --draft --title "[Tool] [Type]: [Title]" --body "$(cat <<'EOF'
@@ -262,151 +186,23 @@ EOF
 )"
 ```
 
-### Step 10: Update CHANGELOG with PR Number
+### 3.5 Backfill the PR number
 
 ```bash
-# Update PR: #TBD to actual PR number in CHANGELOG
 git add [CHANGELOG file]
 git commit -m "[tool] chore: Add PR number to CHANGELOG"
 git push
 ```
 
-### Step 10b: Refresh Cache
+### 3.6 Project board (sprints and epics only)
 
-After all mutations (PR created, project board updated), refresh the cache so subsequent commands see fresh state:
-
-```bash
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1" -Force
-```
-
-### Step 11: Report Summary
-
-Output format varies by type:
-
-**For Epics:**
-```markdown
-## Epic Branch Initialized
-
-**Branch**: [branch-name]
-**PR**: #[pr-number] (draft)
-**Issue**: #[issue-number]
-
-### Reminder
-
-This is an epic. Consider breaking into sprints if not already done.
-Use `/research #[number]` for investigation tasks.
-
-### Next Steps
-1. Review epic scope and create sprint issues if needed
-2. Implement phase by phase
-3. Run `/pre-merge` before each merge
-```
-
-**For Sprints:**
-```markdown
-## Sprint Branch Initialized
-
-**Branch**: [branch-name]
-**PR**: #[pr-number] (draft)
-**Issue**: #[issue-number]
-
-### Sprint Scope
-
-This branch covers all items in the sprint. Update CHANGELOG as you complete each item.
-
-### ⚠️ AI Workflow: Commit Between Items
-
-**Note**: This guidance is for AI assistants (Claude), not humans. Humans may batch commits as they prefer.
-
-**AI should commit and push after completing each discrete sprint item.** This provides:
-- Clear git history for each change
-- Easy rollback if issues arise
-- Simpler code review
-- Protection against losing work if session ends
-
-Example workflow:
-\`\`\`bash
-# After completing item 1
-git add -A && git commit -m "[Tool] feat: Item 1 description (#sprint-issue)"
-git push
-
-# After completing item 2
-git add -A && git commit -m "[Tool] feat: Item 2 description (#sprint-issue)"
-git push
-\`\`\`
-
-### Next Steps
-1. For each item: check TDD table — write tests first if required
-2. Begin work immediately (any order) unless user specifies otherwise
-3. Update CHANGELOG entries as completed
-4. Run `/pre-merge` when sprint complete
-```
-
-**For Features/Fixes:**
-```markdown
-## [Type] Branch Initialized
-
-**Branch**: [branch-name]
-**PR**: #[pr-number] (draft)
-**Issue**: #[issue-number]
-
-### Next Steps
-1. Check TDD table — write tests first if required
-2. Implement the [type]
-3. Run `/pre-merge` to verify all checks pass
-4. Mark PR ready for review
-```
-
-## Error Handling
-
-- **Issue not found**: Error and exit - issue number is required
-- **Dirty working directory**: Prompt user to commit/stash first
-- **Branch already exists**: Ask if user wants to checkout existing or create new
-- **Can't determine tool**: Ask user to specify (parley/radoub)
-- **PR creation fails**: Provide manual command to run
-
-## Label Detection Examples
-
-Labels are extracted from the cache data (no API call needed). Common label patterns:
-- `epic`, `Epic`, `type:epic` → Epic
-- `sprint`, `Sprint`, `type:sprint` → Sprint
-- `bug`, `Bug`, `type:bug` → Fix
-- `enhancement`, `feature`, `type:feature` → Feature
-- `parley`, `Parley`, `tool:parley` → Tool detection
-- `radoub`, `Radoub`, `tool:radoub` → Tool detection
-
-## GitHub Project Integration
-
-**Only add Sprints and Epics to projects** - individual features/fixes don't go on project boards unless explicitly requested.
-
-### When to Add to Project
-
-| Item Type | Add to Project? |
-|-----------|-----------------|
-| Epic | ✅ Yes |
-| Sprint | ✅ Yes |
-| Feature | ❌ No (unless solo work requested) |
-| Fix | ❌ No (unless solo work requested) |
-
-### Project Selection (for Sprints/Epics only)
-
-All tools use the **Radoub project (#3)**.
-
-### Add Sprint/Epic to Project and Set In Progress
-
-After Step 9 (Create Draft PR), **only for sprints and epics**:
+Features and fixes do not go on the board unless the user asks. Everything uses Radoub
+project #3.
 
 ```bash
-# Add to Radoub project (returns item ID)
 ITEM_JSON=$(gh project item-add 3 --owner LordOfMyatar --url https://github.com/LordOfMyatar/Radoub/issues/[number] --format json)
+ITEM_ID=$(echo "$ITEM_JSON" | gh api --jq '.id' 2>/dev/null || echo "$ITEM_JSON" | powershell.exe -NoProfile -Command '$input | ConvertFrom-Json | Select-Object -ExpandProperty id')
 
-# Parse item ID (no jq on this system - use grep/sed or parse from gh output)
-# The gh output includes "id" field. Extract with:
-ITEM_ID=$(echo "$ITEM_JSON" | powershell.exe -NoProfile -Command '$input | ConvertFrom-Json | Select-Object -ExpandProperty id')
-# Or parse directly from JSON output (id is always returned):
-# ITEM_ID=$(echo "$ITEM_JSON" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
-
-# Set status to "In Progress"
 gh project item-edit \
   --id "$ITEM_ID" \
   --project-id PVT_kwHOAotjYs4BHbMq \
@@ -414,11 +210,19 @@ gh project item-edit \
   --single-select-option-id 47fc9ee4
 ```
 
-> **Note**: `jq` is not available in this environment. Use PowerShell `ConvertFrom-Json`, `grep`/`sed`, or `gh`'s `--jq` flag for JSON parsing.
+Needs the `project` scope — `gh auth status` to check, `gh auth refresh -s project` to add.
+Project IDs and field details live in `.claude/github-projects-reference.md`.
 
-### Updated Summary Output
+**Parsing JSON**: use `gh --jq` or PowerShell `ConvertFrom-Json`. There is no `jq` on this
+box, and `grep`/`sed`/`cut` pipelines over JSON break on the first quoted comma.
 
-For **Sprints/Epics**, include project status:
+### 3.7 Refresh the cache
+
+```bash
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1" -Force
+```
+
+## Phase 4 — Report
 
 ```markdown
 ## [Type] Branch Initialized
@@ -426,48 +230,41 @@ For **Sprints/Epics**, include project status:
 **Branch**: [branch-name]
 **PR**: #[pr-number] (draft)
 **Issue**: #[issue-number]
-**Project**: [Project Name] - Status: In Progress
+**Project**: Radoub - In Progress          <!-- sprints and epics only -->
 
 ### Next Steps
-...
+1. Check the TDD Policy table — tests first where required
+2. [type-specific line, see below]
+3. Run `/pre-merge` when done
 ```
 
-For **Features/Fixes**, omit project line (not added to board).
+Step 2 varies: an **epic** reviews scope and files sprint issues, then implements phase by
+phase; a **sprint** starts any item immediately unless the user sequences them, updating
+CHANGELOG entries as each lands; a **fix or feature** just implements.
 
-### Prerequisites
+## Working a sprint (AI)
 
-Ensure `project` scope is available:
-```bash
-gh auth status  # Check for 'project' scope
-gh auth refresh -s project  # Add if missing
-```
+This is guidance for Claude, not the human — humans may batch commits however they like.
 
-See `.claude/github-projects-reference.md` for project IDs and field details.
+**Commit and push after each discrete item, then start the next one without asking.** Every
+commit stays reviewable, rollback stays cheap, and an interrupted session loses nothing.
+
+Run the full test suite once at the end during `/pre-merge`, not per item. Targeted tests for
+the item in hand are still expected. Prompt before FlaUI — it takes over the machine.
+
+## Error handling
+
+| Situation | Response |
+|-----------|----------|
+| Issue not found | Error and exit; the issue number is required |
+| Dirty working directory | Ask the user to commit or stash |
+| Branch already exists | Ask whether to check it out or create a new one |
+| Tool ambiguous | Ask the user |
+| PR creation fails | Print the manual command |
 
 ## Notes
 
-- Always use draft PRs initially
-- CHANGELOG version should increment appropriately (check last version)
-- For epics, encourage planning before diving into implementation
-- For sprints, all work goes in one PR but **commit and push after each item**
-- Issue number is required - this command won't work without it
-- **TDD is mandatory** — check the TDD Policy table in CLAUDE.md before writing implementation code. Tests first for features, services, parsers, and reproducible bugs.
-
-## Sprint Workflow Discipline (AI)
-
-**Note**: This guidance is for AI assistants (Claude), not humans.
-
-**AI should** commit and push after completing each discrete item:
-
-1. Complete item → commit → push
-2. Complete next item → commit → push
-3. Repeat until sprint complete
-
-This prevents:
-- Large, tangled commits that are hard to review
-- Losing work if session ends unexpectedly
-- Difficult rollbacks when issues are discovered
-- Confusion about what changed when
-
-**AI should** begin work immediately in any order unless the user specifies a particular sequence.
-
+- **TDD is mandatory** — check the TDD Policy table in CLAUDE.md before writing implementation
+  code. Tests first for features, services, parsers, and reproducible bugs.
+- CHANGELOG versions increment from the previous entry; check the last one.
+- Launch `.ps1` from the Bash tool — PowerShell-tool permission rules never match on Windows.
