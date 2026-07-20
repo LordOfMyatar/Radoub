@@ -23,17 +23,13 @@ public class GameDataService : IGameDataService
     private readonly object _lock = new();
     private bool _disposed;
 
-    /// <summary>
-    /// Create a GameDataService using RadoubSettings for configuration.
-    /// </summary>
+    /// <summary>Create a GameDataService using RadoubSettings for configuration.</summary>
     public GameDataService()
     {
         InitializeFromSettings();
     }
 
-    /// <summary>
-    /// Create a GameDataService with explicit configuration.
-    /// </summary>
+    /// <summary>Create a GameDataService with explicit configuration.</summary>
     public GameDataService(GameResourceConfig config)
     {
         _resolver = new GameResourceResolver(config);
@@ -54,11 +50,9 @@ public class GameDataService : IGameDataService
 
         lock (_lock)
         {
-            // Check cache first (including negative cache)
             if (_twoDACache.TryGetValue(name, out var cached))
                 return cached;
 
-            // Load from resolver
             var twoDA = LoadTwoDA(name);
             _twoDACache[name] = twoDA; // Cache even if null (negative cache)
             return twoDA;
@@ -81,7 +75,6 @@ public class GameDataService : IGameDataService
             if (_resolver == null)
                 return false;
 
-            // Check cache first
             if (_twoDACache.TryGetValue(name, out var cached))
                 return cached != null;
 
@@ -212,14 +205,12 @@ public class GameDataService : IGameDataService
     {
         lock (_lock)
         {
-            // Dispose existing resolver
             _resolver?.Dispose();
             _resolver = null;
             _baseTlk = null;
             _customTlk = null;
             _twoDACache.Clear();
 
-            // Reinitialize from settings
             InitializeFromSettings();
         }
     }
@@ -288,11 +279,8 @@ public class GameDataService : IGameDataService
         var config = BuildConfig(settings);
         _resolver = new GameResourceResolver(config);
 
-        // Load TLK
         var tlkPath = settings.GetTlkPath(settings.EffectiveLanguage, settings.PreferredGender);
         LoadBaseTlk(tlkPath);
-
-        // Load custom TLK if configured
         LoadCustomTlk(config.CustomTlkPath);
 
         UnifiedLogger.Log(LogLevel.INFO, $"GameDataService initialized: IsConfigured={IsConfigured}", "GameDataService", "GameData");
@@ -305,7 +293,6 @@ public class GameDataService : IGameDataService
             CacheArchives = true
         };
 
-        // Base game path
         if (!string.IsNullOrEmpty(settings.BaseGameInstallPath))
         {
             var dataPath = Path.Combine(settings.BaseGameInstallPath, "data");
@@ -318,7 +305,6 @@ public class GameDataService : IGameDataService
             }
         }
 
-        // Override path
         if (!string.IsNullOrEmpty(settings.NeverwinterNightsPath))
         {
             var overridePath = Path.Combine(settings.NeverwinterNightsPath, "override");
@@ -328,9 +314,8 @@ public class GameDataService : IGameDataService
             }
         }
 
-        // HAK paths from additional search paths (not default hak folder)
+        // Only explicitly configured additional search paths, not the default hak folder.
         // Module-aware HAK scanning is handled by ConfigureModuleHaks() (#1314)
-        // This path only handles explicitly configured additional search paths
         var additionalHakPaths = settings.HakSearchPaths;
         if (additionalHakPaths.Count > 0)
         {
@@ -346,7 +331,6 @@ public class GameDataService : IGameDataService
             }
         }
 
-        // TLK path
         var tlkPath = settings.GetTlkPath(settings.EffectiveLanguage, settings.PreferredGender);
         if (!string.IsNullOrEmpty(tlkPath) && File.Exists(tlkPath))
         {
@@ -522,7 +506,6 @@ public class GameDataService : IGameDataService
             return new List<PaletteCategory>();
         }
 
-        // Load the skeleton palette ITP
         var data = FindResource(paletteName, ResourceTypes.Itp);
         if (data == null)
         {
@@ -537,7 +520,6 @@ public class GameDataService : IGameDataService
             return new List<PaletteCategory>();
         }
 
-        // Extract categories with resolved names
         var categories = new List<PaletteCategory>();
         ExtractCategories(itp.MainNodes, categories, null);
 
@@ -561,10 +543,8 @@ public class GameDataService : IGameDataService
             if (node.DisplayType == PaletteDisplayType.DisplayNever)
                 continue;
 
-            // Get node name
             var name = GetNodeName(node);
 
-            // Skip invalid/placeholder names
             if (string.IsNullOrEmpty(name) || IsInvalidCategoryName(name))
                 continue;
 
@@ -604,11 +584,9 @@ public class GameDataService : IGameDataService
 
     private string? GetNodeName(PaletteNode node)
     {
-        // Try direct name first
         if (!string.IsNullOrEmpty(node.Name))
             return node.Name;
 
-        // Try TLK resolution
         if (node.StrRef.HasValue && node.StrRef.Value != 0xFFFFFFFF)
         {
             var tlkString = GetString(node.StrRef.Value);
@@ -623,15 +601,12 @@ public class GameDataService : IGameDataService
 
     private static bool IsInvalidCategoryName(string name)
     {
-        // Check against known invalid names
         if (InvalidCategoryNames.Contains(name))
             return true;
 
-        // Check for names that are just numbers or whitespace
         if (string.IsNullOrWhiteSpace(name))
             return true;
 
-        // Check for names that start with common invalid prefixes
         if (name.StartsWith("Bad", StringComparison.OrdinalIgnoreCase) ||
             name.StartsWith("Delete", StringComparison.OrdinalIgnoreCase) ||
             name.StartsWith("Unused", StringComparison.OrdinalIgnoreCase))
@@ -642,7 +617,6 @@ public class GameDataService : IGameDataService
 
     private static string? GetPaletteNameForResource(ushort resourceType)
     {
-        // Map resource types to their skeleton palette names
         return resourceType switch
         {
             ResourceTypes.Utc => "creaturepal",   // Creature

@@ -12,9 +12,7 @@ public class LoggerConfig
     /// </summary>
     public required string AppName { get; init; }
 
-    /// <summary>
-    /// Minimum log level to output. Default is INFO.
-    /// </summary>
+    /// <summary>Minimum log level to output. Default is INFO.</summary>
     public LogLevel LogLevel { get; init; } = LogLevel.INFO;
 
     /// <summary>

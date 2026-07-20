@@ -2,21 +2,16 @@ using System.Text.RegularExpressions;
 
 namespace Radoub.Formats.Search;
 
-/// <summary>
-/// Defines what to search for and how to match.
-/// </summary>
+/// <summary>Defines what to search for and how to match.</summary>
 public class SearchCriteria
 {
     /// <summary>Search pattern (plain text or regex)</summary>
     public required string Pattern { get; init; }
 
-    /// <summary>Treat Pattern as a regular expression</summary>
     public bool IsRegex { get; init; }
 
-    /// <summary>Case-sensitive matching</summary>
     public bool CaseSensitive { get; init; }
 
-    /// <summary>Match whole words only</summary>
     public bool WholeWord { get; init; }
 
     /// <summary>
@@ -59,9 +54,7 @@ public class SearchCriteria
     /// </summary>
     public Func<uint, string?>? TlkResolver { get; init; }
 
-    /// <summary>
-    /// Validates the pattern. Returns null if valid, error message if invalid.
-    /// </summary>
+    /// <summary>Validates the pattern. Returns null if valid, error message if invalid.</summary>
     public string? Validate()
     {
         if (string.IsNullOrEmpty(Pattern))
@@ -97,14 +90,10 @@ public class SearchCriteria
         return new Regex(pattern, options);
     }
 
-    /// <summary>
-    /// Returns the TLK resolver to pass to SearchLocString, or null if StrRef search is disabled.
-    /// </summary>
+    /// <summary>Returns the TLK resolver to pass to SearchLocString, or null if StrRef search is disabled.</summary>
     public Func<uint, string?>? EffectiveTlkResolver => SearchStrRefs ? TlkResolver : null;
 
-    /// <summary>
-    /// Returns true if the given field definition passes all filters.
-    /// </summary>
+    /// <summary>Returns true if the given field definition passes all filters.</summary>
     public bool MatchesField(FieldDefinition field)
     {
         if (FieldFilter != null && !FieldFilter.Contains(field.Name))

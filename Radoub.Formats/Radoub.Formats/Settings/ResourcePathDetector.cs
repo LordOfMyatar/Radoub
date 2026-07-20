@@ -64,9 +64,7 @@ public static class ResourcePathDetector
         return null;
     }
 
-    /// <summary>
-    /// Attempts to auto-detect the module directory path.
-    /// </summary>
+    /// <summary>Attempts to auto-detect the module directory path.</summary>
     public static string? AutoDetectModulePath(string? gamePath = null)
     {
         if (!string.IsNullOrEmpty(gamePath))
@@ -176,14 +174,10 @@ public static class ResourcePathDetector
         return false;
     }
 
-    /// <summary>
-    /// Validation result with message for UI display.
-    /// </summary>
+    /// <summary>Validation result with message for UI display.</summary>
     public record PathValidationResult(bool IsValid, string Message);
 
-    /// <summary>
-    /// Validate base game path with UI message.
-    /// </summary>
+    /// <summary>Validate base game path with UI message.</summary>
     public static PathValidationResult ValidateBaseGamePathWithMessage(string path)
     {
         if (string.IsNullOrEmpty(path))
@@ -195,9 +189,7 @@ public static class ResourcePathDetector
         return new PathValidationResult(false, "❌ Invalid path - missing data\\ folder");
     }
 
-    /// <summary>
-    /// Validate game documents path with UI message.
-    /// </summary>
+    /// <summary>Validate game documents path with UI message.</summary>
     public static PathValidationResult ValidateGamePathWithMessage(string path)
     {
         if (string.IsNullOrEmpty(path))
@@ -209,9 +201,7 @@ public static class ResourcePathDetector
         return new PathValidationResult(false, "❌ Invalid path - missing required directories (ambient, music)");
     }
 
-    /// <summary>
-    /// Validate module path with UI message.
-    /// </summary>
+    /// <summary>Validate module path with UI message.</summary>
     public static PathValidationResult ValidateModulePathWithMessage(string path)
     {
         if (string.IsNullOrEmpty(path))
@@ -223,9 +213,7 @@ public static class ResourcePathDetector
         return new PathValidationResult(false, "❌ Invalid path - no .mod files or module directories found");
     }
 
-    /// <summary>
-    /// Gets the sound directories relative to game path.
-    /// </summary>
+    /// <summary>Gets the sound directories relative to game path.</summary>
     public static List<string> GetSoundDirectories(string gamePath)
     {
         if (string.IsNullOrEmpty(gamePath))

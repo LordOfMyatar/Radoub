@@ -1,11 +1,8 @@
 namespace Radoub.Formats.Search;
 
-/// <summary>
-/// A single search match within a GFF file.
-/// </summary>
+/// <summary>A single search match within a GFF file.</summary>
 public class SearchMatch
 {
-    /// <summary>Which field definition matched</summary>
     public required FieldDefinition Field { get; init; }
 
     /// <summary>The text that matched the pattern</summary>
@@ -17,7 +14,6 @@ public class SearchMatch
     /// <summary>Character offset of match within FullFieldValue</summary>
     public int MatchOffset { get; init; }
 
-    /// <summary>Length of the match</summary>
     public int MatchLength { get; init; }
 
     /// <summary>
@@ -35,9 +31,7 @@ public class SearchMatch
     public override string ToString() => $"{Field.Name}: \"{MatchedText}\" at offset {MatchOffset}";
 }
 
-/// <summary>
-/// Location within a DLG file tree.
-/// </summary>
+/// <summary>Location within a DLG file tree.</summary>
 public class DlgMatchLocation
 {
     public required DlgNodeType NodeType { get; init; }

@@ -19,18 +19,14 @@ public static class GffReader
         NwnEncoding = Encoding.GetEncoding(1252);
     }
 
-    /// <summary>
-    /// Read a GFF file from a file path.
-    /// </summary>
+    /// <summary>Read a GFF file from a file path.</summary>
     public static GffFile Read(string filePath)
     {
         var buffer = File.ReadAllBytes(filePath);
         return Read(buffer);
     }
 
-    /// <summary>
-    /// Read a GFF file from a stream.
-    /// </summary>
+    /// <summary>Read a GFF file from a stream.</summary>
     public static GffFile Read(Stream stream)
     {
         using var ms = new MemoryStream();
@@ -38,9 +34,7 @@ public static class GffReader
         return Read(ms.ToArray());
     }
 
-    /// <summary>
-    /// Read a GFF file from a byte buffer.
-    /// </summary>
+    /// <summary>Read a GFF file from a byte buffer.</summary>
     public static GffFile Read(byte[] buffer)
     {
         if (buffer.Length < HeaderSize)
@@ -80,9 +74,7 @@ public static class GffReader
         return gff;
     }
 
-    /// <summary>
-    /// Parse GFF header from buffer (exposed for testing).
-    /// </summary>
+    /// <summary>Parse GFF header from buffer (exposed for testing).</summary>
     public static GffHeader ParseHeader(byte[] buffer)
     {
         if (buffer.Length < HeaderSize)
@@ -452,9 +444,7 @@ public static class GffReader
         return locString;
     }
 
-    /// <summary>
-    /// Read a struct by direct index (for Struct type fields where DataOrDataOffset is the index).
-    /// </summary>
+    /// <summary>Read a struct by direct index (for Struct type fields where DataOrDataOffset is the index).</summary>
     private static GffStruct? ReadStructByIndex(uint structIndex, GffStruct[] structs)
     {
         if (structIndex >= structs.Length)

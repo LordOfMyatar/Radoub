@@ -10,19 +10,13 @@ namespace Radoub.Formats.Gff;
 /// </summary>
 public static class VarTableHelper
 {
-    /// <summary>
-    /// The GFF field name for the VarTable list.
-    /// </summary>
+    /// <summary>The GFF field name for the VarTable list.</summary>
     public const string VarTableFieldName = "VarTable";
 
-    /// <summary>
-    /// StructID for Variable structs in a VarTable.
-    /// </summary>
+    /// <summary>StructID for Variable structs in a VarTable.</summary>
     public const uint VariableStructId = 0;
 
-    /// <summary>
-    /// StructID for Location structs within location-type variables.
-    /// </summary>
+    /// <summary>StructID for Location structs within location-type variables.</summary>
     public const uint LocationStructId = 1;
 
     #region Reading
@@ -51,9 +45,6 @@ public static class VarTableHelper
         return variables;
     }
 
-    /// <summary>
-    /// Read a single variable from a Variable struct.
-    /// </summary>
     private static Variable? ReadVariable(GffStruct varStruct)
     {
         var name = varStruct.GetFieldValue<string>("Name", string.Empty);
@@ -85,9 +76,6 @@ public static class VarTableHelper
         return variable;
     }
 
-    /// <summary>
-    /// Read a location value from a Variable struct.
-    /// </summary>
     private static VariableLocation? ReadLocationValue(GffStruct varStruct)
     {
         var valueField = varStruct.GetField("Value");
@@ -106,9 +94,7 @@ public static class VarTableHelper
         };
     }
 
-    /// <summary>
-    /// Get a variable by name from a VarTable.
-    /// </summary>
+    /// <summary>Get a variable by name from a VarTable.</summary>
     /// <param name="root">The GFF struct containing the VarTable field.</param>
     /// <param name="name">The variable name (case-sensitive).</param>
     /// <returns>The variable if found, null otherwise.</returns>
@@ -118,45 +104,30 @@ public static class VarTableHelper
         return variables.FirstOrDefault(v => v.Name == name);
     }
 
-    /// <summary>
-    /// Get an integer variable value.
-    /// </summary>
     public static int GetInt(GffStruct root, string name, int defaultValue = 0)
     {
         var variable = GetVariable(root, name);
         return variable?.Type == VariableType.Int ? variable.GetInt() : defaultValue;
     }
 
-    /// <summary>
-    /// Get a float variable value.
-    /// </summary>
     public static float GetFloat(GffStruct root, string name, float defaultValue = 0.0f)
     {
         var variable = GetVariable(root, name);
         return variable?.Type == VariableType.Float ? variable.GetFloat() : defaultValue;
     }
 
-    /// <summary>
-    /// Get a string variable value.
-    /// </summary>
     public static string GetString(GffStruct root, string name, string defaultValue = "")
     {
         var variable = GetVariable(root, name);
         return variable?.Type == VariableType.String ? variable.GetString() : defaultValue;
     }
 
-    /// <summary>
-    /// Get an object variable value.
-    /// </summary>
     public static uint GetObjectId(GffStruct root, string name, uint defaultValue = 0x7F000000)
     {
         var variable = GetVariable(root, name);
         return variable?.Type == VariableType.Object ? variable.GetObjectId() : defaultValue;
     }
 
-    /// <summary>
-    /// Get a location variable value.
-    /// </summary>
     public static VariableLocation? GetLocation(GffStruct root, string name)
     {
         var variable = GetVariable(root, name);
@@ -194,9 +165,6 @@ public static class VarTableHelper
         AddListField(root, VarTableFieldName, list);
     }
 
-    /// <summary>
-    /// Build a Variable GFF struct from a Variable object.
-    /// </summary>
     private static GffStruct BuildVariableStruct(Variable variable)
     {
         var varStruct = new GffStruct { Type = VariableStructId };
@@ -227,9 +195,7 @@ public static class VarTableHelper
         return varStruct;
     }
 
-    /// <summary>
-    /// Add a location struct as the Value field.
-    /// </summary>
+    /// <summary>Add a location struct as the Value field.</summary>
     private static void AddLocationStruct(GffStruct parent, VariableLocation? location)
     {
         var locStruct = new GffStruct { Type = LocationStructId };
@@ -267,49 +233,32 @@ public static class VarTableHelper
         WriteVarTable(root, variables);
     }
 
-    /// <summary>
-    /// Set an integer variable.
-    /// </summary>
     public static void SetInt(GffStruct root, string name, int value)
     {
         SetVariable(root, Variable.CreateInt(name, value));
     }
 
-    /// <summary>
-    /// Set a float variable.
-    /// </summary>
     public static void SetFloat(GffStruct root, string name, float value)
     {
         SetVariable(root, Variable.CreateFloat(name, value));
     }
 
-    /// <summary>
-    /// Set a string variable.
-    /// </summary>
     public static void SetString(GffStruct root, string name, string value)
     {
         SetVariable(root, Variable.CreateString(name, value));
     }
 
-    /// <summary>
-    /// Set an object variable.
-    /// </summary>
     public static void SetObjectId(GffStruct root, string name, uint objectId)
     {
         SetVariable(root, Variable.CreateObject(name, objectId));
     }
 
-    /// <summary>
-    /// Set a location variable.
-    /// </summary>
     public static void SetLocation(GffStruct root, string name, VariableLocation location)
     {
         SetVariable(root, Variable.CreateLocation(name, location));
     }
 
-    /// <summary>
-    /// Delete a variable from a VarTable by name.
-    /// </summary>
+    /// <summary>Delete a variable from a VarTable by name.</summary>
     /// <param name="root">The GFF struct containing the VarTable.</param>
     /// <param name="name">The variable name to delete.</param>
     /// <returns>True if the variable was found and deleted.</returns>
@@ -327,25 +276,19 @@ public static class VarTableHelper
         return false;
     }
 
-    /// <summary>
-    /// Check if a variable exists in a VarTable.
-    /// </summary>
+    /// <summary>Check if a variable exists in a VarTable.</summary>
     public static bool HasVariable(GffStruct root, string name)
     {
         return GetVariable(root, name) != null;
     }
 
-    /// <summary>
-    /// Get all variable names from a VarTable.
-    /// </summary>
+    /// <summary>Get all variable names from a VarTable.</summary>
     public static List<string> GetVariableNames(GffStruct root)
     {
         return ReadVarTable(root).Select(v => v.Name).ToList();
     }
 
-    /// <summary>
-    /// Clear all variables from a VarTable.
-    /// </summary>
+    /// <summary>Clear all variables from a VarTable.</summary>
     public static void ClearVariables(GffStruct root)
     {
         var existingField = root.GetField(VarTableFieldName);

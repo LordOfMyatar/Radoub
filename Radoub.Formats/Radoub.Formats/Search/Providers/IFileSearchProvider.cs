@@ -14,9 +14,7 @@ public interface IFileSearchProvider
     /// <summary>File extensions this provider handles (e.g., ".dlg")</summary>
     IReadOnlyList<string> Extensions { get; }
 
-    /// <summary>
-    /// Search a parsed GFF file for matches.
-    /// </summary>
+    /// <summary>Search a parsed GFF file for matches.</summary>
     IReadOnlyList<SearchMatch> Search(GffFile gffFile, SearchCriteria criteria);
 
     /// <summary>

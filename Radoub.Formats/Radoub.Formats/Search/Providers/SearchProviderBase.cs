@@ -9,9 +9,7 @@ namespace Radoub.Formats.Search;
 /// </summary>
 public abstract class SearchProviderBase
 {
-    /// <summary>
-    /// Search a plain string field for matches.
-    /// </summary>
+    /// <summary>Search a plain string field for matches.</summary>
     protected static List<SearchMatch> SearchString(
         string value, FieldDefinition field, Regex pattern, object? location)
     {
@@ -89,9 +87,7 @@ public abstract class SearchProviderBase
         return matches;
     }
 
-    /// <summary>
-    /// Search VarTable variable names and string values.
-    /// </summary>
+    /// <summary>Search VarTable variable names and string values.</summary>
     protected static List<SearchMatch> SearchVarTable(
         GffStruct root, FieldDefinition field, Regex pattern, object? location)
     {
@@ -362,9 +358,7 @@ public abstract class SearchProviderBase
         };
     }
 
-    /// <summary>
-    /// Search script parameter key/value pairs.
-    /// </summary>
+    /// <summary>Search script parameter key/value pairs.</summary>
     protected static List<SearchMatch> SearchParams(
         IEnumerable<(string Key, string Value)> parameters,
         FieldDefinition field, Regex pattern, object? location)

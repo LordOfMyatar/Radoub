@@ -34,9 +34,7 @@ public static class TlkHelper
                !trimmed.Equals("DELETE_ME", StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>
-    /// Check if a 2DA label is a garbage/placeholder entry that should be skipped.
-    /// </summary>
+    /// <summary>Check if a 2DA label is a garbage/placeholder entry that should be skipped.</summary>
     /// <param name="label">The 2DA label to check</param>
     /// <returns>True if the label represents deleted/padding content</returns>
     public static bool IsGarbageLabel(string label)

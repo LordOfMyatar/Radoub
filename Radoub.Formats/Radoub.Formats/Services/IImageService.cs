@@ -15,9 +15,7 @@ public interface IImageService
     /// <returns>Decoded image, or null if decoding fails</returns>
     ImageData? DecodeImage(byte[] data, string format);
 
-    /// <summary>
-    /// Decode an image from a game resource.
-    /// </summary>
+    /// <summary>Decode an image from a game resource.</summary>
     /// <param name="resRef">Resource reference name</param>
     /// <param name="resourceType">Resource type ID (3=TGA, 6=PLT, 2033=DDS)</param>
     /// <returns>Decoded image, or null if not found or decoding fails</returns>
@@ -32,9 +30,7 @@ public interface IImageService
     /// <returns>Decoded icon image, or null if not found</returns>
     ImageData? GetItemIcon(int baseItemType, int modelNumber = 0);
 
-    /// <summary>
-    /// Get a portrait image by ResRef.
-    /// </summary>
+    /// <summary>Get a portrait image by ResRef.</summary>
     /// <param name="resRef">Portrait ResRef (e.g., "po_elf_m_")</param>
     /// <returns>Decoded portrait image, or null if not found</returns>
     ImageData? GetPortrait(string resRef);
@@ -78,19 +74,13 @@ public interface IImageService
     void ClearCache();
 }
 
-/// <summary>
-/// Decoded image data in RGBA format.
-/// </summary>
+/// <summary>Decoded image data in RGBA format.</summary>
 public class ImageData
 {
-    /// <summary>
-    /// Image width in pixels.
-    /// </summary>
+    /// <summary>Image width in pixels.</summary>
     public int Width { get; }
 
-    /// <summary>
-    /// Image height in pixels.
-    /// </summary>
+    /// <summary>Image height in pixels.</summary>
     public int Height { get; }
 
     /// <summary>
@@ -106,9 +96,7 @@ public class ImageData
         Pixels = pixels;
     }
 
-    /// <summary>
-    /// Get the color at a specific pixel coordinate.
-    /// </summary>
+    /// <summary>Get the color at a specific pixel coordinate.</summary>
     public (byte r, byte g, byte b, byte a) GetPixel(int x, int y)
     {
         if (x < 0 || x >= Width || y < 0 || y >= Height)

@@ -78,9 +78,7 @@ public static class UnifiedLogger
         }
     }
 
-    /// <summary>
-    /// Check if the logger has been configured.
-    /// </summary>
+    /// <summary>Check if the logger has been configured.</summary>
     public static bool IsConfigured => _configured;
 
     /// <summary>
@@ -212,9 +210,7 @@ public static class UnifiedLogger
         _currentFileName = Path.GetFileNameWithoutExtension(filePath);
     }
 
-    /// <summary>
-    /// Get the current file context (for propagating across threads).
-    /// </summary>
+    /// <summary>Get the current file context (for propagating across threads).</summary>
     public static string? GetFileContext() => _currentFileName;
 
     /// <summary>
@@ -230,45 +226,33 @@ public static class UnifiedLogger
     // Configuration & Utilities
     // ========================================================================
 
-    /// <summary>
-    /// Change the log level at runtime.
-    /// </summary>
+    /// <summary>Change the log level at runtime.</summary>
     public static void SetLogLevel(LogLevel level)
     {
         _currentLogLevel = level;
         LogApplication(LogLevel.INFO, $"Log level set to {level}");
     }
 
-    /// <summary>
-    /// Get the current log level.
-    /// </summary>
+    /// <summary>Get the current log level.</summary>
     public static LogLevel CurrentLogLevel => _currentLogLevel;
 
-    /// <summary>
-    /// Set callback for debug console integration.
-    /// </summary>
+    /// <summary>Set callback for debug console integration.</summary>
     public static void SetDebugConsoleCallback(Action<string>? callback)
     {
         _debugConsoleCallback = callback;
     }
 
-    /// <summary>
-    /// Get the current session ID.
-    /// </summary>
+    /// <summary>Get the current session ID.</summary>
     public static string GetCurrentSessionId() => SessionId;
 
-    /// <summary>
-    /// Get the session log directory path.
-    /// </summary>
+    /// <summary>Get the session log directory path.</summary>
     public static string GetSessionDirectory()
     {
         EnsureInitialized();
         return _sessionDirectory;
     }
 
-    /// <summary>
-    /// Creates a log file path in the session directory for external components.
-    /// </summary>
+    /// <summary>Creates a log file path in the session directory for external components.</summary>
     public static string CreateSessionLogPath(string logFileName)
     {
         EnsureInitialized();
@@ -279,9 +263,7 @@ public static class UnifiedLogger
     // Privacy Helpers (delegated to PrivacyHelper for convenience)
     // ========================================================================
 
-    /// <summary>
-    /// Sanitize a file path for logging - replaces home directory with ~
-    /// </summary>
+    /// <summary>Sanitize a file path for logging - replaces home directory with ~</summary>
     public static string? SanitizePath(string? path) => PrivacyHelper.SanitizePath(path);
 
     // ========================================================================

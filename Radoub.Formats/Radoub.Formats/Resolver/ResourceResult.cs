@@ -1,8 +1,6 @@
 namespace Radoub.Formats.Resolver;
 
-/// <summary>
-/// Source of a resolved resource.
-/// </summary>
+/// <summary>Source of a resolved resource.</summary>
 public enum ResourceSource
 {
     /// <summary>Resource found in module directory (loose file).</summary>
@@ -18,19 +16,13 @@ public enum ResourceSource
     Bif
 }
 
-/// <summary>
-/// Result of a resource lookup including source information.
-/// </summary>
+/// <summary>Result of a resource lookup including source information.</summary>
 public class ResourceResult
 {
-    /// <summary>
-    /// The resource data.
-    /// </summary>
+    /// <summary>The resource data.</summary>
     public byte[] Data { get; }
 
-    /// <summary>
-    /// Where the resource was found.
-    /// </summary>
+    /// <summary>Where the resource was found.</summary>
     public ResourceSource Source { get; }
 
     /// <summary>
@@ -39,14 +31,10 @@ public class ResourceResult
     /// </summary>
     public string SourcePath { get; }
 
-    /// <summary>
-    /// The ResRef of the resource.
-    /// </summary>
+    /// <summary>The ResRef of the resource.</summary>
     public string ResRef { get; }
 
-    /// <summary>
-    /// The resource type.
-    /// </summary>
+    /// <summary>The resource type.</summary>
     public ushort ResourceType { get; }
 
     public ResourceResult(byte[] data, ResourceSource source, string sourcePath, string resRef, ushort resourceType)
@@ -59,28 +47,18 @@ public class ResourceResult
     }
 }
 
-/// <summary>
-/// Information about an available resource (without loading data).
-/// </summary>
+/// <summary>Information about an available resource (without loading data).</summary>
 public class ResourceInfo
 {
-    /// <summary>
-    /// The ResRef of the resource.
-    /// </summary>
+    /// <summary>The ResRef of the resource.</summary>
     public string ResRef { get; set; } = string.Empty;
 
-    /// <summary>
-    /// The resource type.
-    /// </summary>
+    /// <summary>The resource type.</summary>
     public ushort ResourceType { get; set; }
 
-    /// <summary>
-    /// Where the resource is located.
-    /// </summary>
+    /// <summary>Where the resource is located.</summary>
     public ResourceSource Source { get; set; }
 
-    /// <summary>
-    /// Path to the source file/archive.
-    /// </summary>
+    /// <summary>Path to the source file/archive.</summary>
     public string SourcePath { get; set; } = string.Empty;
 }

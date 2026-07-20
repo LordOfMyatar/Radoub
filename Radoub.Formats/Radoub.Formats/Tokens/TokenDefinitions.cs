@@ -80,9 +80,7 @@ public static class TokenDefinitions
         "quarterday"
     };
 
-    /// <summary>
-    /// Standard tokens organized by category for UI display.
-    /// </summary>
+    /// <summary>Standard tokens organized by category for UI display.</summary>
     public static readonly Dictionary<string, string[]> TokensByCategory = new()
     {
         ["Name"] = new[]
@@ -117,9 +115,7 @@ public static class TokenDefinitions
         }
     };
 
-    /// <summary>
-    /// Hash set for O(1) lookup of standard tokens.
-    /// </summary>
+    /// <summary>Hash set for O(1) lookup of standard tokens.</summary>
     public static readonly HashSet<string> StandardTokenSet =
         new(StandardTokens, StringComparer.Ordinal);
 
@@ -172,17 +168,13 @@ public static class TokenDefinitions
         ["bitch/bastard"] = "wretch"
     };
 
-    /// <summary>
-    /// Check if a token name is a standard Aurora token.
-    /// </summary>
+    /// <summary>Check if a token name is a standard Aurora token.</summary>
     public static bool IsStandardToken(string tokenName)
     {
         return StandardTokenSet.Contains(tokenName);
     }
 
-    /// <summary>
-    /// Check if a token name is a CUSTOM token (CUSTOM0-CUSTOM9 or higher).
-    /// </summary>
+    /// <summary>Check if a token name is a CUSTOM token (CUSTOM0-CUSTOM9 or higher).</summary>
     public static bool IsCustomToken(string tokenName, out int tokenNumber)
     {
         tokenNumber = -1;
@@ -192,9 +184,7 @@ public static class TokenDefinitions
         return int.TryParse(tokenName.AsSpan(6), out tokenNumber) && tokenNumber >= 0;
     }
 
-    /// <summary>
-    /// Highlight token opening tags.
-    /// </summary>
+    /// <summary>Highlight token opening tags.</summary>
     public static readonly Dictionary<string, HighlightType> HighlightOpenTags = new(StringComparer.OrdinalIgnoreCase)
     {
         ["<StartAction>"] = HighlightType.Action,
@@ -202,24 +192,16 @@ public static class TokenDefinitions
         ["<StartHighlight>"] = HighlightType.Highlight
     };
 
-    /// <summary>
-    /// Closing tag for all highlight tokens.
-    /// </summary>
+    /// <summary>Closing tag for all highlight tokens.</summary>
     public const string HighlightCloseTag = "</Start>";
 
-    /// <summary>
-    /// Alternative closing tag (some content uses this).
-    /// </summary>
+    /// <summary>Alternative closing tag (some content uses this).</summary>
     public const string HighlightCloseTagAlt = "<End>";
 
-    /// <summary>
-    /// Color token close tag.
-    /// </summary>
+    /// <summary>Color token close tag.</summary>
     public const string ColorCloseTag = "</c>";
 
-    /// <summary>
-    /// Example text shown when selecting highlight tokens in the UI.
-    /// </summary>
+    /// <summary>Example text shown when selecting highlight tokens in the UI.</summary>
     public static readonly Dictionary<HighlightType, string> HighlightExamples = new()
     {
         [HighlightType.Action] = "[Character waves]",
@@ -227,9 +209,7 @@ public static class TokenDefinitions
         [HighlightType.Highlight] = "[Important text]"
     };
 
-    /// <summary>
-    /// Display colors for highlight tokens (Aurora Engine defaults).
-    /// </summary>
+    /// <summary>Display colors for highlight tokens (Aurora Engine defaults).</summary>
     public static readonly Dictionary<HighlightType, string> HighlightColors = new()
     {
         [HighlightType.Action] = "#00FF00",    // Green

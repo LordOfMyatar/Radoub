@@ -6,9 +6,7 @@ using Radoub.Formats.Logging;
 
 namespace Radoub.Formats.Settings;
 
-/// <summary>
-/// Persistence logic for RadoubSettings: Load, Save, AutoDetect, and SettingsData DTO.
-/// </summary>
+/// <summary>Persistence logic for RadoubSettings: Load, Save, AutoDetect, and SettingsData DTO.</summary>
 public partial class RadoubSettings
 {
     private void AutoDetectPaths()

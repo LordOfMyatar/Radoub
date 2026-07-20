@@ -16,9 +16,7 @@ public class GarbageFilterService
     private readonly List<string> _exactPatterns = new();
     private readonly List<string> _rawFilters;
 
-    /// <summary>
-    /// Singleton instance backed by RadoubSettings.
-    /// </summary>
+    /// <summary>Singleton instance backed by RadoubSettings.</summary>
     public static GarbageFilterService Instance
     {
         get
@@ -34,9 +32,7 @@ public class GarbageFilterService
         }
     }
 
-    /// <summary>
-    /// Create with explicit filter list (for testing or custom scenarios).
-    /// </summary>
+    /// <summary>Create with explicit filter list (for testing or custom scenarios).</summary>
     public GarbageFilterService(IReadOnlyList<string> filters)
     {
         _rawFilters = filters.Where(f => !string.IsNullOrWhiteSpace(f)).ToList();
@@ -80,14 +76,10 @@ public class GarbageFilterService
         return false;
     }
 
-    /// <summary>
-    /// Get the current filter list (raw patterns including "=" prefixes).
-    /// </summary>
+    /// <summary>Get the current filter list (raw patterns including "=" prefixes).</summary>
     public IReadOnlyList<string> GetFilters() => _rawFilters.AsReadOnly();
 
-    /// <summary>
-    /// Reset singleton (for testing or after settings reload).
-    /// </summary>
+    /// <summary>Reset singleton (for testing or after settings reload).</summary>
     public static void ResetInstance()
     {
         lock (_lock)

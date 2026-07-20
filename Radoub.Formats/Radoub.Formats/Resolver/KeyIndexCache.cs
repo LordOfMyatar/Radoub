@@ -168,9 +168,7 @@ public class KeyIndexCache
         }
     }
 
-    /// <summary>
-    /// Save KEY index data to binary cache.
-    /// </summary>
+    /// <summary>Save KEY index data to binary cache.</summary>
     public static void Save(string keyFilePath, CachedKeyIndex index)
     {
         try
@@ -215,9 +213,7 @@ public class KeyIndexCache
         }
     }
 
-    /// <summary>
-    /// Delete the cached KEY index (both binary and JSON).
-    /// </summary>
+    /// <summary>Delete the cached KEY index (both binary and JSON).</summary>
     public static void Clear()
     {
         try
@@ -255,9 +251,7 @@ public class KeyIndexCache
     }
 }
 
-/// <summary>
-/// Internal JSON cache file structure (for migration only).
-/// </summary>
+/// <summary>Internal JSON cache file structure (for migration only).</summary>
 internal class KeyIndexCacheFile
 {
     public int Version { get; set; }
@@ -268,27 +262,21 @@ internal class KeyIndexCacheFile
     public List<CachedResourceEntry> Resources { get; set; } = new();
 }
 
-/// <summary>
-/// Cached KEY index data ready for use.
-/// </summary>
+/// <summary>Cached KEY index data ready for use.</summary>
 public class CachedKeyIndex
 {
     public List<CachedBifEntry> BifFiles { get; set; } = new();
     public List<CachedResourceEntry> Resources { get; set; } = new();
 }
 
-/// <summary>
-/// Cached BIF file entry.
-/// </summary>
+/// <summary>Cached BIF file entry.</summary>
 public class CachedBifEntry
 {
     public string Filename { get; set; } = string.Empty;
     public uint FileSize { get; set; }
 }
 
-/// <summary>
-/// Cached resource entry - minimal data needed for lookups.
-/// </summary>
+/// <summary>Cached resource entry - minimal data needed for lookups.</summary>
 public class CachedResourceEntry
 {
     public string ResRef { get; set; } = string.Empty;

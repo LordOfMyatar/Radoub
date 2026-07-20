@@ -20,9 +20,7 @@ public static class UserColorConfigLoader
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    /// <summary>
-    /// Get the default configuration file path.
-    /// </summary>
+    /// <summary>Get the default configuration file path.</summary>
     public static string GetDefaultConfigPath()
     {
         var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -64,9 +62,7 @@ public static class UserColorConfigLoader
         }
     }
 
-    /// <summary>
-    /// Load configuration, creating default if not exists.
-    /// </summary>
+    /// <summary>Load configuration, creating default if not exists.</summary>
     public static UserColorConfig LoadOrCreateDefault()
     {
         var config = Load();
@@ -78,17 +74,13 @@ public static class UserColorConfigLoader
         return config;
     }
 
-    /// <summary>
-    /// Save configuration to the default path.
-    /// </summary>
+    /// <summary>Save configuration to the default path.</summary>
     public static void Save(UserColorConfig config)
     {
         Save(config, GetDefaultConfigPath());
     }
 
-    /// <summary>
-    /// Save configuration to a specific path.
-    /// </summary>
+    /// <summary>Save configuration to a specific path.</summary>
     public static void Save(UserColorConfig config, string path)
     {
         var fileConfig = ConvertToFile(config);
@@ -103,9 +95,7 @@ public static class UserColorConfigLoader
         File.WriteAllText(path, json);
     }
 
-    /// <summary>
-    /// Check if a configuration file exists.
-    /// </summary>
+    /// <summary>Check if a configuration file exists.</summary>
     public static bool ConfigExists()
     {
         return File.Exists(GetDefaultConfigPath());
@@ -154,44 +144,28 @@ public static class UserColorConfigLoader
     }
 }
 
-/// <summary>
-/// JSON file format for user color configuration.
-/// </summary>
+/// <summary>JSON file format for user color configuration.</summary>
 internal class UserColorConfigFile
 {
-    /// <summary>
-    /// Human-readable description of the file purpose.
-    /// </summary>
+    /// <summary>Human-readable description of the file purpose.</summary>
     public string? Description { get; set; }
 
-    /// <summary>
-    /// The close token that ends colored text.
-    /// </summary>
+    /// <summary>The close token that ends colored text.</summary>
     public string? CloseToken { get; set; }
 
-    /// <summary>
-    /// List of color definitions.
-    /// </summary>
+    /// <summary>List of color definitions.</summary>
     public List<ColorDefinition>? Colors { get; set; }
 }
 
-/// <summary>
-/// A single color definition in the config file.
-/// </summary>
+/// <summary>A single color definition in the config file.</summary>
 internal class ColorDefinition
 {
-    /// <summary>
-    /// Display name for the color (e.g., "Red", "Gold").
-    /// </summary>
+    /// <summary>Display name for the color (e.g., "Red", "Gold").</summary>
     public string Name { get; set; } = "";
 
-    /// <summary>
-    /// The CUSTOM token to insert (e.g., "&lt;CUSTOM1001&gt;").
-    /// </summary>
+    /// <summary>The CUSTOM token to insert (e.g., "&lt;CUSTOM1001&gt;").</summary>
     public string Token { get; set; } = "";
 
-    /// <summary>
-    /// Hex color for display preview (e.g., "#FF0000").
-    /// </summary>
+    /// <summary>Hex color for display preview (e.g., "#FF0000").</summary>
     public string HexColor { get; set; } = "#FFFFFF";
 }

@@ -84,9 +84,7 @@ public class FacSearchProvider : SearchProviderBase, IFileSearchProvider
     }
 }
 
-/// <summary>
-/// Location within a FAC faction file.
-/// </summary>
+/// <summary>Location within a FAC faction file.</summary>
 public class FacMatchLocation
 {
     public required int FactionIndex { get; init; }

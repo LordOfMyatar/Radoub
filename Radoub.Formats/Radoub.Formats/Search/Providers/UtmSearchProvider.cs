@@ -24,9 +24,7 @@ public class UtmSearchProvider : SearchProviderBase, IFileSearchProvider
 
     private readonly Func<string, string?>? _itemNameResolver;
 
-    /// <summary>
-    /// Create a UtmSearchProvider with optional item name resolution.
-    /// </summary>
+    /// <summary>Create a UtmSearchProvider with optional item name resolution.</summary>
     /// <param name="itemNameResolver">Optional callback that resolves an item ResRef to its display name.
     /// When provided, inventory items are searchable by their resolved name (e.g., "Club" instead of "nw_wblcl001").</param>
     public UtmSearchProvider(Func<string, string?>? itemNameResolver = null)

@@ -7,40 +7,26 @@ namespace Radoub.Formats.Gff;
 /// </summary>
 public class GffFile
 {
-    /// <summary>
-    /// File type signature (4 bytes, e.g., "DLG ", "UTC ", "JRL ").
-    /// </summary>
+    /// <summary>File type signature (4 bytes, e.g., "DLG ", "UTC ", "JRL ").</summary>
     public string FileType { get; set; } = string.Empty;
 
-    /// <summary>
-    /// File version (4 bytes, typically "V3.2").
-    /// </summary>
+    /// <summary>File version (4 bytes, typically "V3.2").</summary>
     public string FileVersion { get; set; } = string.Empty;
 
-    /// <summary>
-    /// The root struct containing all data.
-    /// </summary>
+    /// <summary>The root struct containing all data.</summary>
     public GffStruct RootStruct { get; set; } = new();
 
-    /// <summary>
-    /// All structs in the file (indexed by struct array position).
-    /// </summary>
+    /// <summary>All structs in the file (indexed by struct array position).</summary>
     public List<GffStruct> Structs { get; set; } = new();
 
-    /// <summary>
-    /// All fields in the file (indexed by field array position).
-    /// </summary>
+    /// <summary>All fields in the file (indexed by field array position).</summary>
     public List<GffField> Fields { get; set; } = new();
 
-    /// <summary>
-    /// All labels in the file (indexed by label array position).
-    /// </summary>
+    /// <summary>All labels in the file (indexed by label array position).</summary>
     public List<GffLabel> Labels { get; set; } = new();
 }
 
-/// <summary>
-/// GFF file header containing offsets and counts for all sections.
-/// </summary>
+/// <summary>GFF file header containing offsets and counts for all sections.</summary>
 public class GffHeader
 {
     public string FileType { get; set; } = string.Empty;
@@ -59,14 +45,10 @@ public class GffHeader
     public uint ListIndicesCount { get; set; }
 }
 
-/// <summary>
-/// A struct in GFF format, containing zero or more fields.
-/// </summary>
+/// <summary>A struct in GFF format, containing zero or more fields.</summary>
 public class GffStruct
 {
-    /// <summary>
-    /// Struct type ID (application-specific meaning).
-    /// </summary>
+    /// <summary>Struct type ID (application-specific meaning).</summary>
     public uint Type { get; set; }
 
     /// <summary>
@@ -75,19 +57,12 @@ public class GffStruct
     /// </summary>
     public uint DataOrDataOffset { get; set; }
 
-    /// <summary>
-    /// Number of fields in this struct.
-    /// </summary>
     public uint FieldCount { get; set; }
 
-    /// <summary>
-    /// The fields belonging to this struct (populated during parsing).
-    /// </summary>
+    /// <summary>The fields belonging to this struct (populated during parsing).</summary>
     public List<GffField> Fields { get; set; } = new();
 
-    /// <summary>
-    /// Get a field by label (case-insensitive).
-    /// </summary>
+    /// <summary>Get a field by label (case-insensitive).</summary>
     public GffField? GetField(string label)
     {
         return Fields.FirstOrDefault(f => f.Label.Equals(label, StringComparison.OrdinalIgnoreCase));
@@ -103,17 +78,15 @@ public class GffStruct
         if (field?.Value == null)
             return defaultValue;
 
-        // Direct type match
         if (field.Value is T value)
             return value;
 
-        // Handle numeric type conversions (common in GFF files where DWORD/INT are sometimes swapped)
+        // Numeric conversions: GFF files sometimes swap DWORD/INT for the same field.
         var targetType = typeof(T);
         var sourceValue = field.Value;
 
         try
         {
-            // Convert numeric types
             if (targetType == typeof(int))
             {
                 return (T)(object)Convert.ToInt32(sourceValue);
@@ -156,24 +129,16 @@ public class GffStruct
     }
 }
 
-/// <summary>
-/// A field in GFF format, containing typed data.
-/// </summary>
+/// <summary>A field in GFF format, containing typed data.</summary>
 public class GffField
 {
-    /// <summary>
-    /// Field type (see constants below).
-    /// </summary>
+    /// <summary>Field type (see constants below).</summary>
     public uint Type { get; set; }
 
-    /// <summary>
-    /// Index into the labels array.
-    /// </summary>
+    /// <summary>Index into the labels array.</summary>
     public uint LabelIndex { get; set; }
 
-    /// <summary>
-    /// The field's label/name (populated during parsing).
-    /// </summary>
+    /// <summary>The field's label/name (populated during parsing).</summary>
     public string Label { get; set; } = string.Empty;
 
     /// <summary>
@@ -182,9 +147,7 @@ public class GffField
     /// </summary>
     public uint DataOrDataOffset { get; set; }
 
-    /// <summary>
-    /// The parsed value (type depends on field Type).
-    /// </summary>
+    /// <summary>The parsed value (type depends on field Type).</summary>
     public object? Value { get; set; }
 
     // Field type constants from GFF specification
@@ -224,27 +187,18 @@ public class GffField
     public bool IsList => Type == List;
 }
 
-/// <summary>
-/// A label (field name) in GFF format. Max 16 characters.
-/// </summary>
+/// <summary>A label (field name) in GFF format. Max 16 characters.</summary>
 public class GffLabel
 {
     public string Text { get; set; } = string.Empty;
 }
 
-/// <summary>
-/// A list of structs in GFF format.
-/// </summary>
+/// <summary>A list of structs in GFF format.</summary>
 public class GffList
 {
-    /// <summary>
-    /// Number of struct references in this list.
-    /// </summary>
     public uint Count { get; set; }
 
-    /// <summary>
-    /// The structs in this list (populated during parsing).
-    /// </summary>
+    /// <summary>The structs in this list (populated during parsing).</summary>
     public List<GffStruct> Elements { get; set; } = new();
 }
 
@@ -254,14 +208,10 @@ public class GffList
 /// </summary>
 public class CExoLocString
 {
-    /// <summary>
-    /// String reference into TLK file (0xFFFFFFFF = no TLK reference).
-    /// </summary>
+    /// <summary>String reference into TLK file (0xFFFFFFFF = no TLK reference).</summary>
     public uint StrRef { get; set; } = 0xFFFFFFFF;
 
-    /// <summary>
-    /// Number of localized substrings (used during binary parsing).
-    /// </summary>
+    /// <summary>Number of localized substrings (used during binary parsing).</summary>
     public uint SubStringCount { get; set; }
 
     /// <summary>
@@ -270,47 +220,34 @@ public class CExoLocString
     /// </summary>
     public Dictionary<uint, string> LocalizedStrings { get; set; } = new();
 
-    /// <summary>
-    /// Get string for a specific language ID.
-    /// </summary>
+    /// <summary>Get string for a specific language ID.</summary>
     public string GetString(uint languageId = 0)
     {
         return LocalizedStrings.TryGetValue(languageId, out var text) ? text : string.Empty;
     }
 
-    /// <summary>
-    /// Set string for a specific language ID.
-    /// </summary>
+    /// <summary>Set string for a specific language ID.</summary>
     public void SetString(uint languageId, string text)
     {
         LocalizedStrings[languageId] = text;
     }
 
-    /// <summary>
-    /// Get the default string (English male, or first available).
-    /// </summary>
+    /// <summary>Get the default string: English male (language ID 0), else first available.</summary>
     public string GetDefault()
     {
-        // Try English male (0) first, then any available language
         if (LocalizedStrings.TryGetValue(0, out var english))
             return english;
         return LocalizedStrings.Values.FirstOrDefault() ?? string.Empty;
     }
 
-    /// <summary>
-    /// True if no strings and no TLK reference.
-    /// </summary>
+    /// <summary>True if no strings and no TLK reference.</summary>
     public bool IsEmpty => LocalizedStrings.Count == 0 && StrRef == 0xFFFFFFFF;
 }
 
-/// <summary>
-/// Extension methods for GFF field types.
-/// </summary>
+/// <summary>Extension methods for GFF field types.</summary>
 public static class GffFieldTypeExtensions
 {
-    /// <summary>
-    /// Returns true if the field type stores its value directly in DataOrDataOffset.
-    /// </summary>
+    /// <summary>True if the field type stores its value directly in DataOrDataOffset.</summary>
     public static bool IsSimpleType(this uint fieldType)
     {
         return fieldType switch
@@ -337,9 +274,7 @@ public static class GffFieldTypeExtensions
         };
     }
 
-    /// <summary>
-    /// Get the human-readable name for a field type.
-    /// </summary>
+    /// <summary>Get the human-readable name for a field type.</summary>
     public static string GetTypeName(this uint fieldType)
     {
         return fieldType switch
