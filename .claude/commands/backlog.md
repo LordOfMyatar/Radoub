@@ -1,68 +1,52 @@
 # Backlog Review & Sprint Planning
 
-Review open issues and plan next sprint. Combines light hygiene check with sprint option generation.
+Review open issues and plan the next sprint. Light hygiene check plus sprint options.
 
 ## Usage
 
 ```
-/backlog [options]
+/backlog [--tool <name>] [--full] [--refresh] [#N]
 ```
 
-**Options:**
-- No args: Review all open issues, generate sprint options
-- `--tool parley|radoub|manifest|quartermaster|fence`: Filter by tool
-- `--full`: Include detailed grooming (label fixes, title standardization)
-- `--refresh`: Force cache refresh before review
-- `#N`: Focus on specific epic's issues
+| Option | Effect |
+|--------|--------|
+| (none) | Review all open issues, generate sprint options |
+| `--tool <name>` | Filter to one tool |
+| `--full` | Add detailed grooming — label fixes, title standardization |
+| `--refresh` | Force a cache refresh first |
+| `#N` | Focus on one epic's issues |
 
-**Examples:**
-- `/backlog` - Quick review + sprint options
-- `/backlog --tool quartermaster` - Quartermaster issues only
-- `/backlog #544` - Focus on epic #544
-- `/backlog --full` - Include detailed grooming pass
-- `/backlog --refresh` - Force fresh data from GitHub
+Ask both up front, in one interaction: create the sprint issue on GitHub afterward
+(`y/n/ask-after`), and if so, add it to the project board.
 
-## Upfront Questions
+## Phase 1 — Load
 
-Collect in ONE interaction:
-
-1. **Create Issues**: "After planning, create sprint issue on GitHub? [y/n/ask-after]"
-2. **Project Board**: "Add created sprint to project board? [y/n]" (only if creating issues)
-
-## Workflow
-
-### Step 0: Ensure Cache is Fresh
+### 1.1 Refresh the cache
 
 ```bash
-# Auto-refresh if cache is stale (>1 hour) or missing
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1" [-Force]
 ```
 
-If `--refresh` flag is passed, force refresh:
-```bash
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1" -Force
-```
+Auto-refreshes when stale (over an hour). `--refresh` forces it.
 
-### Step 1: Load Issues from Cache
+### 1.2 Read issues
 
-- Don't over label.  3 to Five is usually sufficient.
-
-Use the helper script to get a compact view (~25KB instead of 220KB):
+The `backlog` view is sorted **oldest-first**, which is what the anti-recency rules below
+need. Output is `#NNNN  <age>d  <title>` plus labels.
 
 ```bash
-# Get list view (no bodies) - filtered by tool if specified
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View list [-Tool parley]
-
-# Or just summary stats
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View summary
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View backlog [-Tool parley] [-Label "tech-debt|refactor"] [-Query "<title-regex>"]
 ```
 
-The list view includes: number, title, updatedAt, author, labels (comma-separated).
-Bodies are omitted to reduce context size - fetch individually if needed.
+Other views: `-View list` for a compact dump (~25KB versus 220KB — number, title, updatedAt,
+author, labels, no bodies), `-View summary` for counts alone, `-View search -Query` for
+title-and-body regex. Fetch bodies individually only when needed.
 
-### Step 2: Quick Hygiene Summary
+## Phase 2 — Assess
 
-Count issues with problems (don't detail each one unless `--full`):
+### 2.1 Hygiene summary
+
+Counts only, unless `--full`:
 
 ```markdown
 ## Hygiene Summary
@@ -75,14 +59,11 @@ Count issues with problems (don't detail each one unless `--full`):
 [Run `/backlog --full` for detailed fixes]
 ```
 
-If `--full` flag: Include per-issue recommendations (label fixes, title standardization).
+Keep labels sparse — three to five per issue is plenty.
 
-### Step 3: Categorize by Epic/Area
+### 2.2 Group by epic and area
 
-Group issues by:
-- Epic label (if present)
-- Tool label
-- Type (bug, enhancement, tech-debt)
+Group by epic label, then tool, then type (bug, enhancement, tech-debt):
 
 ```markdown
 ## By Epic
@@ -98,20 +79,19 @@ Group issues by:
 | #123 | Fix button alignment | 3 | bug |
 ```
 
-### Step 3.5: Languishing Issues Report
+### 2.3 Languishing issues (MANDATORY)
 
-**MANDATORY** — before generating sprint options, identify issues that are being neglected.
+Never skip this. Age alone is a signal.
 
-An issue is **languishing** if:
-- Open 30+ days with no activity (no comments, no PR, no label changes)
-- Open 60+ days regardless of activity (**call out explicitly**)
-- Tagged `bug` and open 14+ days
-- Tagged `security` or `tech-debt` and open 21+ days
+| Condition | Threshold |
+|-----------|-----------|
+| No activity — no comments, PR, or label changes | 30+ days |
+| Any state, called out explicitly | 60+ days |
+| Tagged `bug` | 14+ days |
+| Tagged `security` or `tech-debt` | 21+ days |
 
 ```markdown
 ## ⚠️ Languishing Issues
-
-These issues need attention — age alone is a signal.
 
 ### Critical (60+ days)
 | # | Title | Age | Type | Last Activity |
@@ -125,31 +105,35 @@ These issues need attention — age alone is a signal.
 ### Overdue Bugs (14+ days)
 | # | Title | Age | Assigned? |
 |---|-------|-----|-----------|
-
-**Action Required**: At least ONE languishing issue must be included in a sprint option below, or the user must explicitly acknowledge and defer it.
 ```
 
-If no issues are languishing, output: "No languishing issues. 👍"
+At least one languishing issue must appear in a sprint option below, or the user must
+explicitly defer it. When none qualify, say "No languishing issues. 👍".
 
-### Step 4: Generate Sprint Options
+## Phase 3 — Plan
 
-**CRITICAL RULES:**
+### 3.1 Generate three sprint options
 
-1. **No overlapping issues** — each issue appears in AT MOST ONE sprint option. If an issue fits multiple themes, pick the best fit. Never duplicate.
+Always exactly three, one per category:
 
-2. **Mandatory sprint categories** — always generate exactly 3 sprint options from these categories:
+| Category | Covers | Skip only when |
+|----------|--------|----------------|
+| Feature | New functionality, enhancements | No feature or enhancement issues exist |
+| Bug Fix | Bugs, corrections | No bug issues exist |
+| Health | Tech debt, security, testing, refactoring | Never — health work always exists |
 
-| Category | Description | When to Skip |
-|----------|-------------|--------------|
-| **Feature Sprint** | New functionality, enhancements | Only if zero feature/enhancement issues exist |
-| **Bug/Fix Sprint** | Bug fixes, corrections | Only if zero bug issues exist |
-| **Health Sprint** | Tech debt, security, testing, refactoring | NEVER skip — there is always health work to do |
+Four rules govern selection:
 
-3. **Anti-recency bias** — for each sprint option, at least ONE issue must be the **oldest qualifying issue** in that category. Do not exclusively pick recent issues. Sort candidates by age (oldest first) when selecting.
+1. **No overlap.** An issue appears in at most one option. If it fits two themes, pick the
+   better fit.
+2. **Oldest-first.** Each option must include the oldest qualifying issue in its category.
+   Sort candidates by age before selecting.
+3. **Breadth over momentum.** If the last three sprints hit Quartermaster, favor another tool.
+   If the last was a feature, lean bug or health.
+4. **Show age everywhere.** Every issue listing carries `(NN days old)`.
 
-4. **Breadth over momentum** — resist grouping issues that were just worked on. If the last 3 sprints touched Quartermaster, prioritize other tools. If the last sprint was a feature, lean toward bug/health.
-
-Present 3 sprint options (one per category):
+Within a category, prioritize blockers, then languishing issues, then user-facing bugs over
+internal cleanup, then natural groupings (same code path), then tool balance.
 
 ```markdown
 ## Sprint Options
@@ -161,51 +145,39 @@ Present 3 sprint options (one per category):
 - #Y - [title] (NN days old)
 
 **Oldest issue included**: #X (NN days)
-**Rationale**: [why these fit together - shared code path, etc.]
+**Rationale**: [why these fit — shared code path, etc.]
 **Complexity**: Small/Medium/Large
-
----
 
 ### Option B: Bug Fix — [Theme]
-
-**Issues:**
-- #X - [title] (NN days old)
-
-**Oldest issue included**: #X (NN days)
-**Rationale**: [why these fit together]
-**Complexity**: Small/Medium/Large
-
----
+...
 
 ### Option C: Health — [Theme]
-
-**Issues:**
-- #X - [title] (NN days old)
-- #Y - [title] (NN days old)
-
-**Oldest issue included**: #X (NN days)
-**Rationale**: [tech debt / security / testing justification]
-**Complexity**: Small/Medium/Large
-
----
+...
 
 ## Recommendation
 
-**Option [X]** recommended because:
-1. [reason — include age/urgency justification]
+**Option [X]** because:
+1. [reason, including age or urgency]
 2. [reason]
 
 **Recent sprint history** (last 3):
 - [tool] [type] — [date]
-- [tool] [type] — [date]
-- [tool] [type] — [date]
-
-If the last 3 sprints were the same tool/type, explicitly recommend a different tool/type for balance.
 ```
 
-### Step 5: Create Sprint Issue (if requested)
+When the last three sprints share a tool or type, recommend a different one and say why.
 
-If user said yes to creating issues:
+Sizing: Small is 1–2 focused items (~1 day), Medium is 2–4 related items (~2–3 days), Large
+is 4+ or a complex feature (~a week). Good pairings include a feature with its related tech
+debt, a bug with its cleanup, several small issues on one code path, or a blocked issue
+alongside its blocker.
+
+Avoid: the same issue in two options, always recommending the most recently active tool,
+ignoring anything over 30 days, feature-only slates, grouping by momentum rather than code
+area, and never surfacing security or tech-debt work.
+
+## Phase 4 — Create (if requested)
+
+### 4.1 Sprint issue
 
 ```bash
 gh issue create \
@@ -224,7 +196,7 @@ gh issue create \
 
 ## Sprint Goals
 
-[Brief description of what this sprint accomplishes]
+[What this sprint accomplishes]
 
 ## Acceptance Criteria
 
@@ -239,123 +211,28 @@ EOF
 )"
 ```
 
-### Step 6: Add to Project Board (if requested)
-
-Only for created sprint issues:
+### 4.2 Project board
 
 ```bash
-# Add to project
-gh project item-add [PROJECT_NUMBER] --owner LordOfMyatar --url https://github.com/LordOfMyatar/Radoub/issues/[number] --format json
+gh project item-add 3 --owner LordOfMyatar --url https://github.com/LordOfMyatar/Radoub/issues/[number] --format json
 
-# Set status to "In Progress" (see project IDs below)
+gh project item-edit --id "[item-id]" \
+  --project-id PVT_kwHOAotjYs4BHbMq \
+  --field-id PVTSSF_lAHOAotjYs4BHbMqzg4Lxyk \
+  --single-select-option-id 47fc9ee4
 ```
 
-**Project:** All tools use Radoub project (#3)
+All tools use Radoub project #3.
 
-**Project IDs for status update:**
-- Radoub: `--project-id PVT_kwHOAotjYs4BHbMq --field-id PVTSSF_lAHOAotjYs4BHbMqzg4Lxyk --single-select-option-id 47fc9ee4`
+## Output
 
-## Output Format
+Write the full review to `NonPublic/backlog.md`, clobbering each run. Structure: header with
+date, tool filter, and recent sprint history; then Hygiene Summary, Languishing Issues, By
+Epic, Sprint Options, Recommendation, and Next Steps.
+
+Next steps read:
 
 ```markdown
-# Backlog Review
-
-**Date**: YYYY-MM-DD
-**Tool Filter**: [all/specific tool]
-**Recent Sprint History**: [last 3 sprints: tool + type + date]
-
-## Hygiene Summary
-
-- **Missing tool label**: N issues
-- **Missing type label**: N issues
-- **Stale (15+ days)**: N issues
-- **Well-formed**: N issues
-
-[Run `/backlog --full` for detailed fixes]
-
----
-
-## ⚠️ Languishing Issues
-
-[Languishing report — see Step 3.5]
-
----
-
-## By Epic
-
-### Epic #N: [Name] (X issues)
-| # | Title | Days | Priority |
-|---|-------|------|----------|
-
-### Uncategorized (X issues)
-| # | Title | Days | Type |
-|---|-------|------|------|
-
----
-
-## Sprint Options
-
-### Option A: Feature — [Theme]
-...
-
-### Option B: Bug Fix — [Theme]
-...
-
-### Option C: Health — [Theme]
-...
-
----
-
-## Recommendation
-
-**Option [X]** recommended because:
-...
-
----
-
-## Next Steps
-
-- To start selected sprint: `/init-item #[sprint-issue-number]`
+- To start the selected sprint: `/init-item #[sprint-issue-number]`
 - For detailed grooming: `/backlog --full`
 ```
-
-## Save to File
-
-Save output to `NonPublic/backlog.md` (clobber each run).
-
-## Grouping Guidelines
-
-**Good sprint combinations:**
-- Feature + related tech debt in same area
-- Bug fix + related cleanup
-- Multiple small issues touching same code path
-- Blocked issue + its blocker (clear the blocker first)
-
-**Sprint sizing:**
-- Small: 1-2 focused items, ~1 day
-- Medium: 2-4 related items, ~2-3 days
-- Large: 4+ items or complex feature, ~week
-
-**HARD RULES (non-negotiable):**
-
-1. **No issue overlap between sprint options** — an issue can appear in exactly ONE option
-2. **3 categories always** — Feature, Bug Fix, Health (tech debt/security/testing)
-3. **Oldest-first selection** — within each category, start candidate selection from the oldest issues
-4. **Languishing report is mandatory** — never skip Step 3.5
-5. **Include age in all issue listings** — always show "(NN days old)" next to each issue
-6. **Recent sprint awareness** — check last 3 merged PRs for tool/type distribution; if skewed, recommend the underrepresented category
-
-**Prioritization (within each sprint category):**
-1. Blockers first (issues blocking other work)
-2. Languishing issues (30+ days, called out in Step 3.5)
-3. User-facing bugs over internal cleanup
-4. Natural groupings over isolated tasks (same code path = same sprint)
-5. Balance across tools (don't always sprint on the same tool)
-
-**Anti-Patterns to AVOID:**
-- Putting the same issue in multiple sprint options
-- Always recommending the most recently active tool
-- Ignoring issues older than 30 days
-- Creating only feature sprints (health work always exists)
-- Grouping by "momentum" instead of logical code area
-- Never surfacing security or tech-debt issues
