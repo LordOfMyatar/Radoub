@@ -167,6 +167,37 @@ public class CreatureCopyFromTests
     }
 
     [Fact]
+    public void CopyFrom_DoesNotAliasSourceLists()
+    {
+        // The commit takes ownership of a private round-tripped copy, so mutating
+        // the source afterwards must not reach the target. This pins the property
+        // the clone-and-commit design depends on.
+        var target = CreateTestUtc();
+        var source = CreateTestUtc();
+        source.FeatList.Add(200);
+
+        target.CopyFrom(source);
+        source.FeatList.Add(201);
+        source.ClassList[0].ClassLevel = 99;
+
+        Assert.Single(target.FeatList);
+        Assert.Equal(1, target.ClassList[0].ClassLevel);
+    }
+
+    [Fact]
+    public void CopyFrom_BicToBic_DoesNotAliasPlayerLists()
+    {
+        var target = CreateTestBic();
+        var source = CreateTestBic();
+        source.ReputationList.Add(50);
+
+        target.CopyFrom(source);
+        source.ReputationList.Add(75);
+
+        Assert.Single(target.ReputationList);
+    }
+
+    [Fact]
     public void CopyFrom_NullSource_Throws()
     {
         var target = CreateTestUtc();

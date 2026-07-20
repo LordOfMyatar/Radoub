@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -715,7 +716,8 @@ public partial class LevelUpWizardWindow : Window
         }
         catch (Exception ex) when (
             ex is InvalidOperationException or ArgumentException or KeyNotFoundException
-               or FormatException or OverflowException)
+               or FormatException or OverflowException or IOException
+               or System.Text.Json.JsonException)
         {
             // The clone absorbed the failed apply, so the live creature is
             // untouched and there is nothing to roll back.
