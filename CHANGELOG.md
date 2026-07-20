@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Sprint: Prose concision across authored text and code comments
 
 - Wired the `writing-clearly-and-concisely` skill into the slash commands that author commit messages, PR bodies, and issue text (#2671).
-- Swept code comments repo-wide for concision, shared libraries first, one commit per tool (#2672).
+- Swept `Radoub.Formats` and `Radoub.UI` comments for concision, collapsing verbose XML doc blocks and dropping summaries that only restated the identifier (#2672). Per-tool sweeps follow in #2689–#2695.
 
 ---
 
