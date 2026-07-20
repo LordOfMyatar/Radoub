@@ -1,0 +1,193 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Radoub.UI.Views.SaveBlueprintWindow"
+        Title="Save Blueprint"
+        MinWidth="600" MinHeight="440"
+        Width="700" Height="500"
+        SizeToContent="Manual"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource ThemeBackground}"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="PreferSystemChrome"
+        ExtendClientAreaTitleBarHeightHint="30">
+
+    <Window.Styles>
+        <!-- Dark mode selection visibility fix -->
+        <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ListBoxItem:selected:focus /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColorDark1}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Custom Title Bar -->
+        <Border Grid.Row="0" Background="{DynamicResource ThemeTitleBar}"
+                x:Name="TitleBar"
+                PointerPressed="OnTitleBarPointerPressed"
+                DoubleTapped="OnTitleBarDoubleTapped">
+            <StackPanel Orientation="Horizontal"
+                        VerticalAlignment="Center"
+                        Margin="10,0,0,0"
+                        IsHitTestVisible="False">
+                <TextBlock x:Name="TitleBarLabel"
+                           Text="Save Blueprint"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource ThemeTitleBarForeground}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1" Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Location Row -->
+            <Grid Grid.Row="0" Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="Location:"
+                           VerticalAlignment="Center"
+                           Margin="0,0,8,0"
+                           FontSize="{DynamicResource FontSizeSmall}"/>
+                <TextBlock Grid.Column="1"
+                           x:Name="LocationPathLabel"
+                           Text="(auto-detected)"
+                           VerticalAlignment="Center"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           TextTrimming="CharacterEllipsis"/>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="5">
+                    <Button x:Name="ResetLocationButton"
+                            Content="reset"
+                            FontSize="{DynamicResource FontSizeSmall}"
+                            Padding="8,2"
+                            IsVisible="False"
+                            Click="OnResetLocationClick"/>
+                    <Button x:Name="BrowseLocationButton"
+                            Content="Browse..."
+                            FontSize="{DynamicResource FontSizeSmall}"
+                            Padding="8,2"
+                            Click="OnBrowseLocationClick"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Search Box -->
+            <TextBox Grid.Row="1"
+                     x:Name="SearchBox"
+                     Watermark="Type to filter existing blueprints..."
+                     Margin="0,0,0,10"
+                     TextChanged="OnSearchTextChanged"/>
+
+            <!-- Existing Blueprint List -->
+            <Border Grid.Row="2"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                    BorderThickness="1"
+                    Padding="5"
+                    Background="{DynamicResource ThemeBackground}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" x:Name="FileCountLabel"
+                               Text="0 files"
+                               FontWeight="Bold"
+                               Margin="0,0,0,5"/>
+
+                    <ListBox Grid.Row="1" x:Name="FileListBox"
+                             SelectionChanged="OnFileSelected"
+                             Background="Transparent">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Name}"/>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+
+            <!-- File Name Row -->
+            <Grid Grid.Row="3" Margin="0,10,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="File name:"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"
+                           Margin="0,0,10,0"/>
+                <TextBox Grid.Column="1"
+                         x:Name="FileNameBox"
+                         Watermark="blueprint_resref"
+                         TextChanged="OnFileNameChanged"/>
+                <TextBlock Grid.Column="2"
+                           x:Name="ExtensionLabel"
+                           Text=".utm"
+                           VerticalAlignment="Center"
+                           Margin="6,0,0,0"
+                           IsVisible="False"/>
+                <ComboBox Grid.Column="3"
+                          x:Name="ExtensionCombo"
+                          MinWidth="90"
+                          Margin="6,0,0,0"
+                          IsVisible="False"
+                          SelectionChanged="OnExtensionChanged"/>
+            </Grid>
+
+            <!-- Validation Warning -->
+            <TextBlock Grid.Row="4"
+                       x:Name="ValidationLabel"
+                       Text=""
+                       Margin="0,6,0,0"
+                       IsVisible="False"
+                       TextWrapping="Wrap"
+                       FontSize="{DynamicResource FontSizeSmall}"/>
+
+            <!-- Dialog Buttons -->
+            <StackPanel Grid.Row="5"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Spacing="10"
+                        Margin="0,10,0,0">
+                <Button x:Name="SaveButton"
+                        Content="Save"
+                        Width="80"
+                        Click="OnSaveClick"
+                        IsDefault="True"/>
+                <Button Content="Cancel"
+                        Width="80"
+                        Click="OnCancelClick"
+                        IsCancel="True"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

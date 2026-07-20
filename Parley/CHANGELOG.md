@@ -4,6 +4,15 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
+## [0.1.178-alpha] - 2026-07-08
+**Branch**: `radoub/sprint/save-integrity` | **PR**: #2656
+
+### Sprint: Data-Loss & Save Integrity (#2655)
+
+- Save As now uses the shared internal dialog defaulting to the module directory (see root CHANGELOG, #2515).
+
+---
+
 ## [0.1.177-alpha] - 2026-07-08
 **Branch**: `parley/sprint/2524-simulator-fixes` | **PR**: #2652
 

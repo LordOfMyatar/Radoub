@@ -292,20 +292,15 @@ public partial class MainWindow
         if (string.IsNullOrEmpty(suggested))
             suggested = Path.GetFileNameWithoutExtension(_currentFilePath ?? "placeable");
 
-        var file = await StorageProvider.SaveFilePickerAsync(new Avalonia.Platform.Storage.FilePickerSaveOptions
-        {
-            Title = "Save Placeable As",
-            DefaultExtension = "utp",
-            SuggestedFileName = suggested + ".utp",
-            FileTypeChoices = new[]
-            {
-                new Avalonia.Platform.Storage.FilePickerFileType("Placeable Blueprint") { Patterns = new[] { "*.utp" } },
-                new Avalonia.Platform.Storage.FilePickerFileType("All Files") { Patterns = new[] { "*.*" } }
-            }
-        });
-
-        var path = file?.Path.LocalPath;
-        if (string.IsNullOrEmpty(path)) return false;
+        var opts = new Radoub.UI.Services.SaveBlueprintOptions(
+            Title: "Save Placeable As — Reliquary",
+            Extensions: new[] { "utp" },
+            DefaultResRef: suggested,
+            Context: new PlaceableEditor.Services.ReliquaryScriptBrowserContext(_currentFilePath, _gameData));
+        var win = new Radoub.UI.Views.SaveBlueprintWindow(opts);
+        await win.ShowDialog(this);
+        if (win.Result is not { } result) return false;
+        var path = result.Path;
 
         if (!WritePlaceable(path)) return false;
 

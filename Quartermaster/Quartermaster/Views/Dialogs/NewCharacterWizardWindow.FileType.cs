@@ -43,7 +43,8 @@ public partial class NewCharacterWizardWindow
         // Show default scripts option for UTC only
         _defaultScriptsPanel.IsVisible = !_isBicFile;
 
-        // Clear save location when file type changes (extension changes)
+        // File type changed → clear any prior save-location choice; the finish-time
+        // save routes through the shared in-app dialog (#2515).
         ChosenSavePath = null;
         _saveLocationTextBox.Text = "";
 

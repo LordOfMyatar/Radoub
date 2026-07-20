@@ -20,6 +20,7 @@ This guide holds the full checklist and detailed patterns for adding a new tool 
   - [Testing Requirements](#testing-requirements)
   - [UI Uniformity Checklist (Epic #959)](#ui-uniformity-checklist-epic-959)
   - [File Browser Adoption (FileBrowserPanelBase)](#file-browser-adoption-filebrowserpanelbase)
+  - [Blueprint Save Dialog (SaveBlueprintWindow)](#blueprint-save-dialog-saveblueprintwindow)
   - [Post-Implementation Audit](#post-implementation-audit)
   - [Versioning (NBGV)](#versioning-nbgv)
   - [Common Mistakes to Avoid](#common-mistakes-to-avoid)
@@ -441,6 +442,34 @@ A `PaletteCache` is optional — wire it only when HAK/BIF extraction is expensi
 - `BrowserSortLogic.FilterAndSort` ([BrowserSortLogic.cs](../Radoub.UI/Radoub.UI/Controls/BrowserSortLogic.cs)) is a pure-static helper covering the comparator + filter behavior; mirror its test style in `BrowserSortLogicTests.cs` if extending sort semantics.
 - `TryFillFromCache(entry, lookup)` on each panel is an `internal static` seam — write cache-hit/miss tests against it (see `ItemBrowserPanelIndexingTests.cs`, `StoreBrowserPanelIndexingTests.cs`).
 - `BuildPaletteItemFromUtm` (`StoreBrowserPanel.cs:335`) shows the pure-logic pattern for converting raw bytes → `SharedPaletteCacheItem` so the populator path is testable independent of disk I/O.
+
+[↑ TOC](#table-of-contents)
+
+### Blueprint Save Dialog (SaveBlueprintWindow)
+
+For blueprint Save / Save As, use the shared `Radoub.UI.Views.SaveBlueprintWindow` instead of `StorageProvider.SaveFilePickerAsync`. The OS-native picker scatters files outside the module and is not screenshot-identical across Windows and Linux. `SaveBlueprintWindow` defaults to the active module directory, lists existing blueprints in the target folder, validates the filename inline (Aurora: ≤16 chars, `[A-Za-z0-9_]`), confirms overwrite, and renders identically on every OS. All blueprint tools (Fence/Relique/Reliquary/Quartermaster/Parley) adopted it in [#2515](https://github.com/LordOfMyatar/Radoub/issues/2515).
+
+Call it with a `SaveBlueprintOptions` and read `Result` (null on cancel). The tool supplies its own `IScriptBrowserContext`, whose `CurrentFileDirectory` must fall back to `RadoubSettings.Instance.CurrentModulePath` so a brand-new unsaved blueprint still defaults to the module (see `ReliqueScriptBrowserContext`):
+
+```csharp
+var opts = new Radoub.UI.Services.SaveBlueprintOptions(
+    Title: "Save Store As — Fence",
+    Extensions: new[] { "utm" },              // first is default
+    DefaultResRef: _currentStore.ResRef,
+    Context: new FenceScriptBrowserContext(_currentFilePath, _gameDataService));
+var win = new Radoub.UI.Views.SaveBlueprintWindow(opts);
+await win.ShowDialog(this);
+if (win.Result is not { } result) return false;
+await SaveFile(result.Path);                  // tool-specific save runs after the dialog
+```
+
+Keep all tool-specific post-save logic — ResRef-from-filename, atomic write, browser refresh, format conversion — in your own `SaveFile` after the dialog returns. The dialog only resolves the path; it does not write the file.
+
+The **Browse** button inside the dialog is the deliberate override for saving elsewhere (the only place an OS folder picker remains). Do not add your own OS picker alongside it.
+
+Multi-extension: pass multiple `Extensions` (e.g. Quartermaster's `["utc", "bic"]`) to show an extension selector, and `DefaultDirectoryByExtension` to give each extension its own default folder (e.g. QM: `utc` → module, `bic` → localvault). Single-extension tools omit that argument.
+
+Cross-reference: the OS picker (`SaveFilePickerAsync`) is still correct for non-blueprint **exports** — character sheets, script/text exports, settings files. Those are not module resources and stay on the native picker.
 
 [↑ TOC](#table-of-contents)
 
