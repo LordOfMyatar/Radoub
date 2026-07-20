@@ -12,6 +12,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 - The Level-Up wizard now edits a private copy of the creature and commits only on success, so cancelling, closing, or a mid-apply error leaves the creature untouched (#2572, #2573).
 - Multi-level apply no longer drops extra ability increases selected in CE mode (#2696).
+- The character sheet's Final ability column now adds the racial modifier instead of repeating the base score.
 
 ---
 
