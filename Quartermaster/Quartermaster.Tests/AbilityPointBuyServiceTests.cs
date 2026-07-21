@@ -1,3 +1,4 @@
+using System;
 using Quartermaster.Services;
 using Xunit;
 
@@ -191,6 +192,37 @@ public class AbilityPointBuyServiceTests
 
         int spent = AbilityPointBuyService.CalculatePointsSpent(result);
         Assert.True(spent <= 30, $"Should not overspend: spent {spent}");
+    }
+
+    /// <summary>
+    /// #2581: the NCW wizard kept its own copy of this order and the two drifted in all six
+    /// branches. The wizard's order (#1737 — avoid pumping WIS/CHA/INT for martial builds) is
+    /// the newer, deliberate one and is now canonical. Pinned so it cannot silently drift again.
+    /// </summary>
+    [Theory]
+    [InlineData("STR", new[] { "CON", "DEX", "INT", "WIS", "CHA" })]
+    [InlineData("DEX", new[] { "CON", "STR", "INT", "WIS", "CHA" })]
+    [InlineData("CON", new[] { "STR", "DEX", "INT", "WIS", "CHA" })]
+    [InlineData("INT", new[] { "DEX", "CON", "STR", "WIS", "CHA" })]
+    [InlineData("WIS", new[] { "CON", "DEX", "STR", "INT", "CHA" })]
+    [InlineData("CHA", new[] { "CON", "DEX", "STR", "INT", "WIS" })]
+    public void GetSecondaryPriorityOrder_MatchesCanonicalOrder(string primary, string[] expected)
+    {
+        Assert.Equal(expected, AbilityPointBuyService.GetSecondaryPriorityOrder(primary));
+    }
+
+    /// <summary>
+    /// #2581/#1737: a martial primary must favour INT over WIS among its secondaries, which is
+    /// the behavioural difference between the two drifted orders.
+    /// </summary>
+    [Fact]
+    public void GetSecondaryPriorityOrder_MartialPrimary_PrefersIntOverWis()
+    {
+        var order = AbilityPointBuyService.GetSecondaryPriorityOrder("STR");
+
+        Assert.True(
+            Array.IndexOf(order, "INT") < Array.IndexOf(order, "WIS"),
+            "STR builds should rank INT above WIS (#1737)");
     }
 
     [Fact]

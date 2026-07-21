@@ -15,8 +15,10 @@ public partial class NewCharacterWizardWindow
 {
     #region Step 6: Ability Scores
 
-    private static readonly string[] AbilityNames = { "STR", "DEX", "CON", "INT", "WIS", "CHA" };
-    private static readonly string[] AbilityFullNames = { "Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma" };
+    // Canonical order lives in AbilityPointBuyService; a divergent copy here would map racial
+    // modifiers to the wrong stat (#2581).
+    private static string[] AbilityNames => AbilityPointBuyService.AbilityNames;
+    private static string[] AbilityFullNames => AbilityPointBuyService.AbilityFullNames;
 
     private void PrepareStep6()
     {
@@ -196,9 +198,7 @@ public partial class NewCharacterWizardWindow
                 else if (tag.StartsWith("Cost_"))
                 {
                     var ability = tag[5..];
-                    int baseScore = _abilityBaseScores[ability];
-                    int costIndex = baseScore - AbilityMinBase;
-                    int cost = costIndex >= 0 && costIndex < PointBuyCosts.Length ? PointBuyCosts[costIndex] : 0;
+                    int cost = AbilityPointBuyService.GetCostForScore(_abilityBaseScores[ability]);
                     tb.Text = cost.ToString();
                 }
             }
@@ -218,11 +218,7 @@ public partial class NewCharacterWizardWindow
                         if (_validationLevel == ValidationLevel.Strict)
                         {
                             // Lawful Good: enforce point-buy budget
-                            int nextCostIndex = baseScore + 1 - AbilityMinBase;
-                            int nextCost = nextCostIndex < PointBuyCosts.Length ? PointBuyCosts[nextCostIndex] : int.MaxValue;
-                            int currentCostIndex = baseScore - AbilityMinBase;
-                            int currentCost = currentCostIndex >= 0 && currentCostIndex < PointBuyCosts.Length ? PointBuyCosts[currentCostIndex] : 0;
-                            int costDelta = nextCost - currentCost;
+                            int costDelta = AbilityPointBuyService.GetIncreaseCost(baseScore);
                             btn.IsEnabled = baseScore < AbilityMaxBase && remaining >= costDelta;
                         }
                         else
@@ -275,11 +271,7 @@ public partial class NewCharacterWizardWindow
                 if (_validationLevel == ValidationLevel.Strict)
                 {
                     // Lawful Good: enforce point-buy budget
-                    int nextCostIndex = currentScore + 1 - AbilityMinBase;
-                    int nextCost = nextCostIndex < PointBuyCosts.Length ? PointBuyCosts[nextCostIndex] : int.MaxValue;
-                    int currentCostIndex = currentScore - AbilityMinBase;
-                    int currentCost = currentCostIndex >= 0 && currentCostIndex < PointBuyCosts.Length ? PointBuyCosts[currentCostIndex] : 0;
-                    int costDelta = nextCost - currentCost;
+                    int costDelta = AbilityPointBuyService.GetIncreaseCost(currentScore);
 
                     if (GetAbilityPointsRemaining() >= costDelta)
                     {
@@ -311,92 +303,14 @@ public partial class NewCharacterWizardWindow
 
     private void OnAbilityAutoAssignClick(object? sender, RoutedEventArgs e)
     {
-        // Reset all to base 8
-        foreach (var ability in AbilityNames)
-            _abilityBaseScores[ability] = AbilityMinBase;
-
         // Read package primary ability from packages.2da Attribute column
-        string? primaryAbility = null;
-        if (_selectedPackageId != 255)
-        {
-            primaryAbility = _gameDataService.Get2DAValue("packages", _selectedPackageId, "Attribute")?.ToUpperInvariant();
-        }
+        string? primaryAbility = _selectedPackageId != 255
+            ? _gameDataService.Get2DAValue("packages", _selectedPackageId, "Attribute")?.ToUpperInvariant()
+            : null;
 
-        // Default distribution: balanced with emphasis on primary ability
-        // Strategy: primary ability gets priority, then spread remaining across useful stats
-        if (!string.IsNullOrEmpty(primaryAbility) && primaryAbility != "****" && _abilityBaseScores.ContainsKey(primaryAbility))
-        {
-            // Push primary ability to 16 (cost 10), leaves 20 points
-            _abilityBaseScores[primaryAbility] = 16;
-            int remaining = GetAbilityPointsRemaining();
-
-            // Distribute remaining points across other abilities
-            // Priority: CON > DEX > other stats
-            // Secondary ability priority: CON/DEX are universally useful,
-            // then spread across stats relevant to the primary ability.
-            // Avoid pumping WIS/CHA/INT unnecessarily for martial classes. (#1737)
-            var priorityOrder = primaryAbility switch
-            {
-                "STR" => new[] { "CON", "DEX", "INT", "WIS", "CHA" },
-                "DEX" => new[] { "CON", "STR", "INT", "WIS", "CHA" },
-                "CON" => new[] { "STR", "DEX", "INT", "WIS", "CHA" },
-                "INT" => new[] { "DEX", "CON", "STR", "WIS", "CHA" },
-                "WIS" => new[] { "CON", "DEX", "STR", "INT", "CHA" },
-                "CHA" => new[] { "CON", "DEX", "STR", "INT", "WIS" },
-                _ => new[] { "CON", "DEX", "INT", "WIS", "CHA" }
-            };
-
-            // Try to raise each secondary ability to 14 (cost 6), then 12 (cost 4)
-            foreach (var target in new[] { 14, 12 })
-            {
-                foreach (var ability in priorityOrder)
-                {
-                    while (_abilityBaseScores[ability] < target)
-                    {
-                        int currentScore = _abilityBaseScores[ability];
-                        int nextCostIndex = currentScore + 1 - AbilityMinBase;
-                        if (nextCostIndex >= PointBuyCosts.Length) break;
-                        int costDelta = PointBuyCosts[nextCostIndex] - PointBuyCosts[currentScore - AbilityMinBase];
-                        if (GetAbilityPointsRemaining() < costDelta) break;
-                        _abilityBaseScores[ability]++;
-                    }
-                }
-            }
-
-            // Spend any remaining single points
-            foreach (var ability in priorityOrder)
-            {
-                while (GetAbilityPointsRemaining() > 0 && _abilityBaseScores[ability] < AbilityMaxBase)
-                {
-                    int currentScore = _abilityBaseScores[ability];
-                    int nextCostIndex = currentScore + 1 - AbilityMinBase;
-                    if (nextCostIndex >= PointBuyCosts.Length) break;
-                    int costDelta = PointBuyCosts[nextCostIndex] - PointBuyCosts[currentScore - AbilityMinBase];
-                    if (GetAbilityPointsRemaining() < costDelta) break;
-                    _abilityBaseScores[ability]++;
-                }
-            }
-        }
-        else
-        {
-            // No primary ability: balanced spread (all 12s = 24 points, then raise STR/CON)
-            foreach (var ability in AbilityNames)
-                _abilityBaseScores[ability] = 12;
-
-            var boostOrder = new[] { "STR", "CON", "DEX", "WIS", "INT", "CHA" };
-            foreach (var ability in boostOrder)
-            {
-                while (GetAbilityPointsRemaining() > 0 && _abilityBaseScores[ability] < AbilityMaxBase)
-                {
-                    int currentScore = _abilityBaseScores[ability];
-                    int nextCostIndex = currentScore + 1 - AbilityMinBase;
-                    if (nextCostIndex >= PointBuyCosts.Length) break;
-                    int costDelta = PointBuyCosts[nextCostIndex] - PointBuyCosts[currentScore - AbilityMinBase];
-                    if (GetAbilityPointsRemaining() < costDelta) break;
-                    _abilityBaseScores[ability]++;
-                }
-            }
-        }
+        var assigned = AbilityPointBuyService.AutoAssign(_pointBuyTotal, primaryAbility);
+        foreach (var (ability, score) in assigned)
+            _abilityBaseScores[ability] = score;
 
         UpdateAbilityDisplay();
     }
