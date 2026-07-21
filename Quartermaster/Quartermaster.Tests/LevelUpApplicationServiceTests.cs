@@ -1072,6 +1072,79 @@ public class LevelUpApplicationServiceTests
         Assert.Equal(36, result);
     }
 
+    [Fact]
+    public void ApplyOverflowAbilityIncreases_AppliesIncrementsBeyondLegitimateSlots()
+    {
+        // CE mode lets the user take more increases than the every-fourth-level
+        // slots allow. The consolidated path applies the slotted ones itself; the
+        // overflow beyond them was silently dropped before #2696.
+        var creature = new CreatureBuilder()
+            .WithClass(CommonClass.Fighter, 3)
+            .WithAbilities(14, 12, 14, 10, 10, 8)
+            .Build();
+
+        // Two increments requested (STR, DEX) but only one legitimate slot.
+        var allIncreases = new List<int> { 0, 1 };
+        var applied = new Dictionary<int, int> { [4] = 0 }; // STR used the slot at char level 4
+
+        LevelUpApplicationService.ApplyOverflowAbilityIncreases(creature, allIncreases, applied);
+
+        Assert.Equal(14, creature.Str); // Untouched — the slot already applied it
+        Assert.Equal(13, creature.Dex); // 12 + 1 overflow
+    }
+
+    [Fact]
+    public void ApplyOverflowAbilityIncreases_NoOverflow_LeavesCreatureUnchanged()
+    {
+        var creature = new CreatureBuilder()
+            .WithClass(CommonClass.Fighter, 3)
+            .WithAbilities(14, 12, 14, 10, 10, 8)
+            .Build();
+
+        var allIncreases = new List<int> { 0 };
+        var applied = new Dictionary<int, int> { [4] = 0 };
+
+        LevelUpApplicationService.ApplyOverflowAbilityIncreases(creature, allIncreases, applied);
+
+        Assert.Equal(14, creature.Str);
+        Assert.Equal(12, creature.Dex);
+    }
+
+    [Fact]
+    public void ApplyOverflowAbilityIncreases_SameAbilityOverflowsTwice_Stacks()
+    {
+        var creature = new CreatureBuilder()
+            .WithClass(CommonClass.Fighter, 3)
+            .WithAbilities(14, 12, 14, 10, 10, 8)
+            .Build();
+
+        // STR three times, one slot available.
+        var allIncreases = new List<int> { 0, 0, 0 };
+        var applied = new Dictionary<int, int> { [4] = 0 };
+
+        LevelUpApplicationService.ApplyOverflowAbilityIncreases(creature, allIncreases, applied);
+
+        Assert.Equal(16, creature.Str); // 14 + 2 overflow (third one used the slot)
+    }
+
+    [Fact]
+    public void ApplyOverflowAbilityIncreases_NoSlotsUsed_AppliesEverything()
+    {
+        var creature = new CreatureBuilder()
+            .WithClass(CommonClass.Fighter, 3)
+            .WithAbilities(14, 12, 14, 10, 10, 8)
+            .Build();
+
+        var allIncreases = new List<int> { 0, 1, 2 };
+        var applied = new Dictionary<int, int>();
+
+        LevelUpApplicationService.ApplyOverflowAbilityIncreases(creature, allIncreases, applied);
+
+        Assert.Equal(15, creature.Str);
+        Assert.Equal(13, creature.Dex);
+        Assert.Equal(15, creature.Con);
+    }
+
     #endregion
 
     #region Saving Throw Updates (#1740)

@@ -224,13 +224,13 @@ public partial class MainWindow
                 LoadAllPanels(_currentCreature);
                 UpdateCharacterHeader();
                 UpdateStatus($"Character created at level {targetLevel}");
+                MarkDirty();
             }
             else
             {
+                // Cancelling leaves the creature untouched, so nothing is dirty.
                 UpdateStatus("Multi-level creation cancelled");
             }
-
-            MarkDirty();
         }
 
         // Save to path chosen in wizard Step 1, or prompt if not chosen (#1476)

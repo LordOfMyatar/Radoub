@@ -5,6 +5,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.140-alpha] - 2026-07-20
+**Branch**: `quartermaster/issue-2676` | **PR**: #2697
+
+### Sprint: Level-Up Wizard Data Integrity (#2676)
+
+- The Level-Up wizard now edits a private copy of the creature and commits only on success, so cancelling, closing, or a mid-apply error leaves the creature untouched (#2572, #2573).
+- Multi-level apply no longer drops extra ability increases selected in CE mode (#2696).
+- The character sheet's Final ability column now adds the racial modifier instead of repeating the base score.
+
+---
+
 ## [0.2.139-alpha] - 2026-07-08
 **Branch**: `radoub/sprint/save-integrity` | **PR**: #2656
 

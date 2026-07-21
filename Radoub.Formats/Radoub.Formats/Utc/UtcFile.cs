@@ -314,6 +314,166 @@ public class UtcFile
     public List<Variable> VarTable { get; set; } = new();
 
     /// <summary>
+    /// Replaces every field of this creature with the source's, preserving this
+    /// instance so existing references stay valid. Editors clone a creature, edit
+    /// the copy, and commit it back here only on success.
+    ///
+    /// Copies by round-tripping through the format's own writer and reader, so
+    /// copy fidelity equals save fidelity and no hand-maintained field list can
+    /// drift. Source and target must be the same runtime type — converting a UTC
+    /// to a BIC is <see cref="Bic.BicFile.FromUtcFile"/>'s job, since that
+    /// synthesizes Experience and the QuickBar rather than leaving them stale.
+    /// </summary>
+    /// <exception cref="ArgumentNullException">Source is null.</exception>
+    /// <exception cref="InvalidOperationException">Source is a different runtime type.</exception>
+    public void CopyFrom(UtcFile source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        if (source.GetType() != GetType())
+        {
+            throw new InvalidOperationException(
+                $"Cannot copy {source.GetType().Name} into {GetType().Name}. " +
+                "Use BicFile.FromUtcFile to convert a creature between formats.");
+        }
+
+        CopyFromCore(source);
+    }
+
+    /// <summary>
+    /// Round-trips the source through the UTC writer/reader and assigns the result
+    /// field by field. BicFile overrides this to use the BIC writer/reader, which
+    /// carries the player-only fields UTC does not support.
+    /// </summary>
+    protected virtual void CopyFromCore(UtcFile source)
+    {
+        var roundTripped = UtcReader.Read(UtcWriter.Write(source));
+        AssignUtcFields(roundTripped);
+    }
+
+    /// <summary>
+    /// Assigns every UTC field from an already-round-tripped creature.
+    /// </summary>
+    protected void AssignUtcFields(UtcFile source)
+    {
+        FileType = source.FileType;
+        FileVersion = source.FileVersion;
+        TemplateResRef = source.TemplateResRef;
+        Comment = source.Comment;
+        PaletteID = source.PaletteID;
+        FirstName = source.FirstName;
+        LastName = source.LastName;
+        Tag = source.Tag;
+        Description = source.Description;
+        Race = source.Race;
+        Gender = source.Gender;
+        Subrace = source.Subrace;
+        Deity = source.Deity;
+        AppearanceType = source.AppearanceType;
+        Phenotype = source.Phenotype;
+        PortraitId = source.PortraitId;
+        Portrait = source.Portrait;
+        Tail = source.Tail;
+        Wings = source.Wings;
+        BodyBag = source.BodyBag;
+        AppearanceHead = source.AppearanceHead;
+        BodyPart_Belt = source.BodyPart_Belt;
+        BodyPart_LBicep = source.BodyPart_LBicep;
+        BodyPart_RBicep = source.BodyPart_RBicep;
+        BodyPart_LFArm = source.BodyPart_LFArm;
+        BodyPart_RFArm = source.BodyPart_RFArm;
+        BodyPart_LFoot = source.BodyPart_LFoot;
+        BodyPart_RFoot = source.BodyPart_RFoot;
+        BodyPart_LHand = source.BodyPart_LHand;
+        BodyPart_RHand = source.BodyPart_RHand;
+        BodyPart_LShin = source.BodyPart_LShin;
+        BodyPart_RShin = source.BodyPart_RShin;
+        BodyPart_LShoul = source.BodyPart_LShoul;
+        BodyPart_RShoul = source.BodyPart_RShoul;
+        BodyPart_LThigh = source.BodyPart_LThigh;
+        BodyPart_RThigh = source.BodyPart_RThigh;
+        BodyPart_Neck = source.BodyPart_Neck;
+        BodyPart_Pelvis = source.BodyPart_Pelvis;
+        BodyPart_Torso = source.BodyPart_Torso;
+        Color_Skin = source.Color_Skin;
+        Color_Hair = source.Color_Hair;
+        Color_Tattoo1 = source.Color_Tattoo1;
+        Color_Tattoo2 = source.Color_Tattoo2;
+        ArmorPart_Belt = source.ArmorPart_Belt;
+        ArmorPart_LBicep = source.ArmorPart_LBicep;
+        ArmorPart_RBicep = source.ArmorPart_RBicep;
+        ArmorPart_LFArm = source.ArmorPart_LFArm;
+        ArmorPart_RFArm = source.ArmorPart_RFArm;
+        ArmorPart_LFoot = source.ArmorPart_LFoot;
+        ArmorPart_RFoot = source.ArmorPart_RFoot;
+        ArmorPart_LHand = source.ArmorPart_LHand;
+        ArmorPart_RHand = source.ArmorPart_RHand;
+        ArmorPart_LShin = source.ArmorPart_LShin;
+        ArmorPart_RShin = source.ArmorPart_RShin;
+        ArmorPart_LShoul = source.ArmorPart_LShoul;
+        ArmorPart_RShoul = source.ArmorPart_RShoul;
+        ArmorPart_LThigh = source.ArmorPart_LThigh;
+        ArmorPart_RThigh = source.ArmorPart_RThigh;
+        ArmorPart_Neck = source.ArmorPart_Neck;
+        ArmorPart_Pelvis = source.ArmorPart_Pelvis;
+        ArmorPart_Torso = source.ArmorPart_Torso;
+        ArmorPart_Robe = source.ArmorPart_Robe;
+        Str = source.Str;
+        Dex = source.Dex;
+        Con = source.Con;
+        Int = source.Int;
+        Wis = source.Wis;
+        Cha = source.Cha;
+        HitPoints = source.HitPoints;
+        CurrentHitPoints = source.CurrentHitPoints;
+        MaxHitPoints = source.MaxHitPoints;
+        NaturalAC = source.NaturalAC;
+        ChallengeRating = source.ChallengeRating;
+        CRAdjust = source.CRAdjust;
+        FortBonus = source.FortBonus;
+        RefBonus = source.RefBonus;
+        WillBonus = source.WillBonus;
+        GoodEvil = source.GoodEvil;
+        LawfulChaotic = source.LawfulChaotic;
+        Plot = source.Plot;
+        IsImmortal = source.IsImmortal;
+        NoPermDeath = source.NoPermDeath;
+        IsPC = source.IsPC;
+        Disarmable = source.Disarmable;
+        Lootable = source.Lootable;
+        Interruptable = source.Interruptable;
+        FactionID = source.FactionID;
+        PerceptionRange = source.PerceptionRange;
+        WalkRate = source.WalkRate;
+        SoundSetFile = source.SoundSetFile;
+        DecayTime = source.DecayTime;
+        StartingPackage = source.StartingPackage;
+        FamiliarType = source.FamiliarType;
+        FamiliarName = source.FamiliarName;
+        Conversation = source.Conversation;
+        ScriptAttacked = source.ScriptAttacked;
+        ScriptDamaged = source.ScriptDamaged;
+        ScriptDeath = source.ScriptDeath;
+        ScriptDialogue = source.ScriptDialogue;
+        ScriptDisturbed = source.ScriptDisturbed;
+        ScriptEndRound = source.ScriptEndRound;
+        ScriptHeartbeat = source.ScriptHeartbeat;
+        ScriptOnBlocked = source.ScriptOnBlocked;
+        ScriptOnNotice = source.ScriptOnNotice;
+        ScriptRested = source.ScriptRested;
+        ScriptSpawn = source.ScriptSpawn;
+        ScriptSpellAt = source.ScriptSpellAt;
+        ScriptUserDefine = source.ScriptUserDefine;
+        ClassList = source.ClassList;
+        FeatList = source.FeatList;
+        SkillList = source.SkillList;
+        SpecAbilityList = source.SpecAbilityList;
+        ItemList = source.ItemList;
+        EquipItemList = source.EquipItemList;
+        VarTable = source.VarTable;
+    }
+
+    /// <summary>
     /// Creates a deep copy of this UtcFile, including all list contents.
     /// Used by Level Up Wizard for cancel/undo safety.
     /// </summary>

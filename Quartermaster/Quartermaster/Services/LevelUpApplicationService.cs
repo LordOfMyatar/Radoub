@@ -291,6 +291,37 @@ public class LevelUpApplicationService
     }
 
     /// <summary>
+    /// Applies ability increases that exceed the available every-fourth-level slots.
+    /// CE mode lets the user take more increases than the slots allow; the consolidated
+    /// path applies the slotted ones per level and this applies the remainder (#2696).
+    /// </summary>
+    /// <param name="allIncreases">Every requested increase, one entry per increment.</param>
+    /// <param name="appliedByLevel">Increases already applied, keyed by character level.</param>
+    public static void ApplyOverflowAbilityIncreases(
+        UtcFile creature,
+        IEnumerable<int> allIncreases,
+        Dictionary<int, int> appliedByLevel)
+    {
+        // Counting rather than set-subtracting: the same ability can be raised
+        // several times, so identity of each increment matters, not membership.
+        var remaining = new Dictionary<int, int>();
+        foreach (int abilityIndex in allIncreases)
+            remaining[abilityIndex] = remaining.GetValueOrDefault(abilityIndex) + 1;
+
+        foreach (int abilityIndex in appliedByLevel.Values)
+        {
+            if (remaining.TryGetValue(abilityIndex, out int count) && count > 0)
+                remaining[abilityIndex] = count - 1;
+        }
+
+        foreach (var (abilityIndex, count) in remaining)
+        {
+            for (int i = 0; i < count; i++)
+                ApplyAbilityIncrease(creature, abilityIndex);
+        }
+    }
+
+    /// <summary>
     /// Calculates total HP gain for multiple levels, accounting for CON increases and retroactive HP.
     /// conIncreaseLevels: character levels where CON was increased (within the range).
     /// </summary>

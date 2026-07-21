@@ -254,6 +254,12 @@ public partial class LevelUpWizardWindow
             }
         }
 
+        // 1.5. Apply CE increases beyond the every-fourth-level slots (#2696).
+        // _abilityIncreasesByLevel holds only what fit into those slots; the rest
+        // would otherwise be dropped on a multi-level apply.
+        LevelUpApplicationService.ApplyOverflowAbilityIncreases(
+            _creature, _ceAbilityIncreases, _abilityIncreasesByLevel);
+
         // 2. Apply pooled HP
         LevelUpApplicationService.ApplyHitPoints(_creature, _hpIncrease);
 

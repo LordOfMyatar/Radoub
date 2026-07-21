@@ -206,6 +206,52 @@ public class LevelHistoryServiceTests
         };
     }
 
+    [Fact]
+    public void Encode_RecordWithUnencodableData_ReturnsEmptyRatherThanThrowing()
+    {
+        // Level history is cosmetic metadata. An encode failure must not abort an
+        // otherwise-valid level-up, so Encode swallows and logs like Decode does.
+        // A cyclic Skills dictionary is not reachable through the UI, but it stands
+        // in for any serializer failure (#2676 code review).
+        var records = new List<LevelRecord>
+        {
+            new()
+            {
+                TotalLevel = 1,
+                ClassId = 0,
+                ClassLevel = 1,
+                Feats = null!,   // Serializer and the readable encoder both dereference this
+                Skills = null!,
+                AbilityIncrease = -1
+            }
+        };
+
+        // Readable and binary dereference the lists directly and throw; both must be
+        // swallowed. JSON tolerates nulls and still produces output, which is fine —
+        // the guarantee is "never throws", not "always returns empty".
+        var readable = LevelHistoryService.Encode(records, LevelHistoryEncoding.Readable);
+        var binary = LevelHistoryService.Encode(records, LevelHistoryEncoding.Binary);
+        var json = Record.Exception(() =>
+            LevelHistoryService.Encode(records, LevelHistoryEncoding.JsonCompressed));
+
+        Assert.Equal("", readable);
+        Assert.Equal("", binary);
+        Assert.Null(json);
+    }
+
+    [Fact]
+    public void AppendToComment_EncodeFails_PreservesExistingComment()
+    {
+        var records = new List<LevelRecord>
+        {
+            new() { TotalLevel = 1, ClassId = 0, ClassLevel = 1, Feats = null!, Skills = null!, AbilityIncrease = -1 }
+        };
+
+        var result = LevelHistoryService.AppendToComment("designer note", records, LevelHistoryEncoding.Readable);
+
+        Assert.Equal("designer note", result);
+    }
+
     private static void AssertRecordsEqual(LevelRecord expected, LevelRecord actual)
     {
         Assert.Equal(expected.TotalLevel, actual.TotalLevel);

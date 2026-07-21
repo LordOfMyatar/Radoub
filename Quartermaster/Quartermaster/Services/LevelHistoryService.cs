@@ -54,13 +54,24 @@ public static class LevelHistoryService
         if (records == null || records.Count == 0)
             return "";
 
-        return encoding switch
+        // History is cosmetic metadata appended to the creature's comment. Failing
+        // to encode it must not abort an otherwise-valid level-up, so this swallows
+        // and logs exactly as Decode does — the caller gets "" and skips the append.
+        try
         {
-            LevelHistoryEncoding.Readable => EncodeReadable(records),
-            LevelHistoryEncoding.Binary => EncodeBinary(records),
-            LevelHistoryEncoding.JsonCompressed => EncodeJsonCompressed(records),
-            _ => EncodeReadable(records)
-        };
+            return encoding switch
+            {
+                LevelHistoryEncoding.Readable => EncodeReadable(records),
+                LevelHistoryEncoding.Binary => EncodeBinary(records),
+                LevelHistoryEncoding.JsonCompressed => EncodeJsonCompressed(records),
+                _ => EncodeReadable(records)
+            };
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to encode level history: {ex.Message}");
+            return "";
+        }
     }
 
     /// <summary>

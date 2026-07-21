@@ -197,8 +197,11 @@ public partial class LevelUpWizardWindow
     private void UpdateAbilityToggle(int index, bool selected) { }
 
     /// <summary>
-    /// Temporarily applies ability increments to creature so feat prereqs see projected scores.
+    /// Temporarily applies ability increments so feat prereqs see projected scores.
     /// Called when entering Step 3 (feats). Safe to call multiple times — tracks applied state.
+    ///
+    /// Writes to the wizard's working copy, never the caller's creature, so an
+    /// increment left applied at close cannot reach the live creature (#2573).
     /// </summary>
     private bool _abilityIncrementsApplied;
 

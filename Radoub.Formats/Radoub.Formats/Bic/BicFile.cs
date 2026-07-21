@@ -600,6 +600,25 @@ public class BicFile : UtcFile
     /// Not documented in BioWare specs but present in all valid BIC files.
     /// </summary>
     public List<LevelStatEntry> LvlStatList { get; set; } = new();
+
+    /// <summary>
+    /// Round-trips through the BIC writer/reader so the player-only fields UTC
+    /// does not carry — Age, Experience, Gold, QuickBar, reputations, level
+    /// history — survive a BIC-to-BIC copy.
+    /// </summary>
+    protected override void CopyFromCore(UtcFile source)
+    {
+        var roundTripped = BicReader.Read(BicWriter.Write((BicFile)source));
+
+        AssignUtcFields(roundTripped);
+
+        Age = roundTripped.Age;
+        Experience = roundTripped.Experience;
+        Gold = roundTripped.Gold;
+        QBList = roundTripped.QBList;
+        ReputationList = roundTripped.ReputationList;
+        LvlStatList = roundTripped.LvlStatList;
+    }
 }
 
 /// <summary>

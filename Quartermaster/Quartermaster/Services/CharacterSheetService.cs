@@ -204,12 +204,15 @@ public class CharacterSheetService
 
     private static void AppendAbilityRow(StringBuilder sb, string name, byte score, int racialMod)
     {
-        var baseScore = score; // Note: UTC stores final scores, not base
-        var modifier = CreatureDisplayService.CalculateAbilityBonus(score);
+        // UTC stores base scores; the racial modifier is applied at display time.
+        // BioWare Creature Format 3.2: "Only the base values themselves are saved
+        // in a Creature Struct."
+        var totalScore = score + racialMod;
+        var modifier = CreatureDisplayService.CalculateAbilityBonus(totalScore);
         var modStr = CreatureDisplayService.FormatBonus(modifier);
         var racialStr = racialMod != 0 ? CreatureDisplayService.FormatBonus(racialMod) : "  -";
 
-        sb.AppendLine($"  {name,-8}  {baseScore,4}    {racialStr,6}    {score,5}    {modStr,8}");
+        sb.AppendLine($"  {name,-8}  {score,4}    {racialStr,6}    {totalScore,5}    {modStr,8}");
     }
 
     private void AppendCombatSection(StringBuilder sb, UtcFile creature)
@@ -490,21 +493,26 @@ public class CharacterSheetService
         sb.AppendLine("| Ability | Score | Modifier |");
         sb.AppendLine("|---------|-------|----------|");
 
-        AppendAbilityRowMd(sb, "STR", creature.Str);
-        AppendAbilityRowMd(sb, "DEX", creature.Dex);
-        AppendAbilityRowMd(sb, "CON", creature.Con);
-        AppendAbilityRowMd(sb, "INT", creature.Int);
-        AppendAbilityRowMd(sb, "WIS", creature.Wis);
-        AppendAbilityRowMd(sb, "CHA", creature.Cha);
+        var racialMods = _displayService.GetRacialModifiers(creature.Race);
+
+        AppendAbilityRowMd(sb, "STR", creature.Str, racialMods.Str);
+        AppendAbilityRowMd(sb, "DEX", creature.Dex, racialMods.Dex);
+        AppendAbilityRowMd(sb, "CON", creature.Con, racialMods.Con);
+        AppendAbilityRowMd(sb, "INT", creature.Int, racialMods.Int);
+        AppendAbilityRowMd(sb, "WIS", creature.Wis, racialMods.Wis);
+        AppendAbilityRowMd(sb, "CHA", creature.Cha, racialMods.Cha);
 
         sb.AppendLine();
     }
 
-    private static void AppendAbilityRowMd(StringBuilder sb, string name, byte score)
+    private static void AppendAbilityRowMd(StringBuilder sb, string name, byte score, int racialMod)
     {
-        var modifier = CreatureDisplayService.CalculateAbilityBonus(score);
+        // Single Score column, so it shows the effective score — otherwise the
+        // modifier beside it would not match. UTC stores base; racial is applied here.
+        var totalScore = score + racialMod;
+        var modifier = CreatureDisplayService.CalculateAbilityBonus(totalScore);
         var modStr = CreatureDisplayService.FormatBonus(modifier);
-        sb.AppendLine($"| {name} | {score} | {modStr} |");
+        sb.AppendLine($"| {name} | {totalScore} | {modStr} |");
     }
 
     private void AppendCombatSectionMd(StringBuilder sb, UtcFile creature)
