@@ -725,6 +725,101 @@ public class FeatServiceTests
 
     #endregion
 
+    #region Level Up Feat Count - Multi-Level Range (#2701)
+
+    /// <summary>
+    /// The requested class level drives the answer, not the creature's current state.
+    /// A level-1 creature asked about level 3 must report the level-3 general feat,
+    /// even though its current level plus one is 2.
+    /// </summary>
+    /// <remarks>
+    /// Class level 1 is excluded: against a level-1 creature it projects to character
+    /// level 1, which correctly grants a feat under the level-1 rule.
+    /// <see cref="GetLevelUpFeatCount_Level1Human_Gets3Feats"/> covers that case.
+    /// </remarks>
+    [Theory]
+    [InlineData(2, false)]
+    [InlineData(3, true)]
+    [InlineData(4, false)]
+    [InlineData(5, false)]
+    [InlineData(6, true)]
+    [InlineData(9, true)]
+    public void GetLevelUpFeatCount_QueriedLevelDrivesGeneralFeat_NotCurrentState(
+        int queriedLevel, bool expectsGeneralFeat)
+    {
+        var creature = new CreatureBuilder()
+            .WithRace(6)
+            .WithClass(4, 1) // Fighter 1 — current state stays fixed across every case
+            .Build();
+
+        var result = _featService.GetLevelUpFeatCount(creature, 4, queriedLevel);
+
+        Assert.Equal(expectsGeneralFeat ? 1 : 0, result.GeneralFeats);
+    }
+
+    /// <summary>
+    /// Acceptance: multi-level apply pools the same count as levelling one at a time.
+    /// 1 to 5 earns one general feat (level 3); 1 to 8 earns two (levels 3 and 6).
+    /// </summary>
+    [Theory]
+    [InlineData(5, 1)]  // levels 2,3,4,5 -> feat at 3
+    [InlineData(8, 2)]  // levels 2..8 -> feats at 3 and 6
+    [InlineData(10, 3)] // levels 2..10 -> feats at 3, 6, 9
+    public void GetLevelUpFeatCount_PooledOverRange_MatchesSingleLevelTotal(
+        int targetLevel, int expectedGeneralFeats)
+    {
+        var creature = new CreatureBuilder()
+            .WithRace(6)
+            .WithClass(4, 1) // Fighter 1
+            .Build();
+
+        int pooled = 0;
+        for (int lvl = 2; lvl <= targetLevel; lvl++)
+            pooled += _featService.GetLevelUpFeatCount(creature, 4, lvl).GeneralFeats;
+
+        Assert.Equal(expectedGeneralFeats, pooled);
+    }
+
+    /// <summary>
+    /// Projection is per-class: the queried level replaces only the levelled class's
+    /// contribution, leaving other classes' levels intact.
+    /// </summary>
+    [Fact]
+    public void GetLevelUpFeatCount_Multiclass_ProjectsOnlyTheLevelledClass()
+    {
+        // Fighter 3 + Rogue 2 = total 5. Rogue to 3 => projected total 6 => general feat.
+        var creature = new CreatureBuilder()
+            .WithRace(6)
+            .WithClass(4, 3)
+            .WithClass(8, 2)
+            .Build();
+
+        Assert.Equal(1, _featService.GetLevelUpFeatCount(creature, 8, 3).GeneralFeats);
+        // Rogue to 4 => projected total 7 => no general feat.
+        Assert.Equal(0, _featService.GetLevelUpFeatCount(creature, 8, 4).GeneralFeats);
+    }
+
+    /// <summary>
+    /// Levelling a brand-new class adds to the existing total rather than replacing it.
+    /// </summary>
+    [Fact]
+    public void GetLevelUpFeatCount_NewClass_AddsToExistingTotal()
+    {
+        // Fighter 5, taking Rogue 1 => projected total 6 => general feat.
+        var creature = new CreatureBuilder()
+            .WithRace(6)
+            .WithClass(4, 5)
+            .Build();
+
+        var result = _featService.GetLevelUpFeatCount(creature, 8, 1);
+
+        Assert.Equal(1, result.GeneralFeats);
+        // Class level 1 of a new class is not character level 1 — no racial feat.
+        Assert.Equal(0, result.RacialBonusFeats);
+    }
+
+    #endregion
+
     #region Class Bonus Feat Pool
 
     [Fact]

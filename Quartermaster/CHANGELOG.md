@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.141-alpha] - 2026-07-20
+**Branch**: `quartermaster/issue-2701` | **PR**: #2703
+
+### Fix: Multi-level apply offers no general feats (#2701)
+
+- Multi-level level-up now offers the general feats earned across the whole range; previously it counted every level as the creature's current level plus one and offered none.
+
+---
+
 ## [0.2.140-alpha] - 2026-07-20
 **Branch**: `quartermaster/issue-2676` | **PR**: #2697
 
