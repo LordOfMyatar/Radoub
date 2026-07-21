@@ -86,6 +86,33 @@ ls NonPublic/Plans/*-[number]-plan.md 2>/dev/null
 If one exists, tell the user it was prepared in an earlier session and should be reviewed
 before implementation. Otherwise continue silently.
 
+### 1.5 Challenge AI-generated issues
+
+**Skip this entirely if Phase 1.4 found a plan containing a Verification Summary.** `/pre-warm`
+already challenged the claims; re-running it wastes tokens and time. Say so in the report:
+"Claims verified during pre-warm [date] — skipping re-verification."
+
+Otherwise, challenge before writing code — but only for **AI-generated tech debt or
+`/code-review` output**, identified by a `## Source` line citing `/code-review`, a
+`🤖 Generated with Claude Code` footer, or `tech-debt`/`performance` labels on a body dense with
+`file.cs:123` citations. AI-filed issues carry fabricated line numbers, invented magnitudes, and
+premises that have since gone stale.
+
+Skip it for human-written enhancements and features. A feature describes what should exist, so
+there is no premise to falsify.
+
+**How.** Dispatch `Explore` agents (one per issue, concurrently) instructed to **refute** rather
+than confirm. Require quoted code with real current line numbers, a per-claim verdict of
+CONFIRMED / WRONG / STALE / UNREACHABLE, and `git log` on cited files since the filing date. Be
+suspicious of perf claims over already-cached data, round row counts lifted from `?? fallback`
+constants, and "these two have drifted" assertions — verify those character by character.
+
+**Then act.** A materially wrong premise stops the branch: report it and ask whether to rescope,
+proceed anyway, or cancel and re-triage. Wrong details get the issue body corrected
+(`gh issue edit N --body-file NonPublic/_scratch/N-body.md`) with a dated correction note before
+implementation begins. Confirm the active identity is `LordOfMyatar` (`gh api user --jq .login`)
+before any issue edit.
+
 ## Phase 2 — Classify
 
 ### 2.1 Item type
@@ -262,6 +289,7 @@ the item in hand are still expected. Prompt before FlaUI — it takes over the m
 | Dirty working directory | Ask the user to commit or stash |
 | Branch already exists | Ask whether to check it out or create a new one |
 | Tool ambiguous | Ask the user |
+| Issue premise refuted (1.5) | Report the failed claims; ask whether to rescope, proceed, or cancel |
 | PR creation fails | Print the manual command |
 
 ## Notes
