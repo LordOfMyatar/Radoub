@@ -21,7 +21,14 @@ public partial class FeatService
     public LevelUpFeatInfo GetLevelUpFeatCount(UtcFile creature, int selectedClassId, int newClassLevel)
     {
         var result = new LevelUpFeatInfo();
-        int newTotalLevel = creature.ClassList.Sum(c => c.ClassLevel) + 1;
+
+        // Project the total level from the requested class level, not from current state (#2701).
+        // The consolidated wizard calls this once per level in a range, so deriving the level
+        // from the creature would return the same answer every iteration.
+        int currentClassLevel = creature.ClassList
+            .FirstOrDefault(c => c.Class == selectedClassId)?.ClassLevel ?? 0;
+        int newTotalLevel = creature.ClassList.Sum(c => c.ClassLevel)
+            + (newClassLevel - currentClassLevel);
 
         // D&D 3.5/NWN rule: general feat at level 1, then every 3 levels (3, 6, 9, 12...)
         // This interval is an engine rule, not configurable via 2DA
