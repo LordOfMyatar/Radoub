@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.141-alpha] - 2026-07-20
-**Branch**: `quartermaster/issue-2701` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2701` | **PR**: #2703
 
 ### Fix: Multi-level apply offers no general feats (#2701)
 
