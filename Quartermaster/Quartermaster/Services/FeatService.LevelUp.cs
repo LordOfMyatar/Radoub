@@ -112,24 +112,12 @@ public partial class FeatService
     public HashSet<int> GetClassBonusFeatPool(int classId)
     {
         var result = new HashSet<int>();
-        var featTable = _gameDataService.Get2DAValue("classes", classId, "FeatsTable");
-        if (string.IsNullOrEmpty(featTable) || featTable == "****")
-            return result;
 
-        int rowCount = _gameDataService.Get2DA(featTable)?.RowCount ?? 300;
-        for (int row = 0; row < rowCount; row++)
+        ForEachClassFeatRow(classId, (featId, listType, _) =>
         {
-            var featIndexStr = _gameDataService.Get2DAValue(featTable, row, "FeatIndex");
-            if (string.IsNullOrEmpty(featIndexStr) || featIndexStr == "****")
-                break;
-
-            if (int.TryParse(featIndexStr, out int featId))
-            {
-                var listType = _gameDataService.Get2DAValue(featTable, row, "List");
-                if (listType == "1") // Bonus-only feats
-                    result.Add(featId);
-            }
-        }
+            if (listType == "1") // Bonus-only feats
+                result.Add(featId);
+        });
 
         return result;
     }

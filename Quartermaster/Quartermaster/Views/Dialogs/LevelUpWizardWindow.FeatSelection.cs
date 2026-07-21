@@ -244,28 +244,14 @@ public partial class LevelUpWizardWindow
     private HashSet<int> GetClassSelectableFeatIds(int classId)
     {
         var result = new HashSet<int>();
-        var featTable = _displayService.GameDataService.Get2DAValue("classes", classId, "FeatsTable");
-        if (string.IsNullOrEmpty(featTable) || featTable == "****")
-            return result;
 
-        int rowCount = _displayService.GameDataService.Get2DA(featTable)?.RowCount ?? 300;
-        for (int row = 0; row < rowCount; row++)
+        _displayService.Feats.ForEachClassFeatRow(classId, (featId, listType, _) =>
         {
-            var featIndexStr = _displayService.GameDataService.Get2DAValue(featTable, row, "FeatIndex");
-            if (string.IsNullOrEmpty(featIndexStr) || featIndexStr == "****")
-                break;
-
-            if (int.TryParse(featIndexStr, out int featId))
-            {
-                var listType = _displayService.GameDataService.Get2DAValue(featTable, row, "List");
-                // List = 1: Bonus feat only, 2: Normal selectable, 3: Automatic/granted
-                // We want 1 and 2 for selection
-                if (listType == "1" || listType == "2")
-                {
-                    result.Add(featId);
-                }
-            }
-        }
+            // List = 1: Bonus feat only, 2: Normal selectable, 3: Automatic/granted
+            // We want 1 and 2 for selection
+            if (listType == "1" || listType == "2")
+                result.Add(featId);
+        });
 
         return result;
     }
