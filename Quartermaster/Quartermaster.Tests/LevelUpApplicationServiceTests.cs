@@ -552,9 +552,47 @@ public class LevelUpApplicationServiceTests
         // No class yet (total level will be 0+1=1)
 
         int points = _service.CalculateLevelUpSkillPoints(creature, (int)CommonClass.Fighter);
-        // (base + intMod + racialExtra) * 4
-        // The exact value depends on mock data - just verify it's > 0 and > non-level-1
-        Assert.True(points > 0, "Level 1 should have skill points");
+
+        // Must be exactly 4x the same creature's level-2 award, not merely non-zero (#2578).
+        var atLevel1 = new CreatureBuilder()
+            .WithRace(CommonRace.Human)
+            .WithClass(CommonClass.Fighter, 1)
+            .WithAbilities(intel: 10)
+            .Build();
+        int level2Points = _service.CalculateLevelUpSkillPoints(atLevel1, (int)CommonClass.Fighter);
+
+        Assert.Equal(level2Points * 4, points);
+    }
+
+    /// <summary>
+    /// #2578: the wizard inlined the per-level formula and omitted the level-1 x4 rule, so a
+    /// level-0 creature gaining its first level got a quarter of the correct points. Both the
+    /// wizard loop and the service must go through this one function.
+    /// </summary>
+    [Theory]
+    [InlineData(1, 8, 0, 0, 32)]  // Level 1: (8 + 0 + 0) * 4 = 32
+    [InlineData(2, 8, 0, 0, 8)]   // Level 2: no multiplier
+    [InlineData(1, 8, 2, 0, 40)]  // Level 1 with INT +2: (8 + 2) * 4 = 40
+    [InlineData(1, 2, 0, 1, 12)]  // Level 1 human fighter: (2 + 0 + 1) * 4 = 12
+    [InlineData(5, 2, 0, 1, 3)]   // Level 5 human fighter: 2 + 0 + 1 = 3
+    [InlineData(2, 0, -3, 0, 1)]  // Floor of 1 applies before racial extra
+    public void CalculateSkillPointsForLevel_AppliesFirstLevelMultiplier(
+        int charLevel, int basePoints, int intMod, int racialExtra, int expected)
+    {
+        Assert.Equal(expected, LevelUpApplicationService.CalculateSkillPointsForLevel(
+            charLevel, basePoints, intMod, racialExtra));
+    }
+
+    /// <summary>
+    /// #2578: level 1 must yield exactly four times the level-2 award for the same inputs.
+    /// </summary>
+    [Fact]
+    public void CalculateSkillPointsForLevel_Level1_IsExactlyFourTimesLevel2()
+    {
+        int level1 = LevelUpApplicationService.CalculateSkillPointsForLevel(1, 8, 1, 0);
+        int level2 = LevelUpApplicationService.CalculateSkillPointsForLevel(2, 8, 1, 0);
+
+        Assert.Equal(level2 * 4, level1);
     }
 
     [Fact]

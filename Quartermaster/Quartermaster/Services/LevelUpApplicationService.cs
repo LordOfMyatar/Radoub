@@ -232,17 +232,26 @@ public class LevelUpApplicationService
         int intMod = CreatureDisplayService.CalculateAbilityBonus(creature.Int);
         int basePoints = _displayService.GetClassSkillPointBase(classId);
         int totalLevel = creature.ClassList.Sum(c => c.ClassLevel) + 1;
-
         int racialExtra = _displayService.GetRacialExtraSkillPointsPerLevel(creature.Race);
 
-        if (totalLevel == 1)
-        {
-            // Level 1 gets 4x multiplier (NWN engine rule)
-            const int FirstLevelMultiplier = 4;
-            return (Math.Max(1, basePoints + intMod) + racialExtra) * FirstLevelMultiplier;
-        }
+        return CalculateSkillPointsForLevel(totalLevel, basePoints, intMod, racialExtra);
+    }
 
-        return Math.Max(1, basePoints + intMod) + racialExtra;
+    /// <summary>
+    /// Calculates skill points awarded for gaining one character level.
+    /// D&amp;D 3.5/NWN: (basePoints + intMod) at level 2+, x4 at level 1. Racial bonus points
+    /// apply per level, and are multiplied at level 1 too.
+    /// Callers that award points across a level range must invoke this per level so the
+    /// level-1 rule cannot be skipped (#2578).
+    /// </summary>
+    public static int CalculateSkillPointsForLevel(
+        int characterLevel, int basePoints, int intMod, int racialExtra)
+    {
+        int perLevel = Math.Max(1, basePoints + intMod) + racialExtra;
+
+        // Level 1 gets 4x multiplier (NWN engine rule)
+        const int FirstLevelMultiplier = 4;
+        return characterLevel == 1 ? perLevel * FirstLevelMultiplier : perLevel;
     }
 
     /// <summary>

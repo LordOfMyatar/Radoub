@@ -40,7 +40,8 @@ public partial class LevelUpWizardWindow
                 effectiveInt = (byte)System.Math.Min(255, effectiveInt + 1);
 
             int intMod = CreatureDisplayService.CalculateAbilityBonus(effectiveInt);
-            _skillPointsToAllocate += System.Math.Max(1, basePoints + intMod) + racialExtra;
+            _skillPointsToAllocate += LevelUpApplicationService.CalculateSkillPointsForLevel(
+                charLevel, basePoints, intMod, racialExtra);
         }
 
         _skillPointsAdded.Clear();
