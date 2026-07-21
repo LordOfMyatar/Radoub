@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.142-alpha] - 2026-07-21
-**Branch**: `quartermaster/issue-2677` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2677` | **PR**: #2706
 
 ### Sprint: Level-Up Wizard Correctness & Debt (#2677)
 
