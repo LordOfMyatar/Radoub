@@ -280,6 +280,29 @@ public class SkillServiceTests
         Assert.Equal(4, result[3]); // Discipline maxed at 4
     }
 
+    /// <summary>
+    /// #2576: in multi-level mode the wizard pools points across every level, so auto-assign
+    /// must cap at the final character level. Passing current+1 terminated the allocator
+    /// early and left pooled points unspent.
+    /// </summary>
+    [Fact]
+    public void AutoAssignSkills_MultiLevel_CapsAtFinalCharacterLevel()
+    {
+        var classSkillIds = new HashSet<int> { 3 }; // Discipline
+        int finalLevel = Services.LevelUpApplicationService.CalculateFinalCharacterLevel(5, 3); // 8
+
+        var result = _skillService.AutoAssignSkills(
+            packageId: 255,
+            classSkillIds: classSkillIds,
+            unavailableSkillIds: new HashSet<int>(),
+            totalPoints: 40,
+            totalLevel: finalLevel,
+            existingRanks: null);
+
+        // Final level 8 -> class skill cap 8+3 = 11, matching the manual +/- path.
+        Assert.Equal(11, result[3]);
+    }
+
     [Fact]
     public void AutoAssignSkills_RespectsTotalPoints()
     {

@@ -243,6 +243,42 @@ public class LevelUpApplicationServiceTests
 
     #endregion
 
+    #region CalculateFinalCharacterLevel (#2576)
+
+    [Theory]
+    [InlineData(5, 1, 6)]   // Single level: 5 -> 6
+    [InlineData(5, 3, 8)]   // Multi-level: 5 +3 -> 8
+    [InlineData(0, 1, 1)]   // Level-0 creature gaining its first level
+    [InlineData(17, 3, 20)] // Near cap
+    public void CalculateFinalCharacterLevel_AddsLevelsToAdd(int currentTotal, int levelsToAdd, int expected)
+    {
+        Assert.Equal(expected, LevelUpApplicationService.CalculateFinalCharacterLevel(currentTotal, levelsToAdd));
+    }
+
+    /// <summary>
+    /// #2576: auto-assign capped ranks at currentTotal+1 while the manual +/- path and the
+    /// pooled point budget used currentTotal+_levelsToAdd, so multi-level level-ups left
+    /// pooled points unspent. Both paths must derive the same cap.
+    /// </summary>
+    [Fact]
+    public void CalculateFinalCharacterLevel_MultiLevel_MatchesManualRankCap()
+    {
+        const int currentTotal = 5;
+        const int levelsToAdd = 3;
+
+        int finalLevel = LevelUpApplicationService.CalculateFinalCharacterLevel(currentTotal, levelsToAdd);
+
+        // The manual +/- path caps class skills at final level + 3 = 11.
+        Assert.Equal(11, LevelUpApplicationService.CalculateMaxSkillRanks(true, finalLevel));
+
+        // The pre-fix auto-assign level (currentTotal + 1 = 6) capped at 9 — two ranks short.
+        Assert.NotEqual(
+            LevelUpApplicationService.CalculateMaxSkillRanks(true, currentTotal + 1),
+            LevelUpApplicationService.CalculateMaxSkillRanks(true, finalLevel));
+    }
+
+    #endregion
+
     #region CalculateRemainingSkillPoints
 
     [Fact]

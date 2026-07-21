@@ -246,6 +246,16 @@ public class LevelUpApplicationService
     }
 
     /// <summary>
+    /// Calculates the character level a level-up ends at, given the levels being added.
+    /// Multi-level level-ups pool points across the whole range, so rank caps and the point
+    /// budget must both derive from the final level rather than the next one (#2576).
+    /// </summary>
+    public static int CalculateFinalCharacterLevel(int currentTotalLevel, int levelsToAdd)
+    {
+        return currentTotalLevel + levelsToAdd;
+    }
+
+    /// <summary>
     /// Calculates max skill ranks for a skill at a given character level.
     /// Class skill: level + 3. Cross-class: (level + 3) / 2.
     /// </summary>
