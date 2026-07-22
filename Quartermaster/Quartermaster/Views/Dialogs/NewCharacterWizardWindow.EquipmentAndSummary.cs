@@ -213,7 +213,7 @@ public partial class NewCharacterWizardWindow
         _summaryFileTypeLabel.Text = _isBicFile ? "Player Character (BIC)" : "Creature Blueprint (UTC)";
 
         var raceName = _displayService.GetRaceName(_selectedRaceId);
-        var genderName = _selectedGender == 0 ? "Male" : "Female";
+        var genderName = _displayService.GetGenderName(_selectedGender);
         _summaryRaceLabel.Text = $"{genderName} {raceName}";
 
         // Identity

@@ -291,7 +291,7 @@ public partial class NewCharacterWizardWindow
         if (_currentStep >= 2 && _selectedRaceId != 255)
         {
             var raceName = _displayService.GetRaceName(_selectedRaceId);
-            var genderName = _selectedGender == 0 ? "Male" : "Female";
+            var genderName = _displayService.GetGenderName(_selectedGender);
             parts.Add($"{genderName} {raceName}");
         }
 

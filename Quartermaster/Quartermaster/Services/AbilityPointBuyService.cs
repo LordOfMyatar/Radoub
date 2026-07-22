@@ -161,15 +161,17 @@ public class AbilityPointBuyService
 
     /// <summary>
     /// Gets the secondary ability priority order given a primary ability.
+    /// CON and DEX are universally useful, so they lead; the rest follow the stats relevant to
+    /// the primary, avoiding needless WIS/CHA/INT investment on martial builds (#1737).
     /// </summary>
-    internal static string[] GetSecondaryPriorityOrder(string primaryAbility) => primaryAbility switch
+    public static string[] GetSecondaryPriorityOrder(string primaryAbility) => primaryAbility switch
     {
-        "STR" => new[] { "CON", "DEX", "WIS", "INT", "CHA" },
-        "DEX" => new[] { "CON", "STR", "WIS", "INT", "CHA" },
-        "CON" => new[] { "STR", "DEX", "WIS", "INT", "CHA" },
-        "INT" => new[] { "CON", "DEX", "WIS", "STR", "CHA" },
-        "WIS" => new[] { "CON", "DEX", "INT", "STR", "CHA" },
-        "CHA" => new[] { "CON", "DEX", "WIS", "INT", "STR" },
-        _ => new[] { "CON", "DEX", "WIS", "INT", "CHA" }
+        "STR" => new[] { "CON", "DEX", "INT", "WIS", "CHA" },
+        "DEX" => new[] { "CON", "STR", "INT", "WIS", "CHA" },
+        "CON" => new[] { "STR", "DEX", "INT", "WIS", "CHA" },
+        "INT" => new[] { "DEX", "CON", "STR", "WIS", "CHA" },
+        "WIS" => new[] { "CON", "DEX", "STR", "INT", "CHA" },
+        "CHA" => new[] { "CON", "DEX", "STR", "INT", "WIS" },
+        _ => new[] { "CON", "DEX", "INT", "WIS", "CHA" }
     };
 }

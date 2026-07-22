@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.Formats 0.2.80-alpha] - 2026-07-21
+**Branch**: `quartermaster/issue-2677` | **PR**: #2706
+
+### Changed
+
+- `TwoDAFile.GetColumnIndex` now caches its name-to-index map instead of scanning columns on every lookup, speeding up the per-cell 2DA reads every tool performs (#2580).
+
+---
+
 ## [Radoub.Formats 0.2.79-alpha] - 2026-07-20
 **Branch**: `quartermaster/issue-2676` | **PR**: #2697
 

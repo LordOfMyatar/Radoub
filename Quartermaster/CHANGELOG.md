@@ -5,6 +5,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.142-alpha] - 2026-07-21
+**Branch**: `quartermaster/issue-2677` | **PR**: #2706
+
+### Sprint: Level-Up Wizard Correctness & Debt (#2677)
+
+- Auto-Assign Skills now caps ranks at the final character level in multi-level level-ups, so pooled points are no longer left unspent (#2576).
+- Gaining a first level now grants the x4 skill points NWN awards at level 1 (#2578).
+- Single-level and multi-level level-up now share one span-aware apply path, and the ability-increase map is derived from a single tested source instead of three hand-synced copies (#2575).
+- The New Character wizard now uses the shared point-buy and gender services, and the four class-feat-table scans share one reader; auto-assign follows the martial-friendly priority order from #1737 (#2581).
+- Skill and feat lists update the changed row instead of rebuilding, removing search-box input lag (#2580).
+
+---
+
 ## [0.2.141-alpha] - 2026-07-20
 **Branch**: `quartermaster/issue-2701` | **PR**: #2703
 

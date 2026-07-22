@@ -22,13 +22,10 @@ public partial class LevelUpWizardWindow
 
         var className = _displayService.GetClassName(_selectedClassId);
 
-        // Build ability increases map for consolidated apply (#1645)
-        _abilityIncreasesByLevel.Clear();
-        if (_selectedAbilityIncrease >= 0)
-        {
-            foreach (var level in _abilityIncreaseLevels)
-                _abilityIncreasesByLevel[level] = _selectedAbilityIncrease;
-        }
+        // Ability map for the HP/skill preview, built from the increment source of truth via the
+        // same tested helper the apply path uses (#2575 / 3f).
+        _abilityIncreasesByLevel = LevelUpApplicationService.BuildAbilityIncreasesByLevel(
+            _abilityIncrements, _abilityIncreaseLevels);
 
         // Class summary
         if (_levelsToAdd > 1)
@@ -201,114 +198,38 @@ public partial class LevelUpWizardWindow
         var service = new LevelUpApplicationService(_displayService);
         var settings = SettingsService.Instance;
 
-        if (_levelsToAdd > 1)
+        // Build the per-level ability map straight from the increment source of truth, and the
+        // full increase list for CE overflow — no hand-synced projections (#2575 / 3f).
+        var abilityIncreasesByLevel = LevelUpApplicationService.BuildAbilityIncreasesByLevel(
+            _abilityIncrements, _abilityIncreaseLevels);
+        var allAbilityIncreases = new List<int>();
+        for (int ability = 0; ability < _abilityIncrements.Length; ability++)
+            for (int n = 0; n < _abilityIncrements[ability]; n++)
+                allAbilityIncreases.Add(ability);
+
+        // One span-aware apply path for both single- and multi-level. FromClassLevel == NewClassLevel
+        // for a single level, so the orchestrator loops once (#2575).
+        service.ApplyLevelUp(_creature, new LevelUpApplicationService.LevelUpInput
         {
-            ApplyConsolidatedLevelUp(service, settings);
-        }
-        else
-        {
-            // Existing single-level apply (unchanged)
-            service.ApplyLevelUp(_creature, new LevelUpApplicationService.LevelUpInput
-            {
-                SelectedClassId = _selectedClassId,
-                NewClassLevel = _newClassLevel,
-                IsNewClass = _isNewClass,
-                SelectedFeats = _selectedFeats,
-                SkillPointsAdded = _skillPointsAdded,
-                SelectedSpellsByLevel = _selectedSpellsByLevel,
-                AbilityIncrease = _selectedAbilityIncrease,
-                ExtraAbilityIncreases = _ceAbilityIncreases
-                    .Where(i => i != _selectedAbilityIncrease)
-                    .ToList(),
-                HpIncrease = _hpIncrease,
-                ConRetroactiveHp = _conRetroactiveHp,
-                RecordHistory = settings.RecordLevelHistory,
-                HistoryEncoding = settings.LevelHistoryEncoding
-            });
-        }
-    }
-
-    /// <summary>
-    /// Applies multiple levels in consolidated mode (#1645).
-    /// Loops class level increments, then applies pooled player selections.
-    /// </summary>
-    private void ApplyConsolidatedLevelUp(LevelUpApplicationService service, SettingsService settings)
-    {
-        // 1. Apply class levels one at a time (for auto-granted feats per level)
-        for (int lvl = _fromClassLevel; lvl <= _newClassLevel; lvl++)
-        {
-            LevelUpApplicationService.ApplyClassLevel(_creature, _selectedClassId);
-
-            // Apply ability increase at this character level (if applicable)
-            int currentCharLevel = _creature.ClassList.Sum(c => c.ClassLevel);
-            if (_abilityIncreasesByLevel.TryGetValue(currentCharLevel, out int abilityIdx))
-                LevelUpApplicationService.ApplyAbilityIncrease(_creature, abilityIdx);
-
-            // Apply auto-granted feats for this class level
-            var grantedFeats = _displayService.Feats.GetClassFeatsGrantedAtLevel(_selectedClassId, lvl);
-            foreach (var featId in grantedFeats)
-            {
-                if (_displayService.CanFeatBeGainedMultipleTimes(featId) ||
-                    !_creature.FeatList.Contains((ushort)featId))
-                    _creature.FeatList.Add((ushort)featId);
-            }
-        }
-
-        // 1.5. Apply CE increases beyond the every-fourth-level slots (#2696).
-        // _abilityIncreasesByLevel holds only what fit into those slots; the rest
-        // would otherwise be dropped on a multi-level apply.
-        LevelUpApplicationService.ApplyOverflowAbilityIncreases(
-            _creature, _ceAbilityIncreases, _abilityIncreasesByLevel);
-
-        // 2. Apply pooled HP
-        LevelUpApplicationService.ApplyHitPoints(_creature, _hpIncrease);
-
-        // 3. Apply pooled player-selected feats
-        foreach (var featId in _selectedFeats)
-        {
-            if (_displayService.CanFeatBeGainedMultipleTimes(featId) ||
-                !_creature.FeatList.Contains((ushort)featId))
-                _creature.FeatList.Add((ushort)featId);
-        }
-
-        // 4. Apply pooled skills and spells
-        LevelUpApplicationService.ApplySkills(_creature, _skillPointsAdded);
-        LevelUpApplicationService.ApplySpells(_creature, _selectedClassId, _selectedSpellsByLevel);
-
-        // 4.5. Recalculate saves from updated class levels (#1740)
-        service.UpdateSavingThrows(_creature);
-
-        // 5. Record level history — one record per level for fidelity
-        if (settings.RecordLevelHistory)
-        {
-            var existingHistory = LevelHistoryService.Decode(_creature.Comment) ?? new List<LevelRecord>();
-            int baseCharLevel = _creature.ClassList.Sum(c => c.ClassLevel);
-
-            for (int lvl = _fromClassLevel; lvl <= _newClassLevel; lvl++)
-            {
-                int charLevelAtThisPoint = baseCharLevel - (_newClassLevel - lvl);
-                var record = new LevelRecord
-                {
-                    TotalLevel = charLevelAtThisPoint,
-                    ClassId = _selectedClassId,
-                    ClassLevel = lvl,
-                    // Attribute pooled selections to the last level
-                    Feats = lvl == _newClassLevel ? _selectedFeats.ToList() : new List<int>(),
-                    Skills = lvl == _newClassLevel
-                        ? _skillPointsAdded.Where(kv => kv.Value > 0).ToDictionary(kv => kv.Key, kv => kv.Value)
-                        : new Dictionary<int, int>(),
-                    AbilityIncrease = _abilityIncreasesByLevel.GetValueOrDefault(charLevelAtThisPoint, -1)
-                };
-                existingHistory.Add(record);
-            }
-
-            _creature.Comment = LevelHistoryService.AppendToComment(
-                _creature.Comment, existingHistory, settings.LevelHistoryEncoding);
-        }
+            SelectedClassId = _selectedClassId,
+            NewClassLevel = _newClassLevel,
+            FromClassLevel = _fromClassLevel,
+            IsNewClass = _isNewClass,
+            SelectedFeats = _selectedFeats,
+            SkillPointsAdded = _skillPointsAdded,
+            SelectedSpellsByLevel = _selectedSpellsByLevel,
+            AbilityIncreasesByLevel = abilityIncreasesByLevel,
+            ExtraAbilityIncreases = allAbilityIncreases,
+            HpIncrease = _hpIncrease,
+            ConRetroactiveHp = _conRetroactiveHp,
+            RecordHistory = settings.RecordLevelHistory,
+            HistoryEncoding = settings.LevelHistoryEncoding
+        });
 
         UnifiedLogger.LogApplication(LogLevel.INFO,
-            $"Consolidated level-up: {_displayService.GetClassName(_selectedClassId)} {_fromClassLevel}-{_newClassLevel} ({_levelsToAdd} levels)");
+            $"Level-up: {_displayService.GetClassName(_selectedClassId)} {_fromClassLevel}-{_newClassLevel} ({_levelsToAdd} level(s))");
     }
+
 
     #endregion
 

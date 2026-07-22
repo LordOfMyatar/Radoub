@@ -47,8 +47,6 @@ public partial class LevelUpWizardWindow : Window
     private int _skillPointsToAllocate;
     private bool _needsSpellSelection;
     private bool _needsAbilityIncrease;
-    private int _selectedAbilityIncrease = -1; // -1=none, 0=STR, 1=DEX, 2=CON, 3=INT, 4=WIS, 5=CHA
-    private readonly HashSet<int> _ceAbilityIncreases = new(); // CE mode: multiple ability increases
     private int _hpIncrease; // Pre-calculated HP gain for this level
     private int _conRetroactiveHp; // Retroactive HP from CON modifier change
     private byte _resolvedPackageId = 255;

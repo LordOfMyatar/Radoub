@@ -63,18 +63,30 @@ public class TwoDAFile
         return Rows[rowIndex].GetValue(columnIndex) ?? DefaultValue;
     }
 
+    // Lazily-built name -> index map. GetColumnIndex is called once per GetValue-by-name, so a
+    // per-file cache turns the hot path from an O(columns) scan into a dictionary hit (#2580).
+    // Rebuilt whenever Columns.Count changes, covering parsers that reuse an instance. A rename
+    // that keeps the same count would not invalidate, but 2DA columns are built once and never
+    // renamed in place, so that case does not arise.
+    private Dictionary<string, int>? _columnIndexCache;
+    private int _columnIndexCacheCount = -1;
+
     /// <summary>
     /// Get the column index for a column name (case-insensitive).
     /// Returns -1 if not found.
     /// </summary>
     public int GetColumnIndex(string columnName)
     {
-        for (int i = 0; i < Columns.Count; i++)
+        if (_columnIndexCache is null || _columnIndexCacheCount != Columns.Count)
         {
-            if (Columns[i].Equals(columnName, StringComparison.OrdinalIgnoreCase))
-                return i;
+            var cache = new Dictionary<string, int>(Columns.Count, StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < Columns.Count; i++)
+                cache.TryAdd(Columns[i], i); // first occurrence wins, matching the old linear scan
+            _columnIndexCache = cache;
+            _columnIndexCacheCount = Columns.Count;
         }
-        return -1;
+
+        return _columnIndexCache.TryGetValue(columnName, out int index) ? index : -1;
     }
 
     /// <summary>

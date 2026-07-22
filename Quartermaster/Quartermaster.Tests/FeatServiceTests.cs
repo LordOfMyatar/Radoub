@@ -290,6 +290,20 @@ public class FeatServiceTests
         Assert.DoesNotContain(45, feats);
     }
 
+    /// <summary>
+    /// #2581: the four cls_feat_*.2da scans share a skeleton but keep distinct List filters.
+    /// The bonus pool is List=1 only, and must not absorb granted (3) or creation (-1) rows.
+    /// </summary>
+    [Fact]
+    public void GetClassBonusFeatPool_Fighter_ReturnsOnlyListOneFeats()
+    {
+        var feats = _featService.GetClassBonusFeatPool(4);
+
+        Assert.Contains(5, feats);        // Blind-Fight, List=1 bonus pool
+        Assert.DoesNotContain(2, feats);  // Armor Prof Heavy, List=3 granted
+        Assert.DoesNotContain(45, feats); // Simple Weapons, List=-1 creation
+    }
+
     [Fact]
     public void GetClassGrantedFeatIds_Fighter_ReturnsAutoGrantedFeats()
     {

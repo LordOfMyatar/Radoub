@@ -40,7 +40,8 @@ public partial class LevelUpWizardWindow
                 effectiveInt = (byte)System.Math.Min(255, effectiveInt + 1);
 
             int intMod = CreatureDisplayService.CalculateAbilityBonus(effectiveInt);
-            _skillPointsToAllocate += System.Math.Max(1, basePoints + intMod) + racialExtra;
+            _skillPointsToAllocate += LevelUpApplicationService.CalculateSkillPointsForLevel(
+                charLevel, basePoints, intMod, racialExtra);
         }
 
         _skillPointsAdded.Clear();
@@ -112,7 +113,8 @@ public partial class LevelUpWizardWindow
 
     private int CalculateMaxRanks(bool isClassSkill)
     {
-        int totalLevel = _creature.ClassList.Sum(c => c.ClassLevel) + _levelsToAdd;
+        int totalLevel = LevelUpApplicationService.CalculateFinalCharacterLevel(
+            _creature.ClassList.Sum(c => c.ClassLevel), _levelsToAdd);
         return LevelUpApplicationService.CalculateMaxSkillRanks(isClassSkill, totalLevel);
     }
 
@@ -173,7 +175,8 @@ public partial class LevelUpWizardWindow
 
     private void OnSkillAutoAssignClick(object? sender, RoutedEventArgs e)
     {
-        int totalLevel = _creature.ClassList.Sum(c => c.ClassLevel) + 1;
+        int totalLevel = LevelUpApplicationService.CalculateFinalCharacterLevel(
+            _creature.ClassList.Sum(c => c.ClassLevel), _levelsToAdd);
         _skillPointsAdded = _displayService.Skills.AutoAssignSkills(
             _resolvedPackageId,
             _classSkillIds,

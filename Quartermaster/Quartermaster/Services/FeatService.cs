@@ -279,23 +279,24 @@ public partial class FeatService
         };
     }
 
-    /// <summary>
-    /// Gets the set of feat IDs granted by a class at all levels.
-    /// Reads from cls_feat_*.2da files.
-    /// </summary>
-    /// <summary>
-    /// Gets feats automatically granted at a specific class level.
-    /// Reads List=3 + GrantedOnLevel from cls_feat_*.2da, plus List=-1 for level 1.
-    /// </summary>
-    public HashSet<int> GetClassFeatsGrantedAtLevel(int classId, int classLevel)
-    {
-        var result = new HashSet<int>();
+    // cls_feat_*.2da row counts vary by class; used only when the table reports none.
+    private const int ClassFeatTableRowCountFallback = 300;
 
+    /// <summary>
+    /// Walks a class's cls_feat_*.2da, invoking <paramref name="onRow"/> per parsed feat row.
+    /// The four callers filter on different List values by design (#2581) — this shares only
+    /// the scan skeleton: table resolution, the "****" terminator, and row parsing.
+    /// </summary>
+    /// <param name="classId">Class to read FeatsTable from</param>
+    /// <param name="onRow">Receives (featId, listType, rowIndex, featTable) for each feat row.
+    /// featTable is the resolved, non-null cls_feat table name for reading further columns.</param>
+    internal void ForEachClassFeatRow(int classId, Action<int, string?, int, string> onRow)
+    {
         var featTable = _gameDataService.Get2DAValue("classes", classId, "FeatsTable");
         if (string.IsNullOrEmpty(featTable) || featTable == "****")
-            return result;
+            return;
 
-        int rowCount = _gameDataService.Get2DA(featTable)?.RowCount ?? 200;
+        int rowCount = _gameDataService.Get2DA(featTable)?.RowCount ?? ClassFeatTableRowCountFallback;
         for (int row = 0; row < rowCount; row++)
         {
             var featIndexStr = _gameDataService.Get2DAValue(featTable, row, "FeatIndex");
@@ -305,13 +306,25 @@ public partial class FeatService
             if (!int.TryParse(featIndexStr, out int featId))
                 continue;
 
-            var listType = _gameDataService.Get2DAValue(featTable, row, "List");
+            onRow(featId, _gameDataService.Get2DAValue(featTable, row, "List"), row, featTable);
+        }
+    }
 
+    /// <summary>
+    /// Gets feats automatically granted at a specific class level.
+    /// Reads List=3 + GrantedOnLevel from cls_feat_*.2da, plus List=-1 for level 1.
+    /// </summary>
+    public HashSet<int> GetClassFeatsGrantedAtLevel(int classId, int classLevel)
+    {
+        var result = new HashSet<int>();
+
+        ForEachClassFeatRow(classId, (featId, listType, row, featTable) =>
+        {
             // List=-1: granted at creation (class level 1 only)
             if (listType == "-1" && classLevel == 1)
             {
                 result.Add(featId);
-                continue;
+                return;
             }
 
             // List=3: automatically granted at GrantedOnLevel
@@ -321,7 +334,7 @@ public partial class FeatService
                 if (int.TryParse(grantedLevelStr, out int grantedLevel) && grantedLevel == classLevel)
                     result.Add(featId);
             }
-        }
+        });
 
         return result;
     }
@@ -345,26 +358,11 @@ public partial class FeatService
     {
         var result = new HashSet<int>();
 
-        var featTable = _gameDataService.Get2DAValue("classes", classId, "FeatsTable");
-        if (string.IsNullOrEmpty(featTable) || featTable == "****")
-            return result;
-
-        int rowCount = _gameDataService.Get2DA(featTable)?.RowCount ?? 200;
-        for (int row = 0; row < rowCount; row++)
+        ForEachClassFeatRow(classId, (featId, listType, _, _) =>
         {
-            var featIndexStr = _gameDataService.Get2DAValue(featTable, row, "FeatIndex");
-            if (string.IsNullOrEmpty(featIndexStr) || featIndexStr == "****")
-                break;
-
-            if (int.TryParse(featIndexStr, out int featId))
-            {
-                var listType = _gameDataService.Get2DAValue(featTable, row, "List");
-                if (listType == "3") // Automatic/granted feat
-                {
-                    result.Add(featId);
-                }
-            }
-        }
+            if (listType == "3") // Automatic/granted feat
+                result.Add(featId);
+        });
 
         return result;
     }

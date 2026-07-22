@@ -37,6 +37,18 @@ public class LevelUpApplicationService
         public int ConRetroactiveHp { get; set; } // Retroactive HP from CON modifier change
         public bool RecordHistory { get; set; }
         public LevelHistoryEncoding HistoryEncoding { get; set; } = LevelHistoryEncoding.Readable;
+
+        // Span-aware fields (#2575). FromClassLevel defaults to NewClassLevel, making the
+        // single-level case From==To with one loop iteration. AbilityIncreasesByLevel is the
+        // general form of AbilityIncrease/ExtraAbilityIncreases, keyed by character level.
+        public int? FromClassLevel { get; set; }
+        public Dictionary<int, int>? AbilityIncreasesByLevel { get; set; }
+
+        /// <summary>Number of class levels this input applies (>= 1).</summary>
+        public int LevelsToApply => NewClassLevel - EffectiveFromClassLevel + 1;
+
+        /// <summary>First class level in the range; equals NewClassLevel for a single-level apply.</summary>
+        public int EffectiveFromClassLevel => FromClassLevel ?? NewClassLevel;
     }
 
     /// <summary>
@@ -45,13 +57,39 @@ public class LevelUpApplicationService
     /// <exception cref="InvalidOperationException">If level-up cannot be applied.</exception>
     public void ApplyLevelUp(UtcFile creature, LevelUpInput input)
     {
-        ApplyClassLevel(creature, input.SelectedClassId);
-        ApplyAbilityIncrease(creature, input.AbilityIncrease);
-        // CE mode: apply additional ability increases
-        foreach (var extraAbility in input.ExtraAbilityIncreases)
-            ApplyAbilityIncrease(creature, extraAbility);
+        // Per-level: class level, that level's auto-granted feats, and any slotted ability
+        // increase. For a single-level apply From==To, so the loop runs once (#2575).
+        for (int classLevel = input.EffectiveFromClassLevel; classLevel <= input.NewClassLevel; classLevel++)
+        {
+            ApplyClassLevel(creature, input.SelectedClassId);
+            ApplyAutoGrantedFeats(creature, input.SelectedClassId, classLevel);
+
+            if (input.AbilityIncreasesByLevel is { } byLevel)
+            {
+                int charLevel = creature.ClassList.Sum(c => c.ClassLevel);
+                if (byLevel.TryGetValue(charLevel, out int abilityIdx))
+                    ApplyAbilityIncrease(creature, abilityIdx);
+            }
+        }
+
+        if (input.AbilityIncreasesByLevel is { } increasesByLevel)
+        {
+            // Map-based path (span-aware wizard). ExtraAbilityIncreases is the COMPLETE list of
+            // requested increases; the loop above applied the slotted ones, so this applies any
+            // CE overflow the slots could not hold (#2696).
+            ApplyOverflowAbilityIncreases(creature, input.ExtraAbilityIncreases, increasesByLevel);
+        }
+        else
+        {
+            // Legacy scalar path: primary increase plus any CE extras, applied directly.
+            ApplyAbilityIncrease(creature, input.AbilityIncrease);
+            foreach (var extraAbility in input.ExtraAbilityIncreases)
+                ApplyAbilityIncrease(creature, extraAbility);
+        }
+
+        // Pooled across the whole range — applied once.
         ApplyHitPoints(creature, input.HpIncrease + input.ConRetroactiveHp);
-        ApplyFeats(creature, input.SelectedClassId, input.NewClassLevel, input.SelectedFeats);
+        ApplyPlayerSelectedFeats(creature, input.SelectedFeats);
         ApplySkills(creature, input.SkillPointsAdded);
         ApplySpells(creature, input.SelectedClassId, input.SelectedSpellsByLevel);
         UpdateSavingThrows(creature);
@@ -146,25 +184,35 @@ public class LevelUpApplicationService
     /// </summary>
     public void ApplyFeats(UtcFile creature, int classId, int classLevel, List<int> selectedFeats)
     {
-        // Add player-selected feats
-        foreach (var featId in selectedFeats)
-        {
-            if (_displayService.CanFeatBeGainedMultipleTimes(featId) ||
-                !creature.FeatList.Contains((ushort)featId))
-            {
-                creature.FeatList.Add((ushort)featId);
-            }
-        }
+        ApplyPlayerSelectedFeats(creature, selectedFeats);
+        ApplyAutoGrantedFeats(creature, classId, classLevel);
+    }
 
-        // Add auto-granted class feats
-        var grantedFeats = _displayService.Feats.GetClassFeatsGrantedAtLevel(classId, classLevel);
-        foreach (var featId in grantedFeats)
+    /// <summary>
+    /// Adds player-picked feats. Pooled across a level range, so applied once (#2575).
+    /// </summary>
+    public void ApplyPlayerSelectedFeats(UtcFile creature, List<int> selectedFeats)
+    {
+        foreach (var featId in selectedFeats)
+            AddFeatIfAllowed(creature, featId);
+    }
+
+    /// <summary>
+    /// Adds the class feats auto-granted at one class level. Per-level, so called once per
+    /// level in a range (#2575).
+    /// </summary>
+    public void ApplyAutoGrantedFeats(UtcFile creature, int classId, int classLevel)
+    {
+        foreach (var featId in _displayService.Feats.GetClassFeatsGrantedAtLevel(classId, classLevel))
+            AddFeatIfAllowed(creature, featId);
+    }
+
+    private void AddFeatIfAllowed(UtcFile creature, int featId)
+    {
+        if (_displayService.CanFeatBeGainedMultipleTimes(featId) ||
+            !creature.FeatList.Contains((ushort)featId))
         {
-            if (_displayService.CanFeatBeGainedMultipleTimes(featId) ||
-                !creature.FeatList.Contains((ushort)featId))
-            {
-                creature.FeatList.Add((ushort)featId);
-            }
+            creature.FeatList.Add((ushort)featId);
         }
     }
 
@@ -232,17 +280,36 @@ public class LevelUpApplicationService
         int intMod = CreatureDisplayService.CalculateAbilityBonus(creature.Int);
         int basePoints = _displayService.GetClassSkillPointBase(classId);
         int totalLevel = creature.ClassList.Sum(c => c.ClassLevel) + 1;
-
         int racialExtra = _displayService.GetRacialExtraSkillPointsPerLevel(creature.Race);
 
-        if (totalLevel == 1)
-        {
-            // Level 1 gets 4x multiplier (NWN engine rule)
-            const int FirstLevelMultiplier = 4;
-            return (Math.Max(1, basePoints + intMod) + racialExtra) * FirstLevelMultiplier;
-        }
+        return CalculateSkillPointsForLevel(totalLevel, basePoints, intMod, racialExtra);
+    }
 
-        return Math.Max(1, basePoints + intMod) + racialExtra;
+    /// <summary>
+    /// Calculates skill points awarded for gaining one character level.
+    /// D&amp;D 3.5/NWN: (basePoints + intMod) at level 2+, x4 at level 1. Racial bonus points
+    /// apply per level, and are multiplied at level 1 too.
+    /// Callers that award points across a level range must invoke this per level so the
+    /// level-1 rule cannot be skipped (#2578).
+    /// </summary>
+    public static int CalculateSkillPointsForLevel(
+        int characterLevel, int basePoints, int intMod, int racialExtra)
+    {
+        int perLevel = Math.Max(1, basePoints + intMod) + racialExtra;
+
+        // Level 1 gets 4x multiplier (NWN engine rule)
+        const int FirstLevelMultiplier = 4;
+        return characterLevel == 1 ? perLevel * FirstLevelMultiplier : perLevel;
+    }
+
+    /// <summary>
+    /// Calculates the character level a level-up ends at, given the levels being added.
+    /// Multi-level level-ups pool points across the whole range, so rank caps and the point
+    /// budget must both derive from the final level rather than the next one (#2576).
+    /// </summary>
+    public static int CalculateFinalCharacterLevel(int currentTotalLevel, int levelsToAdd)
+    {
+        return currentTotalLevel + levelsToAdd;
     }
 
     /// <summary>
@@ -274,6 +341,33 @@ public class LevelUpApplicationService
     }
 
     #region Consolidated Level-Up Helpers (#1645)
+
+    /// <summary>
+    /// Maps each every-fourth-level ability slot to the ability being raised there (#2575, folds
+    /// in #2581's 3f). Spreads the per-ability increment counts across the available slots in
+    /// ability order, so the first slot takes the first requested increment and so on. Increments
+    /// beyond the slot count are CE-mode overflow, handled separately by
+    /// <see cref="ApplyOverflowAbilityIncreases"/>.
+    /// </summary>
+    /// <param name="abilityIncrements">Per-ability increment counts, indexed STR=0..CHA=5.</param>
+    /// <param name="abilityIncreaseLevels">Character levels that grant a slot, ascending.</param>
+    public static Dictionary<int, int> BuildAbilityIncreasesByLevel(
+        IReadOnlyList<int> abilityIncrements, IReadOnlyList<int> abilityIncreaseLevels)
+    {
+        var result = new Dictionary<int, int>();
+        int slotIdx = 0;
+        for (int ability = 0; ability < abilityIncrements.Count; ability++)
+        {
+            for (int n = 0; n < abilityIncrements[ability]; n++)
+            {
+                if (slotIdx >= abilityIncreaseLevels.Count)
+                    return result; // remaining increments are CE overflow
+                result[abilityIncreaseLevels[slotIdx]] = ability;
+                slotIdx++;
+            }
+        }
+        return result;
+    }
 
     /// <summary>
     /// Returns character levels within the range that get +1 ability increase (every 4th level).
@@ -361,24 +455,45 @@ public class LevelUpApplicationService
 
     private void RecordLevelHistory(UtcFile creature, LevelUpInput input)
     {
-        var record = new LevelRecord
-        {
-            TotalLevel = creature.ClassList.Sum(c => c.ClassLevel),
-            ClassId = input.SelectedClassId,
-            ClassLevel = input.NewClassLevel,
-            Feats = input.SelectedFeats.ToList(),
-            Skills = input.SkillPointsAdded
-                .Where(kv => kv.Value > 0)
-                .ToDictionary(kv => kv.Key, kv => kv.Value),
-            AbilityIncrease = input.AbilityIncrease
-        };
-
         var existingHistory = LevelHistoryService.Decode(creature.Comment) ?? new List<LevelRecord>();
-        existingHistory.Add(record);
+
+        // One record per level for fidelity. Pooled feat/skill selections carry no per-level
+        // attribution, so they land on the final level (#2575). Single-level (From==To) writes
+        // exactly one record, identical to the pre-span behaviour.
+        int baseCharLevel = creature.ClassList.Sum(c => c.ClassLevel);
+        for (int classLevel = input.EffectiveFromClassLevel; classLevel <= input.NewClassLevel; classLevel++)
+        {
+            int charLevelAtThisPoint = baseCharLevel - (input.NewClassLevel - classLevel);
+            bool isFinalLevel = classLevel == input.NewClassLevel;
+
+            existingHistory.Add(new LevelRecord
+            {
+                TotalLevel = charLevelAtThisPoint,
+                ClassId = input.SelectedClassId,
+                ClassLevel = classLevel,
+                Feats = isFinalLevel ? input.SelectedFeats.ToList() : new List<int>(),
+                Skills = isFinalLevel
+                    ? input.SkillPointsAdded.Where(kv => kv.Value > 0).ToDictionary(kv => kv.Key, kv => kv.Value)
+                    : new Dictionary<int, int>(),
+                AbilityIncrease = ResolveHistoryAbilityIncrease(input, charLevelAtThisPoint)
+            });
+        }
 
         creature.Comment = LevelHistoryService.AppendToComment(
             creature.Comment,
             existingHistory,
             input.HistoryEncoding);
+    }
+
+    // Per-level ability attribution: the multi-level map wins when present; single-level falls
+    // back to the scalar AbilityIncrease on the (only) final level.
+    private static int ResolveHistoryAbilityIncrease(LevelUpInput input, int charLevel)
+    {
+        if (input.AbilityIncreasesByLevel is { } byLevel)
+            return byLevel.GetValueOrDefault(charLevel, -1);
+
+        return charLevel == input.NewClassLevel || input.EffectiveFromClassLevel == input.NewClassLevel
+            ? input.AbilityIncrease
+            : -1;
     }
 }

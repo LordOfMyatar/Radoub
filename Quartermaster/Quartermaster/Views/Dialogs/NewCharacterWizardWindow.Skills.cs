@@ -82,109 +82,168 @@ public partial class NewCharacterWizardWindow
     private void ApplySkillFilter()
     {
         _filteredSkills = SkillDisplayHelper.FilterByName(_allSkills, _skillSearchBox?.Text?.Trim());
+
+        // Toggle row visibility rather than rebuilding the tree (#2580).
+        var visibleIds = new HashSet<int>(_filteredSkills.Select(s => s.SkillId));
+        foreach (var (skillId, row) in _skillRowMap)
+            row.Container.IsVisible = visibleIds.Contains(skillId);
     }
+
+    // One visual row per skill, holding the controls that change on +/-. Built once per step;
+    // +/- updates only the touched row and search toggles visibility, so the whole Grid tree is
+    // no longer rebuilt on every click and keystroke (#2580).
+    private sealed class SkillRow
+    {
+        public required Grid Container { get; init; }
+        public required Button DecreaseButton { get; init; }
+        public required Button IncreaseButton { get; init; }
+        public required TextBlock RanksLabel { get; init; }
+        public required SkillDisplayItem Skill { get; init; }
+    }
+
+    private readonly Dictionary<int, SkillRow> _skillRowMap = new();
 
     private void RenderSkillRows()
     {
         _skillRowsPanel.Children.Clear();
+        _skillRowMap.Clear();
 
-        foreach (var skill in _filteredSkills)
+        foreach (var skill in _allSkills)
         {
-            var row = new Grid
-            {
-                ColumnDefinitions = ColumnDefinitions.Parse("180,50,35,35,60,60,*"),
-                Margin = new Avalonia.Thickness(12, 3, 12, 3),
-                Opacity = skill.IsUnavailable ? 0.4 : 1.0
-            };
-
-            // Skill name — class skills in green, cross-class uses theme default
-            var nameLabel = new TextBlock
-            {
-                Text = skill.Name,
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
-            };
-            if (skill.IsClassSkill)
-                nameLabel.Foreground = BrushManager.GetSuccessBrush(this);
-            Grid.SetColumn(nameLabel, 0);
-            row.Children.Add(nameLabel);
-
-            // Key ability
-            var keyLabel = new TextBlock
-            {
-                Text = skill.KeyAbility,
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush,
-                FontSize = this.FindResource("FontSizeSmall") as double? ?? 13
-            };
-            Grid.SetColumn(keyLabel, 1);
-            row.Children.Add(keyLabel);
-
-            // [-] button
-            var decreaseBtn = new Button
-            {
-                Content = "−",
-                Width = 28,
-                HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                Tag = skill.SkillId,
-                IsEnabled = !skill.IsUnavailable && skill.AllocatedRanks > 0
-            };
-            decreaseBtn.Click += OnSkillDecrease;
-            Grid.SetColumn(decreaseBtn, 2);
-            row.Children.Add(decreaseBtn);
-
-            // [+] button
-            var increaseBtn = new Button
-            {
-                Content = "+",
-                Width = 28,
-                HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                Tag = skill.SkillId,
-                IsEnabled = !skill.IsUnavailable && (_validationLevel != ValidationLevel.Strict || (skill.AllocatedRanks < skill.MaxRanks && GetSkillPointsRemaining() >= skill.Cost))
-            };
-            increaseBtn.Click += OnSkillIncrease;
-            Grid.SetColumn(increaseBtn, 3);
-            row.Children.Add(increaseBtn);
-
-            // Allocated ranks
-            var ranksLabel = new TextBlock
-            {
-                Text = skill.AllocatedRanks > 0 ? skill.AllocatedRanks.ToString() : "—",
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                FontWeight = skill.AllocatedRanks > 0 ? FontWeight.Bold : FontWeight.Normal
-            };
-            if (skill.AllocatedRanks > 0)
-                ranksLabel.Foreground = BrushManager.GetSuccessBrush(this);
-            Grid.SetColumn(ranksLabel, 4);
-            row.Children.Add(ranksLabel);
-
-            // Max ranks
-            var maxLabel = new TextBlock
-            {
-                Text = skill.IsUnavailable ? "—" : skill.MaxRanks.ToString(),
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush
-            };
-            Grid.SetColumn(maxLabel, 5);
-            row.Children.Add(maxLabel);
-
-            // Type indicator
-            var typeLabel = new TextBlock
-            {
-                Text = skill.IsUnavailable ? "Unavailable" : skill.IsClassSkill ? "Class (1 pt)" : "Cross-class (2 pts)",
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                FontSize = this.FindResource("FontSizeSmall") as double? ?? 13,
-                Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush
-            };
-            Grid.SetColumn(typeLabel, 6);
-            row.Children.Add(typeLabel);
-
-            _skillRowsPanel.Children.Add(row);
+            var row = BuildSkillRow(skill);
+            _skillRowMap[skill.SkillId] = row;
+            _skillRowsPanel.Children.Add(row.Container);
         }
 
+        ApplySkillFilter();
         UpdateSkillPointsDisplay();
+    }
+
+    private SkillRow BuildSkillRow(SkillDisplayItem skill)
+    {
+        var row = new Grid
+        {
+            ColumnDefinitions = ColumnDefinitions.Parse("180,50,35,35,60,60,*"),
+            Margin = new Avalonia.Thickness(12, 3, 12, 3),
+            Opacity = skill.IsUnavailable ? 0.4 : 1.0
+        };
+
+        // Skill name — class skills in green, cross-class uses theme default
+        var nameLabel = new TextBlock
+        {
+            Text = skill.Name,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+        };
+        if (skill.IsClassSkill)
+            nameLabel.Foreground = BrushManager.GetSuccessBrush(this);
+        Grid.SetColumn(nameLabel, 0);
+        row.Children.Add(nameLabel);
+
+        // Key ability
+        var keyLabel = new TextBlock
+        {
+            Text = skill.KeyAbility,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush,
+            FontSize = this.FindResource("FontSizeSmall") as double? ?? 13
+        };
+        Grid.SetColumn(keyLabel, 1);
+        row.Children.Add(keyLabel);
+
+        // [-] button
+        var decreaseBtn = new Button
+        {
+            Content = "−",
+            Width = 28,
+            HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+            Tag = skill.SkillId,
+            IsEnabled = !skill.IsUnavailable && skill.AllocatedRanks > 0
+        };
+        decreaseBtn.Click += OnSkillDecrease;
+        Grid.SetColumn(decreaseBtn, 2);
+        row.Children.Add(decreaseBtn);
+
+        // [+] button
+        var increaseBtn = new Button
+        {
+            Content = "+",
+            Width = 28,
+            HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+            Tag = skill.SkillId
+        };
+        increaseBtn.Click += OnSkillIncrease;
+        Grid.SetColumn(increaseBtn, 3);
+        row.Children.Add(increaseBtn);
+
+        // Allocated ranks
+        var ranksLabel = new TextBlock
+        {
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+        };
+        Grid.SetColumn(ranksLabel, 4);
+        row.Children.Add(ranksLabel);
+
+        // Max ranks
+        var maxLabel = new TextBlock
+        {
+            Text = skill.IsUnavailable ? "—" : skill.MaxRanks.ToString(),
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush
+        };
+        Grid.SetColumn(maxLabel, 5);
+        row.Children.Add(maxLabel);
+
+        // Type indicator
+        var typeLabel = new TextBlock
+        {
+            Text = skill.IsUnavailable ? "Unavailable" : skill.IsClassSkill ? "Class (1 pt)" : "Cross-class (2 pts)",
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            FontSize = this.FindResource("FontSizeSmall") as double? ?? 13,
+            Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush
+        };
+        Grid.SetColumn(typeLabel, 6);
+        row.Children.Add(typeLabel);
+
+        var built = new SkillRow
+        {
+            Container = row,
+            DecreaseButton = decreaseBtn,
+            IncreaseButton = increaseBtn,
+            RanksLabel = ranksLabel,
+            Skill = skill
+        };
+        RefreshSkillRowRankState(built);
+        return built;
+    }
+
+    // Updates the rank label and the +/- enabled state for one row from current allocation.
+    private void RefreshSkillRowRankState(SkillRow row)
+    {
+        var skill = row.Skill;
+        int ranks = skill.AllocatedRanks;
+
+        row.RanksLabel.Text = ranks > 0 ? ranks.ToString() : "—";
+        row.RanksLabel.FontWeight = ranks > 0 ? FontWeight.Bold : FontWeight.Normal;
+        if (ranks > 0)
+            row.RanksLabel.Foreground = BrushManager.GetSuccessBrush(this);
+        else
+            row.RanksLabel.ClearValue(TextBlock.ForegroundProperty);
+
+        row.DecreaseButton.IsEnabled = !skill.IsUnavailable && ranks > 0;
+        row.IncreaseButton.IsEnabled = !skill.IsUnavailable &&
+            (_validationLevel != ValidationLevel.Strict ||
+             (ranks < skill.MaxRanks && GetSkillPointsRemaining() >= skill.Cost));
+    }
+
+    // Raising one skill can exhaust the budget and disable every other + button, so the enabled
+    // state of all rows is refreshed after any allocation change — cheap property writes, no rebuild.
+    private void RefreshAllSkillRowStates()
+    {
+        foreach (var row in _skillRowMap.Values)
+            RefreshSkillRowRankState(row);
     }
 
     private void UpdateSkillPointsDisplay()
@@ -230,7 +289,8 @@ public partial class NewCharacterWizardWindow
                 int current = _skillRanksAllocated.GetValueOrDefault(skillId, 0);
                 _skillRanksAllocated[skillId] = current + 1;
                 UpdateSkillItem(skillId);
-                RenderSkillRows();
+                RefreshAllSkillRowStates();
+                UpdateSkillPointsDisplay();
             }
         }
     }
@@ -246,7 +306,8 @@ public partial class NewCharacterWizardWindow
                 if (_skillRanksAllocated[skillId] == 0)
                     _skillRanksAllocated.Remove(skillId);
                 UpdateSkillItem(skillId);
-                RenderSkillRows();
+                RefreshAllSkillRowStates();
+                UpdateSkillPointsDisplay();
             }
         }
     }
@@ -263,7 +324,6 @@ public partial class NewCharacterWizardWindow
     private void OnSkillSearchChanged(object? sender, TextChangedEventArgs e)
     {
         ApplySkillFilter();
-        RenderSkillRows();
     }
 
     private void OnSkillAutoAssignClick(object? sender, RoutedEventArgs e)
@@ -291,7 +351,8 @@ public partial class NewCharacterWizardWindow
             skill.AllocatedRanks = _skillRanksAllocated.GetValueOrDefault(skill.SkillId, 0);
         }
 
-        RenderSkillRows();
+        RefreshAllSkillRowStates();
+        UpdateSkillPointsDisplay();
     }
 
     #endregion
