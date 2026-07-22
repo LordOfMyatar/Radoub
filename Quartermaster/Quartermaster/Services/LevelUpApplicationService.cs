@@ -37,6 +37,18 @@ public class LevelUpApplicationService
         public int ConRetroactiveHp { get; set; } // Retroactive HP from CON modifier change
         public bool RecordHistory { get; set; }
         public LevelHistoryEncoding HistoryEncoding { get; set; } = LevelHistoryEncoding.Readable;
+
+        // Span-aware fields (#2575). FromClassLevel defaults to NewClassLevel, making the
+        // single-level case From==To with one loop iteration. AbilityIncreasesByLevel is the
+        // general form of AbilityIncrease/ExtraAbilityIncreases, keyed by character level.
+        public int? FromClassLevel { get; set; }
+        public Dictionary<int, int>? AbilityIncreasesByLevel { get; set; }
+
+        /// <summary>Number of class levels this input applies (>= 1).</summary>
+        public int LevelsToApply => NewClassLevel - EffectiveFromClassLevel + 1;
+
+        /// <summary>First class level in the range; equals NewClassLevel for a single-level apply.</summary>
+        public int EffectiveFromClassLevel => FromClassLevel ?? NewClassLevel;
     }
 
     /// <summary>
@@ -45,13 +57,43 @@ public class LevelUpApplicationService
     /// <exception cref="InvalidOperationException">If level-up cannot be applied.</exception>
     public void ApplyLevelUp(UtcFile creature, LevelUpInput input)
     {
-        ApplyClassLevel(creature, input.SelectedClassId);
-        ApplyAbilityIncrease(creature, input.AbilityIncrease);
-        // CE mode: apply additional ability increases
-        foreach (var extraAbility in input.ExtraAbilityIncreases)
-            ApplyAbilityIncrease(creature, extraAbility);
+        // Per-level: class level, that level's auto-granted feats, and any slotted ability
+        // increase. For a single-level apply From==To, so the loop runs once (#2575).
+        for (int classLevel = input.EffectiveFromClassLevel; classLevel <= input.NewClassLevel; classLevel++)
+        {
+            ApplyClassLevel(creature, input.SelectedClassId);
+            ApplyAutoGrantedFeats(creature, input.SelectedClassId, classLevel);
+
+            if (input.AbilityIncreasesByLevel is { } byLevel)
+            {
+                int charLevel = creature.ClassList.Sum(c => c.ClassLevel);
+                if (byLevel.TryGetValue(charLevel, out int abilityIdx))
+                    ApplyAbilityIncrease(creature, abilityIdx);
+            }
+        }
+
+        // Single-level compatibility: the scalar AbilityIncrease + ExtraAbilityIncreases path
+        // is used when no per-level map is supplied.
+        if (input.AbilityIncreasesByLevel is null)
+        {
+            ApplyAbilityIncrease(creature, input.AbilityIncrease);
+            foreach (var extraAbility in input.ExtraAbilityIncreases)
+                ApplyAbilityIncrease(creature, extraAbility);
+        }
+        else
+        {
+            // Multi-level CE mode: apply any increases beyond the every-fourth-level slots
+            // (#2696). "All" is the slotted increases plus the CE extras; the helper applies
+            // whatever the per-level loop did not.
+            var allIncreases = input.AbilityIncreasesByLevel.Values
+                .Concat(input.ExtraAbilityIncreases)
+                .ToList();
+            ApplyOverflowAbilityIncreases(creature, allIncreases, input.AbilityIncreasesByLevel);
+        }
+
+        // Pooled across the whole range — applied once.
         ApplyHitPoints(creature, input.HpIncrease + input.ConRetroactiveHp);
-        ApplyFeats(creature, input.SelectedClassId, input.NewClassLevel, input.SelectedFeats);
+        ApplyPlayerSelectedFeats(creature, input.SelectedFeats);
         ApplySkills(creature, input.SkillPointsAdded);
         ApplySpells(creature, input.SelectedClassId, input.SelectedSpellsByLevel);
         UpdateSavingThrows(creature);
@@ -146,25 +188,35 @@ public class LevelUpApplicationService
     /// </summary>
     public void ApplyFeats(UtcFile creature, int classId, int classLevel, List<int> selectedFeats)
     {
-        // Add player-selected feats
-        foreach (var featId in selectedFeats)
-        {
-            if (_displayService.CanFeatBeGainedMultipleTimes(featId) ||
-                !creature.FeatList.Contains((ushort)featId))
-            {
-                creature.FeatList.Add((ushort)featId);
-            }
-        }
+        ApplyPlayerSelectedFeats(creature, selectedFeats);
+        ApplyAutoGrantedFeats(creature, classId, classLevel);
+    }
 
-        // Add auto-granted class feats
-        var grantedFeats = _displayService.Feats.GetClassFeatsGrantedAtLevel(classId, classLevel);
-        foreach (var featId in grantedFeats)
+    /// <summary>
+    /// Adds player-picked feats. Pooled across a level range, so applied once (#2575).
+    /// </summary>
+    public void ApplyPlayerSelectedFeats(UtcFile creature, List<int> selectedFeats)
+    {
+        foreach (var featId in selectedFeats)
+            AddFeatIfAllowed(creature, featId);
+    }
+
+    /// <summary>
+    /// Adds the class feats auto-granted at one class level. Per-level, so called once per
+    /// level in a range (#2575).
+    /// </summary>
+    public void ApplyAutoGrantedFeats(UtcFile creature, int classId, int classLevel)
+    {
+        foreach (var featId in _displayService.Feats.GetClassFeatsGrantedAtLevel(classId, classLevel))
+            AddFeatIfAllowed(creature, featId);
+    }
+
+    private void AddFeatIfAllowed(UtcFile creature, int featId)
+    {
+        if (_displayService.CanFeatBeGainedMultipleTimes(featId) ||
+            !creature.FeatList.Contains((ushort)featId))
         {
-            if (_displayService.CanFeatBeGainedMultipleTimes(featId) ||
-                !creature.FeatList.Contains((ushort)featId))
-            {
-                creature.FeatList.Add((ushort)featId);
-            }
+            creature.FeatList.Add((ushort)featId);
         }
     }
 

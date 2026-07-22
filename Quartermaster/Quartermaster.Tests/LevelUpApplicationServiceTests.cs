@@ -387,6 +387,95 @@ public class LevelUpApplicationServiceTests
         Assert.Equal(12, creature.Dex); // Unchanged
     }
 
+    // #2575: one span-aware ApplyLevelUp call must produce the same end state as N single-level
+    // applies for pooled quantities, applying HP/skills/spells once rather than per level.
+
+    [Fact]
+    public void ApplyLevelUp_SpanAware_PooledQuantitiesAppliedOnce()
+    {
+        var creature = new CreatureBuilder()
+            .WithClass(CommonClass.Fighter, 1)
+            .WithAbilities(14, 12, 14, 10, 10, 8)
+            .WithSkillRanks(3, 0, 2)
+            .Build();
+        creature.HitPoints = 12;
+        creature.MaxHitPoints = 12;
+        creature.CurrentHitPoints = 12;
+
+        // Level 1 -> 5 in one consolidated apply. HP/skills are pooled totals for the whole span.
+        var input = new LevelUpApplicationService.LevelUpInput
+        {
+            SelectedClassId = (int)CommonClass.Fighter,
+            NewClassLevel = 5,
+            FromClassLevel = 2,
+            SelectedFeats = new List<int> { 20, 30, 40, 50 },
+            SkillPointsAdded = new Dictionary<int, int> { { 0, 4 } }, // pooled: 4 ranks total
+            SelectedSpellsByLevel = new Dictionary<int, List<int>>(),
+            HpIncrease = 48, // pooled: 4 * 12
+            AbilityIncreasesByLevel = new Dictionary<int, int> { { 4, 0 } }, // STR +1 at char level 4
+            RecordHistory = false
+        };
+
+        _service.ApplyLevelUp(creature, input);
+
+        Assert.Single(creature.ClassList);
+        Assert.Equal(5, creature.ClassList[0].ClassLevel);
+
+        Assert.Contains((ushort)20, creature.FeatList);
+        Assert.Contains((ushort)50, creature.FeatList);
+
+        // Pooled once: skills 3 + 4 = 7, HP 12 + 48 = 60 — NOT multiplied by the 4 levels.
+        Assert.Equal(7, creature.SkillList[0]);
+        Assert.Equal(60, creature.MaxHitPoints);
+
+        // Slotted ability increase at level 4 applied exactly once.
+        Assert.Equal(15, creature.Str);
+        Assert.Equal(12, creature.Dex);
+    }
+
+    [Fact]
+    public void ApplyLevelUp_SpanAware_MatchesEquivalentSingleLevelApplies()
+    {
+        // Two creatures, same start. One leveled 1->4 by three single applies, the other by one
+        // consolidated apply with pooled totals. Class level and pooled results must match.
+        UtcFile MakeCreature() => new CreatureBuilder()
+            .WithClass(CommonClass.Fighter, 1)
+            .WithAbilities(14, 12, 14, 10, 10, 8)
+            .WithSkillRanks(0, 0, 0)
+            .Build();
+
+        var byLoop = MakeCreature();
+        byLoop.HitPoints = byLoop.MaxHitPoints = byLoop.CurrentHitPoints = 12;
+        for (int level = 2; level <= 4; level++)
+        {
+            _service.ApplyLevelUp(byLoop, new LevelUpApplicationService.LevelUpInput
+            {
+                SelectedClassId = (int)CommonClass.Fighter,
+                NewClassLevel = level,
+                SkillPointsAdded = new Dictionary<int, int> { { 0, 2 } },
+                HpIncrease = 10,
+                RecordHistory = false
+            });
+        }
+
+        var bySpan = MakeCreature();
+        bySpan.HitPoints = bySpan.MaxHitPoints = bySpan.CurrentHitPoints = 12;
+        _service.ApplyLevelUp(bySpan, new LevelUpApplicationService.LevelUpInput
+        {
+            SelectedClassId = (int)CommonClass.Fighter,
+            NewClassLevel = 4,
+            FromClassLevel = 2,
+            SkillPointsAdded = new Dictionary<int, int> { { 0, 6 } }, // 3 levels * 2
+            HpIncrease = 30, // 3 levels * 10
+            AbilityIncreasesByLevel = new Dictionary<int, int>(),
+            RecordHistory = false
+        });
+
+        Assert.Equal(byLoop.ClassList[0].ClassLevel, bySpan.ClassList[0].ClassLevel);
+        Assert.Equal(byLoop.SkillList[0], bySpan.SkillList[0]);
+        Assert.Equal(byLoop.MaxHitPoints, bySpan.MaxHitPoints);
+    }
+
     #endregion
 
     #region ApplyLevelUp Integration
