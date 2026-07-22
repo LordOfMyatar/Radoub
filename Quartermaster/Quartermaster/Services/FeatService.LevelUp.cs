@@ -113,7 +113,7 @@ public partial class FeatService
     {
         var result = new HashSet<int>();
 
-        ForEachClassFeatRow(classId, (featId, listType, _) =>
+        ForEachClassFeatRow(classId, (featId, listType, _, _) =>
         {
             if (listType == "1") // Bonus-only feats
                 result.Add(featId);

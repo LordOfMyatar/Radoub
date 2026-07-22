@@ -245,7 +245,7 @@ public partial class LevelUpWizardWindow
     {
         var result = new HashSet<int>();
 
-        _displayService.Feats.ForEachClassFeatRow(classId, (featId, listType, _) =>
+        _displayService.Feats.ForEachClassFeatRow(classId, (featId, listType, _, _) =>
         {
             // List = 1: Bonus feat only, 2: Normal selectable, 3: Automatic/granted
             // We want 1 and 2 for selection

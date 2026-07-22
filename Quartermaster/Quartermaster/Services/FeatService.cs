@@ -288,8 +288,9 @@ public partial class FeatService
     /// the scan skeleton: table resolution, the "****" terminator, and row parsing.
     /// </summary>
     /// <param name="classId">Class to read FeatsTable from</param>
-    /// <param name="onRow">Receives (featId, listType, rowIndex) for each feat row</param>
-    internal void ForEachClassFeatRow(int classId, Action<int, string?, int> onRow)
+    /// <param name="onRow">Receives (featId, listType, rowIndex, featTable) for each feat row.
+    /// featTable is the resolved, non-null cls_feat table name for reading further columns.</param>
+    internal void ForEachClassFeatRow(int classId, Action<int, string?, int, string> onRow)
     {
         var featTable = _gameDataService.Get2DAValue("classes", classId, "FeatsTable");
         if (string.IsNullOrEmpty(featTable) || featTable == "****")
@@ -305,7 +306,7 @@ public partial class FeatService
             if (!int.TryParse(featIndexStr, out int featId))
                 continue;
 
-            onRow(featId, _gameDataService.Get2DAValue(featTable, row, "List"), row);
+            onRow(featId, _gameDataService.Get2DAValue(featTable, row, "List"), row, featTable);
         }
     }
 
@@ -316,9 +317,8 @@ public partial class FeatService
     public HashSet<int> GetClassFeatsGrantedAtLevel(int classId, int classLevel)
     {
         var result = new HashSet<int>();
-        var featTable = _gameDataService.Get2DAValue("classes", classId, "FeatsTable");
 
-        ForEachClassFeatRow(classId, (featId, listType, row) =>
+        ForEachClassFeatRow(classId, (featId, listType, row, featTable) =>
         {
             // List=-1: granted at creation (class level 1 only)
             if (listType == "-1" && classLevel == 1)
@@ -358,7 +358,7 @@ public partial class FeatService
     {
         var result = new HashSet<int>();
 
-        ForEachClassFeatRow(classId, (featId, listType, _) =>
+        ForEachClassFeatRow(classId, (featId, listType, _, _) =>
         {
             if (listType == "3") // Automatic/granted feat
                 result.Add(featId);
