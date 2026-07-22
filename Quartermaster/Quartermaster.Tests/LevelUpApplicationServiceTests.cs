@@ -333,6 +333,71 @@ public class LevelUpApplicationServiceTests
 
     #endregion
 
+    #region BuildAbilityIncreasesByLevel (#2575 / 3f)
+
+    [Fact]
+    public void BuildAbilityIncreasesByLevel_SingleIncrement_MapsToFirstSlot()
+    {
+        // STR +1 (index 0), one slot at char level 4.
+        var increments = new[] { 1, 0, 0, 0, 0, 0 };
+        var levels = new[] { 4 };
+
+        var map = LevelUpApplicationService.BuildAbilityIncreasesByLevel(increments, levels);
+
+        Assert.Single(map);
+        Assert.Equal(0, map[4]);
+    }
+
+    [Fact]
+    public void BuildAbilityIncreasesByLevel_DifferentAbilitiesAcrossSlots_SpreadsInOrder()
+    {
+        // STR +1 and CON +1, slots at levels 4 and 8. First slot -> STR, second -> CON.
+        var increments = new[] { 1, 0, 1, 0, 0, 0 };
+        var levels = new[] { 4, 8 };
+
+        var map = LevelUpApplicationService.BuildAbilityIncreasesByLevel(increments, levels);
+
+        Assert.Equal(0, map[4]); // STR
+        Assert.Equal(2, map[8]); // CON
+    }
+
+    [Fact]
+    public void BuildAbilityIncreasesByLevel_SameAbilityTwice_FillsConsecutiveSlots()
+    {
+        // STR +2, slots at 4 and 8 — both go to STR.
+        var increments = new[] { 2, 0, 0, 0, 0, 0 };
+        var levels = new[] { 4, 8 };
+
+        var map = LevelUpApplicationService.BuildAbilityIncreasesByLevel(increments, levels);
+
+        Assert.Equal(0, map[4]);
+        Assert.Equal(0, map[8]);
+    }
+
+    [Fact]
+    public void BuildAbilityIncreasesByLevel_MoreIncrementsThanSlots_LeavesOverflowUnmapped()
+    {
+        // CE mode: 3 increments but only 1 slot. Only the slot is mapped; the rest are overflow.
+        var increments = new[] { 3, 0, 0, 0, 0, 0 };
+        var levels = new[] { 4 };
+
+        var map = LevelUpApplicationService.BuildAbilityIncreasesByLevel(increments, levels);
+
+        Assert.Single(map);
+        Assert.Equal(0, map[4]);
+    }
+
+    [Fact]
+    public void BuildAbilityIncreasesByLevel_NoIncrements_ReturnsEmpty()
+    {
+        var map = LevelUpApplicationService.BuildAbilityIncreasesByLevel(
+            new[] { 0, 0, 0, 0, 0, 0 }, new[] { 4, 8 });
+
+        Assert.Empty(map);
+    }
+
+    #endregion
+
     #region Multi-Level Stacking
 
     [Fact]
@@ -413,6 +478,7 @@ public class LevelUpApplicationServiceTests
             SelectedSpellsByLevel = new Dictionary<int, List<int>>(),
             HpIncrease = 48, // pooled: 4 * 12
             AbilityIncreasesByLevel = new Dictionary<int, int> { { 4, 0 } }, // STR +1 at char level 4
+            ExtraAbilityIncreases = new List<int> { 0 }, // complete list = the one slotted STR
             RecordHistory = false
         };
 

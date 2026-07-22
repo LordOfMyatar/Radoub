@@ -154,42 +154,12 @@ public partial class LevelUpWizardWindow
     /// </summary>
     private void SyncAbilityLegacyFields()
     {
-        // _selectedAbilityIncrease: set to the ability with most increments (for backward compat)
-        int maxIdx = -1;
-        int maxVal = 0;
-        for (int i = 0; i < 6; i++)
-        {
-            if (_abilityIncrements[i] > maxVal)
-            {
-                maxVal = _abilityIncrements[i];
-                maxIdx = i;
-            }
-        }
-        _selectedAbilityIncrease = maxIdx;
-
-        // _ceAbilityIncreases: populate with all abilities that have increments
-        _ceAbilityIncreases.Clear();
-        for (int i = 0; i < 6; i++)
-        {
-            for (int j = 0; j < _abilityIncrements[i]; j++)
-                _ceAbilityIncreases.Add(i);
-        }
-
-        // _abilityIncreasesByLevel: distribute increments across ability increase levels
-        // Spread them in order: first N goes to first ability with increments, etc.
-        _abilityIncreasesByLevel.Clear();
-        int levelIdx = 0;
-        for (int i = 0; i < 6; i++)
-        {
-            for (int j = 0; j < _abilityIncrements[i]; j++)
-            {
-                if (levelIdx < _abilityIncreaseLevels.Count)
-                {
-                    _abilityIncreasesByLevel[_abilityIncreaseLevels[levelIdx]] = i;
-                    levelIdx++;
-                }
-            }
-        }
+        // Keep the per-level ability map current for the skill-point (Step 4) and HP previews,
+        // built from the increment source of truth via the shared tested helper (#2575 / 3f).
+        // The old _selectedAbilityIncrease / _ceAbilityIncreases projections are gone — the apply
+        // path derives everything it needs from _abilityIncrements directly.
+        _abilityIncreasesByLevel = LevelUpApplicationService.BuildAbilityIncreasesByLevel(
+            _abilityIncrements, _abilityIncreaseLevels);
     }
 
     // Unused legacy methods kept as stubs for compatibility
